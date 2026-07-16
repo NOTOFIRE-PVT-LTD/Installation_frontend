@@ -65,7 +65,7 @@ export default function PaymentDrawer({ open, mode = 'create', payment, onClose,
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: { xs: '100vw', sm: 460 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: 3, pb: 2 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
             {titleMap[mode]}
           </Typography>
@@ -75,7 +75,7 @@ export default function PaymentDrawer({ open, mode = 'create', payment, onClose,
         </Stack>
         <Divider />
 
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, sm: 3 } }}>
           <FormProvider {...methods}>
             <Stack component="form" id="payment-form" spacing={2.5} onSubmit={methods.handleSubmit(submit)}>
               {mode !== 'create' && (
@@ -100,7 +100,7 @@ export default function PaymentDrawer({ open, mode = 'create', payment, onClose,
         </Box>
 
         <Divider />
-        <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: 2.5 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5} sx={{ p: { xs: 2, sm: 2.5 } }}>
           <Button onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</Button>
           {!readOnly && (
             <Button type="submit" form="payment-form" variant="contained" disabled={submitting}>

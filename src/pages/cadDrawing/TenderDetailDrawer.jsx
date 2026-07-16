@@ -18,7 +18,7 @@ export default function TenderDetailDrawer({ open, tender, onClose, onEdit, canE
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: { xs: '100vw', sm: 420 }, p: 3 }}>
+      <Box sx={{ width: { xs: '100vw', sm: 420 }, p: { xs: 2, sm: 3 } }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
           <Box>
             <Typography variant="h6" fontWeight={700}>

@@ -258,7 +258,7 @@ export default function StationDetailPage() {
         </Button>
       </Stack>
 
-      <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
         <StageStepper
           steps={STATION_STAGE_LABELS}
           statuses={STATION_STAGE_LABELS.map((_, i) => (stage === -1 ? (i === 0 ? 'current' : 'pending') : i < stage ? 'done' : i === stage ? 'current' : 'pending'))}
@@ -274,7 +274,7 @@ export default function StationDetailPage() {
         <Box component="form" id="station-form" onSubmit={methods.handleSubmit(onSubmit)}>
           <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+              <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', height: '100%' }}>
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                   Station Details
                 </Typography>
@@ -312,7 +312,7 @@ export default function StationDetailPage() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+              <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', height: '100%' }}>
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                   Timeline
                 </Typography>
@@ -333,8 +333,8 @@ export default function StationDetailPage() {
             </Grid>
           </Grid>
 
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
               <Typography variant="subtitle1" fontWeight={600}>
                 Materials Used (with quantity)
               </Typography>
@@ -373,7 +373,7 @@ export default function StationDetailPage() {
             </Stack>
           </Paper>
 
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Mandatory Site Documentation
             </Typography>
@@ -425,7 +425,7 @@ export default function StationDetailPage() {
 
         <Grid container spacing={2.5}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', height: '100%' }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
               Amount Claimed & Approval
             </Typography>
@@ -518,7 +518,7 @@ export default function StationDetailPage() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', height: '100%' }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
               Bonus
             </Typography>
@@ -542,7 +542,7 @@ export default function StationDetailPage() {
         </Grid>
 
         <Grid item xs={12}>
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
               Remarks
             </Typography>

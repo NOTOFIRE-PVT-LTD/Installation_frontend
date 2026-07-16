@@ -518,7 +518,14 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         </Grid>
 
         <Divider sx={{ my: 1.75 }} />
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          flexWrap="wrap"
+          gap={1}
+          sx={{ mb: 1 }}
+        >
           <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Items as per LOA
           </Typography>
@@ -594,7 +601,14 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           </Grid>
         </Grid>
 
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1.75, mb: 1 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          flexWrap="wrap"
+          gap={1}
+          sx={{ mt: 1.75, mb: 1 }}
+        >
           <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Additional Officers
           </Typography>

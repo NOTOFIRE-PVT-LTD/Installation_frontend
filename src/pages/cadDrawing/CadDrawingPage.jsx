@@ -144,7 +144,7 @@ export default function CadDrawingPage() {
         subtitle="View linked tenders and drawing files across every division and zone"
         actions={
           isAdmin ? (
-            <Stack direction="row" spacing={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               <Button startIcon={<SettingsIcon />} variant="outlined" onClick={() => setManageDivisionsOpen(true)}>
                 Manage Divisions
               </Button>

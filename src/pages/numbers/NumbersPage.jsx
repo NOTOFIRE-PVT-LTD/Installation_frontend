@@ -104,7 +104,7 @@ export default function NumbersPage() {
         title="Numbers"
         subtitle="Government Official, Installer, and Management contact directory"
         actions={
-          <Stack direction="row" spacing={1}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button
               startIcon={<UploadFileIcon />}
               variant="outlined"

@@ -198,8 +198,8 @@ export default function DataTable({
   }, [columns, statusField, actions]);
 
   return (
-    <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }} alignItems={{ sm: 'center' }} justifyContent="space-between">
+    <Box sx={{ minWidth: 0 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
         {onSearchChange ? (
           <TextField
             size="small"
@@ -207,8 +207,9 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              minWidth: 220,
-              maxWidth: 360,
+              width: '100%',
+              minWidth: { xs: 0, sm: 220 },
+              maxWidth: { xs: '100%', sm: 360 },
               flex: 1,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 999,
@@ -229,7 +230,7 @@ export default function DataTable({
         ) : (
           <Box />
         )}
-        <Stack direction="row" spacing={0.75} alignItems="center">
+        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
           {filters.length > 0 && (
             <>
               <Tooltip title="Filters">
@@ -441,7 +442,16 @@ export default function DataTable({
         </Stack>
       </Stack>
 
-      <Box sx={{ bgcolor: 'background.paper', borderRadius: '8px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          bgcolor: 'background.paper',
+          borderRadius: '8px',
+          border: '1px solid',
+          borderColor: 'divider',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
         <DataGrid
           autoHeight
           rows={rows}

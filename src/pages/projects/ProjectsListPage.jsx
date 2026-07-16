@@ -141,8 +141,9 @@ export default function ProjectsListPage() {
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
           sx={{
-            minWidth: 220,
-            maxWidth: 360,
+            width: '100%',
+            minWidth: { xs: 0, sm: 220 },
+            maxWidth: { xs: '100%', sm: 360 },
             flex: 1,
             '& .MuiOutlinedInput-root': {
               borderRadius: 999,

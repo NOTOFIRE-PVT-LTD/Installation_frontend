@@ -50,7 +50,14 @@ export default function ProjectDailyReportingTab({ project, canManage, onProject
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        flexWrap="wrap"
+        gap={1}
+        sx={{ mb: 2 }}
+      >
         <Typography variant="subtitle1" fontWeight={600}>
           Daily Reporting
         </Typography>

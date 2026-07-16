@@ -67,6 +67,10 @@ const theme = createTheme({
         },
         '#root': {
           minHeight: '100vh',
+          overflowX: 'hidden',
+        },
+        body: {
+          overflowX: 'hidden',
         },
       },
     },
@@ -192,6 +196,35 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           minHeight: '52px !important',
+        },
+      },
+    },
+    MuiTabs: {
+      defaultProps: {
+        variant: 'scrollable',
+        scrollButtons: 'auto',
+        allowScrollButtonsMobile: true,
+      },
+    },
+    MuiBreadcrumbs: {
+      styleOverrides: {
+        ol: {
+          flexWrap: 'wrap',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          margin: 12,
+          width: 'calc(100% - 24px)',
+        },
+      },
+    },
+    MuiDataGrid: {
+      styleOverrides: {
+        root: {
+          minWidth: 640,
         },
       },
     },

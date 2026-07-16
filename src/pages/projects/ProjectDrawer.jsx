@@ -162,7 +162,14 @@ export default function ProjectDrawer({ open, project, loading = false, onClose,
 
           {showExisting && (
             <Box sx={{ mt: 1.5 }}>
-              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1 }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={0.75}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ mb: 1 }}
+              >
                 <Chip
                   size="small"
                   label={statusChip.label}
@@ -192,8 +199,8 @@ export default function ProjectDrawer({ open, project, loading = false, onClose,
                 }}
               />
               <Stack
-                direction="row"
-                spacing={1.5}
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={{ xs: 1, sm: 1.5 }}
                 sx={{
                   p: 1,
                   borderRadius: '8px',
@@ -263,7 +270,12 @@ export default function ProjectDrawer({ open, project, loading = false, onClose,
               )}
               {!isNew && activeTab === 1 && <ProjectCadDrawingTab project={currentProject} />}
               {!isNew && activeTab === 2 && (
-                <ProjectStationsTab project={currentProject} canManage={canContributeToProject} onProjectUpdated={handleSaved} />
+                <ProjectStationsTab
+                  project={currentProject}
+                  canManage={canContributeToProject}
+                  onProjectUpdated={handleSaved}
+                  onNavigateAway={onClose}
+                />
               )}
               {!isNew && activeTab === 3 && (
                 <ProjectDailyReportingTab

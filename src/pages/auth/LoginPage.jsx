@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   return (
     <FormProvider {...methods}>
-      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
+      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: { xs: 2, sm: 3 } }}>
         Sign in to manage your site installation reports
       </Typography>
       <Stack component="form" spacing={2.5} onSubmit={methods.handleSubmit(onSubmit)}>

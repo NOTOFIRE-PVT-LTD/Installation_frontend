@@ -242,9 +242,9 @@ export default function DashboardPage() {
   return (
     <Box sx={{ minWidth: 0 }}>
       <Stack
-        direction="row"
+        direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
-        alignItems="center"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
         spacing={1.5}
         sx={{ mb: 1.75 }}
       >
@@ -414,9 +414,22 @@ export default function DashboardPage() {
                       {project.stations.map((station) => {
                         const chip = claimChipStyle(station);
                         const workDone = station.workDone ?? station.completion ?? 0;
+                        const stationId = station.id || station._id;
                         return (
                           <Box
-                            key={station.id || station.name}
+                            key={stationId || station.name}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
+                              if (!stationId) return;
+                              navigate(`/projects/${project.projectId}/stations/${stationId}`);
+                            }}
+                            onKeyDown={(e) => {
+                              if ((e.key === 'Enter' || e.key === ' ') && stationId) {
+                                e.preventDefault();
+                                navigate(`/projects/${project.projectId}/stations/${stationId}`);
+                              }
+                            }}
                             sx={{
                               display: 'flex',
                               flexDirection: 'column',
@@ -429,6 +442,14 @@ export default function DashboardPage() {
                               bgcolor: '#fafbfc',
                               minWidth: 0,
                               textAlign: 'center',
+                              cursor: stationId ? 'pointer' : 'default',
+                              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                              '&:hover': stationId
+                                ? {
+                                    borderColor: 'primary.light',
+                                    boxShadow: '0 4px 12px rgba(47, 111, 237, 0.1)',
+                                  }
+                                : undefined,
                             }}
                           >
                             <CircularWorkDone value={workDone} size={52} color={chip.color} thickness={4.5} />

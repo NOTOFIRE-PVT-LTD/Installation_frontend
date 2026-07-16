@@ -119,11 +119,11 @@ export default function ProjectDetailPage() {
         </Typography>
       </Breadcrumbs>
 
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
+      <Typography variant="h5" fontWeight={700} sx={{ mb: 2, fontSize: { xs: '1.125rem', sm: '1.5rem' } }}>
         {project.projectName}
       </Typography>
 
-      <Paper sx={{ p: 3, ...SQUARE_PAPER, mb: 2.5 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, ...SQUARE_PAPER, mb: 2.5 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
           <Typography variant="subtitle1" fontWeight={600}>
             Progress of Project Tracker
@@ -139,7 +139,14 @@ export default function ProjectDetailPage() {
         <StageStepper steps={PROJECT_STAGES} statuses={stageStatuses} />
       </Paper>
 
-      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Tabs
+        value={activeTab}
+        onChange={(e, v) => setActiveTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{ mb: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}
+      >
         <Tab label="Overview" />
         <Tab label="Cad Drawing" disabled={!canViewCadDrawings} />
         <Tab label="Daily Reporting" disabled={!canContributeToProject} />
@@ -147,7 +154,7 @@ export default function ProjectDetailPage() {
 
       {activeTab === 0 && (
         <>
-          <Paper sx={{ p: 3, ...SQUARE_PAPER, mb: 2.5 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, ...SQUARE_PAPER, mb: 2.5 }}>
             <ProjectDetailsTab
               project={project}
               canManage={canManageProjectDetails}
@@ -156,7 +163,7 @@ export default function ProjectDetailPage() {
             />
           </Paper>
 
-          <Paper sx={{ p: 3, ...SQUARE_PAPER, mb: 2.5, overflow: 'hidden' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, ...SQUARE_PAPER, mb: 2.5, overflow: 'hidden' }}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               justifyContent="space-between"
@@ -276,12 +283,18 @@ export default function ProjectDetailPage() {
             )}
           </Paper>
 
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            spacing={1}
+            sx={{ mb: 2 }}
+          >
             <Typography variant="subtitle1" fontWeight={600}>
               Stations in this Project
             </Typography>
             {canContributeToProject && (
-              <Button size="small" startIcon={<AddIcon />} onClick={() => setAddStationOpen(true)} sx={ADD_BTN_SX}>
+              <Button size="small" startIcon={<AddIcon />} onClick={() => setAddStationOpen(true)} sx={{ ...ADD_BTN_SX, alignSelf: { xs: 'stretch', sm: 'auto' } }}>
                 Add Station
               </Button>
             )}

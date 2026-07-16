@@ -130,7 +130,7 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: { xs: '100vw', sm: 560 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: 3, pb: 2 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
             {isEdit ? 'Edit Tender' : 'Add Tender'}
           </Typography>
@@ -140,7 +140,7 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
         </Stack>
         <Divider />
 
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, sm: 3 } }}>
           {loading ? (
             <Stack alignItems="center" sx={{ mt: 6 }}>
               <CircularProgress />

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -20,6 +21,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/PersonOutline';
 import Tooltip from '@mui/material/Tooltip';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { useAuth } from '../hooks/useAuth';
@@ -40,6 +43,8 @@ function useVisibleNavItems() {
 }
 
 export default function DashboardLayout() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
   const [anchorEl, setAnchorEl] = useState(null);
@@ -129,7 +134,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', width: '100%', overflowX: 'hidden' }}>
       <AppBar
         position="fixed"
         color="inherit"
@@ -143,11 +148,18 @@ export default function DashboardLayout() {
           transition: 'width 0.2s, margin-left 0.2s',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar sx={{ justifyContent: 'space-between', gap: 1, px: { xs: 1, sm: 2 }, minWidth: 0 }}>
           <IconButton edge="start" sx={{ display: { sm: 'none' } }} onClick={() => setMobileOpen(true)}>
             <MenuIcon />
           </IconButton>
-          <GlobalSearchBar />
+          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'none', sm: 'block' } }}>
+            <GlobalSearchBar />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'flex', sm: 'none' }, alignItems: 'center' }}>
+            <Typography variant="subtitle2" fontWeight={700} noWrap>
+              {APP_NAME}
+            </Typography>
+          </Box>
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
             <Avatar src={user?.profileImage?.url} sx={{ width: 34, height: 34 }}>
               {user?.name?.[0]?.toUpperCase()}
@@ -208,7 +220,14 @@ export default function DashboardLayout() {
 
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2 }, width: { sm: `calc(100% - ${drawerWidth}px)` }, transition: 'width 0.2s' }}
+        sx={{
+          flexGrow: 1,
+          minWidth: 0,
+          overflowX: 'hidden',
+          p: { xs: 1, sm: 2 },
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          transition: 'width 0.2s',
+        }}
       >
         <Toolbar />
         {impersonatorAdmin && (
@@ -231,7 +250,7 @@ export default function DashboardLayout() {
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => dispatch(hideSnackbar())}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'right' }}
       >
         <Alert severity={snackbar.severity} onClose={() => dispatch(hideSnackbar())} sx={{ width: '100%' }}>
           {snackbar.message}

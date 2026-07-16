@@ -23,7 +23,11 @@ export default function PageHeader({ title, subtitle, actions }) {
           </Typography>
         )}
       </Box>
-      {actions && <Box sx={{ flexShrink: 0 }}>{actions}</Box>}
+      {actions && (
+        <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' }, '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}>
+          {actions}
+        </Box>
+      )}
     </Stack>
   );
 }

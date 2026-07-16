@@ -69,7 +69,7 @@ function ProfileForm() {
   return (
     <FormProvider {...methods}>
       <Stack component="form" spacing={2.5} onSubmit={methods.handleSubmit(onSubmit)}>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Avatar src={imagePreview} sx={{ width: 72, height: 72 }}>
             {user?.name?.[0]?.toUpperCase()}
           </Avatar>
@@ -136,7 +136,7 @@ export default function ProfilePage() {
       <PageHeader title="My Profile" subtitle="Manage your personal information and password" />
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Profile Information
             </Typography>
@@ -145,7 +145,7 @@ export default function ProfilePage() {
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Change Password
             </Typography>

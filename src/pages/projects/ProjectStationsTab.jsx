@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
@@ -32,11 +33,18 @@ function PhotoThumb({ photo }) {
   );
 }
 
-export default function ProjectStationsTab({ project, canManage, onProjectUpdated }) {
+export default function ProjectStationsTab({ project, canManage, onProjectUpdated, onNavigateAway }) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [dialogState, setDialogState] = useState({ open: false, mode: 'create', station: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const openStationPage = (station) => {
+    if (!project?._id || !station?._id) return;
+    onNavigateAway?.();
+    navigate(`/projects/${project._id}/stations/${station._id}`);
+  };
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
@@ -73,7 +81,14 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        flexWrap="wrap"
+        gap={1}
+        sx={{ mb: 2 }}
+      >
         <Typography variant="subtitle1" fontWeight={600}>
           Stations
         </Typography>
@@ -91,12 +106,28 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
         <Grid container spacing={1.5}>
           {stations.map((station) => (
             <Grid item xs={12} sm={6} key={station._id}>
-              <Stack spacing={1} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
+              <Stack
+                spacing={1}
+                onClick={() => openStationPage(station)}
+                sx={{
+                  p: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  height: '100%',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                  '&:hover': {
+                    borderColor: 'primary.light',
+                    boxShadow: '0 4px 12px rgba(47, 111, 237, 0.08)',
+                  },
+                }}
+              >
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                   <Typography variant="body2" fontWeight={500}>
                     {station.name}
                   </Typography>
-                  <Stack direction="row">
+                  <Stack direction="row" onClick={(e) => e.stopPropagation()}>
                     <Tooltip title="Download this station PDF report">
                       <IconButton size="small" onClick={() => downloadSingleStationReport(project, station)}>
                         <DownloadIcon fontSize="small" />
@@ -118,7 +149,7 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
                 <Typography variant="caption" color="text.secondary">
                   Complete
                 </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                <Stack direction="row" flexWrap="wrap" gap={0.5} onClick={(e) => e.stopPropagation()}>
                   {station.completePhotos?.length > 0 ? (
                     station.completePhotos.map((p) => <PhotoThumb key={p.publicId} photo={p} />)
                   ) : (
@@ -131,7 +162,7 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
                 <Typography variant="caption" color="text.secondary">
                   Remaining
                 </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                <Stack direction="row" flexWrap="wrap" gap={0.5} onClick={(e) => e.stopPropagation()}>
                   {station.remainingPhotos?.length > 0 ? (
                     station.remainingPhotos.map((p) => <PhotoThumb key={p.publicId} photo={p} />)
                   ) : (
