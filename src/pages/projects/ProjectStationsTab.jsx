@@ -129,7 +129,21 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
                   </Typography>
                   <Stack direction="row" onClick={(e) => e.stopPropagation()}>
                     <Tooltip title="Download this station PDF report">
-                      <IconButton size="small" onClick={() => downloadSingleStationReport(project, station)}>
+                      <IconButton
+                        size="small"
+                        onClick={async () => {
+                          try {
+                            await downloadSingleStationReport(project, station);
+                          } catch (err) {
+                            dispatch(
+                              showSnackbar({
+                                message: err?.message || 'Failed to generate PDF',
+                                severity: 'error',
+                              })
+                            );
+                          }
+                        }}
+                      >
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>

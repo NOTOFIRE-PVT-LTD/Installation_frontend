@@ -19,7 +19,7 @@ export default function ApprovalsQueuePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isAdmin, permissions } = useAuth();
-  const canApprove = isAdmin && Boolean(permissions?.projects);
+  const canApprove = isAdmin && Boolean(permissions?.claimApprovals);
 
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);

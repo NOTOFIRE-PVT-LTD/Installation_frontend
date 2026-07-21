@@ -72,9 +72,14 @@ const schema = yup.object({
     })
   ),
   installationAmount: optionalNumber(),
-  claimDate: yup.string().nullable().notRequired(),
-  amountClaimed: optionalNumber(),
-  amountCleared: optionalNumber(),
+  claimRequests: yup.array().of(
+    yup.object({
+      date: yup.string().nullable().notRequired(),
+      amountRequested: optionalNumber(),
+      amountCleared: optionalNumber(),
+      note: yup.string().notRequired(),
+    })
+  ),
   remarks: yup.string().notRequired(),
 });
 
@@ -90,11 +95,35 @@ const defaultValues = {
   reasonForDelay: '',
   materials: [],
   installationAmount: '',
-  claimDate: null,
-  amountClaimed: '',
-  amountCleared: '',
+  claimRequests: [{ date: null, amountRequested: '', amountCleared: '', note: '' }],
   remarks: '',
 };
+
+function buildClaimRequestsFromStation(station) {
+  const existing = Array.isArray(station.claimRequests) ? station.claimRequests : [];
+  if (existing.length > 0) {
+    return existing.map((r) => ({
+      _id: r._id,
+      date: r.date?.slice?.(0, 10) || (typeof r.date === 'string' ? r.date.slice(0, 10) : null) || null,
+      amountRequested: r.amountRequested ?? '',
+      amountCleared: r.amountCleared ?? '',
+      note: r.note || '',
+    }));
+  }
+
+  if (station.amountClaimed > 0 || station.amountCleared > 0 || station.claimDate) {
+    return [
+      {
+        date: station.claimDate?.slice?.(0, 10) || null,
+        amountRequested: station.amountClaimed ?? '',
+        amountCleared: station.amountCleared ?? '',
+        note: '',
+      },
+    ];
+  }
+
+  return [{ date: null, amountRequested: '', amountCleared: '', note: '' }];
+}
 
 export default function StationDetailPage() {
   const { id, stationId } = useParams();
@@ -113,11 +142,12 @@ export default function StationDetailPage() {
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const canManage = isAdmin ? Boolean(permissions?.projects) : permissions ? permissions.projects !== false : true;
-  const canApprove = isAdmin && Boolean(permissions?.projects);
+  const canApprove = isAdmin && Boolean(permissions?.claimApprovals);
 
   const methods = useForm({ resolver: yupResolver(schema), defaultValues });
   const materialsArray = useFieldArray({ control: methods.control, name: 'materials' });
-  const amountRequestedWatch = useWatch({ control: methods.control, name: 'amountClaimed' });
+  const claimRequestsArray = useFieldArray({ control: methods.control, name: 'claimRequests' });
+  const claimRequestsWatch = useWatch({ control: methods.control, name: 'claimRequests' });
 
   useEffect(() => {
     dispatch(fetchProjectById(id));
@@ -140,9 +170,7 @@ export default function StationDetailPage() {
       reasonForDelay: station.reasonForDelay || '',
       materials: station.materials || [],
       installationAmount: station.installationAmount ?? '',
-      claimDate: station.claimDate?.slice(0, 10) || null,
-      amountClaimed: station.amountClaimed ?? '',
-      amountCleared: station.amountCleared ?? '',
+      claimRequests: buildClaimRequestsFromStation(station),
       remarks: station.remarks || '',
     });
     setChecklistFile(station.checklistFile ? { ...station.checklistFile, name: 'Checklist.pdf' } : null);
@@ -175,12 +203,49 @@ export default function StationDetailPage() {
   const stage = stationStage(station);
   const mandatoryOk = Boolean(station.checklistFile && station.checklistSignedFile && station.workPhotos?.length > 0);
   const effectiveBonusPercent = project.bonusPercentOverride != null ? project.bonusPercentOverride : DEFAULT_BONUS_PERCENT;
-  const requestedAmount = Number(amountRequestedWatch) || 0;
-  const tdsAmount = Math.round((requestedAmount * CLAIM_TDS_PERCENT) / 100);
-  const amountAfterTds = Math.round(requestedAmount - tdsAmount);
+  const claimRows = Array.isArray(claimRequestsWatch) ? claimRequestsWatch : [];
+  const allocatedAmount = Number(methods.watch('installationAmount')) || 0;
+  const totalRequested = claimRows.reduce((sum, row) => sum + (Number(row?.amountRequested) || 0), 0);
+  const totalTds = Math.round((totalRequested * CLAIM_TDS_PERCENT) / 100);
+  const totalAfterTds = Math.round(totalRequested - totalTds);
+  const totalCleared = claimRows.reduce((sum, row) => sum + (Number(row?.amountCleared) || 0), 0);
+  const remainingAllocated = Math.max(0, Math.round((allocatedAmount - totalRequested) * 100) / 100);
+  const overAllocated = totalRequested > allocatedAmount && allocatedAmount > 0;
   const claimEditable = canManage && ['Not Submitted', 'Rejected'].includes(station.claimStatus);
+  // After a claim is approved/paid, installers can request the remaining amount as new subparts.
+  const reRequestMode =
+    canManage && [CLAIM_STATUS.APPROVED, CLAIM_STATUS.PAID].includes(station.claimStatus);
+  const hasNewRequest = reRequestMode && claimRows.some((row) => !row?._id && Number(row?.amountRequested) > 0);
+  const clearedEditable =
+    canApprove && [CLAIM_STATUS.APPROVED, CLAIM_STATUS.PAID, CLAIM_STATUS.PENDING_APPROVAL].includes(station.claimStatus);
+
+  const addPaymentSubpart = () => {
+    const remaining = Math.max(0, allocatedAmount - totalRequested);
+    claimRequestsArray.append({
+      date: null,
+      amountRequested: remaining > 0 ? remaining : '',
+      amountCleared: '',
+      note: '',
+    });
+  };
 
   const onSubmit = async (values) => {
+    const rows = values.claimRequests || [];
+    const requestedSum = rows.reduce(
+      (sum, row) => sum + (row.amountRequested === '' || row.amountRequested == null ? 0 : Number(row.amountRequested) || 0),
+      0
+    );
+    const allocated = Number(values.installationAmount) || 0;
+    if (allocated > 0 && requestedSum > allocated) {
+      dispatch(
+        showSnackbar({
+          message: `Total amount requested (${formatCurrency(requestedSum)}) cannot exceed allocated amount (${formatCurrency(allocated)})`,
+          severity: 'error',
+        })
+      );
+      return false;
+    }
+
     setSubmitting(true);
     const formData = new FormData();
     formData.append('name', values.name);
@@ -188,15 +253,25 @@ export default function StationDetailPage() {
     formData.append('reasonForDelay', values.reasonForDelay || '');
     formData.append('remarks', values.remarks || '');
     formData.append('installationAmount', values.installationAmount === '' ? 0 : values.installationAmount);
-    formData.append('amountClaimed', values.amountClaimed === '' ? 0 : values.amountClaimed);
-    formData.append('amountCleared', values.amountCleared === '' ? 0 : values.amountCleared);
-    ['startDate', 'completionDate', 'commissioningDate', 'claimDate'].forEach((field) => {
+    ['startDate', 'completionDate', 'commissioningDate'].forEach((field) => {
       if (values[field]) formData.append(field, values[field]);
     });
     formData.append('sse', JSON.stringify(values.sse || {}));
     formData.append('installer', JSON.stringify(values.installer || {}));
     formData.append('supervisor', JSON.stringify(values.supervisor || {}));
     formData.append('materials', JSON.stringify(values.materials || []));
+    formData.append(
+      'claimRequests',
+      JSON.stringify(
+        (values.claimRequests || []).map((row) => ({
+          ...(row._id ? { _id: row._id } : {}),
+          date: row.date || null,
+          amountRequested: row.amountRequested === '' || row.amountRequested == null ? 0 : Number(row.amountRequested),
+          amountCleared: row.amountCleared === '' || row.amountCleared == null ? 0 : Number(row.amountCleared),
+          note: row.note || '',
+        }))
+      )
+    );
 
     if (checklistFile?.file) formData.append('checklistFile', checklistFile.file);
     if (checklistSignedFile?.file) formData.append('checklistSignedFile', checklistSignedFile.file);
@@ -210,12 +285,25 @@ export default function StationDetailPage() {
     try {
       await dispatch(updateStation({ id: project._id, stationId: station._id, formData })).unwrap();
       dispatch(showSnackbar({ message: 'Station updated successfully' }));
+      return true;
     } catch (err) {
       dispatch(showSnackbar({ message: err || 'Failed to update station', severity: 'error' }));
+      return false;
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Save the new subpart(s) first, then flip the claim back to Pending Approval (triggers WhatsApp).
+  const handleReRequest = methods.handleSubmit(async (values) => {
+    const saved = await onSubmit(values);
+    if (!saved) return;
+    await runAction(
+      submitStationClaim,
+      { id: project._id, stationId: station._id },
+      'New payment request submitted for approval'
+    );
+  });
 
   const runAction = async (thunk, payload, successMessage) => {
     setActionSubmitting(true);
@@ -251,7 +339,13 @@ export default function StationDetailPage() {
           size="small"
           variant="outlined"
           startIcon={<DownloadIcon />}
-          onClick={() => downloadSingleStationReport(project, station)}
+          onClick={async () => {
+            try {
+              await downloadSingleStationReport(project, station);
+            } catch (err) {
+              dispatch(showSnackbar({ message: err?.message || 'Failed to generate PDF', severity: 'error' }));
+            }
+          }}
           sx={{ textTransform: 'none', borderRadius: '8px' }}
         >
           Download Station PDF
@@ -426,73 +520,253 @@ export default function StationDetailPage() {
         <Grid container spacing={2.5}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', height: '100%' }}>
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
-              Amount Claimed & Approval
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              spacing={1}
+              sx={{ mb: 0.5 }}
+            >
+              <Typography variant="subtitle1" fontWeight={600}>
+                Amount Claimed & Approval
+              </Typography>
+              {(claimEditable || reRequestMode) && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={addPaymentSubpart}
+                  disabled={allocatedAmount > 0 && remainingAllocated <= 0}
+                >
+                  Add Payment Subpart
+                </Button>
+              )}
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+              Split the Installation Amount Allocated into multiple payment subparts (Date → Amount Requested → After TDS
+              → Amount Cleared).
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Flow: Allocated → Date → Amount Requested → After TDS (2%) → Amount Cleared
-            </Typography>
+
             <Stack spacing={2} sx={{ mb: 2 }}>
               <RHFTextField
                 name="installationAmount"
-                label="1. Installation Amount Allocated"
+                label="Installation Amount Allocated"
                 type="number"
                 disabled={!canManage}
+                helperText="Total budget for this station — payment requests must stay within this amount"
               />
-              <RHFDatePicker name="claimDate" label="2. Date" disabled={!claimEditable && !canApprove} />
-              <RHFTextField
-                name="amountClaimed"
-                label="3. Amount Requested"
-                type="number"
-                disabled={!claimEditable}
-              />
-              <TextField
-                label={`4. After TDS Deduction (${CLAIM_TDS_PERCENT}%)`}
-                value={
-                  requestedAmount > 0
-                    ? `${formatCurrency(amountAfterTds)}  (TDS ${formatCurrency(tdsAmount)})`
-                    : '—'
-                }
-                size="small"
-                fullWidth
-                disabled
-                helperText={
-                  requestedAmount > 0
-                    ? `Amount Requested ${formatCurrency(requestedAmount)} minus ${CLAIM_TDS_PERCENT}% TDS`
-                    : 'Enter amount requested to calculate TDS'
-                }
-              />
+
+              <Box
+                sx={{
+                  p: 1.25,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: overAllocated ? 'error.light' : 'divider',
+                  bgcolor: overAllocated ? '#fef2f2' : '#f0fdfa',
+                }}
+              >
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
+                  <Typography variant="body2">
+                    Allocated: <b>{formatCurrency(allocatedAmount)}</b>
+                  </Typography>
+                  <Typography variant="body2">
+                    Requested: <b>{formatCurrency(totalRequested)}</b>
+                  </Typography>
+                  <Typography variant="body2" color={overAllocated ? 'error.main' : remainingAllocated > 0 ? 'success.main' : 'text.primary'}>
+                    Remaining: <b>{formatCurrency(remainingAllocated)}</b>
+                  </Typography>
+                </Stack>
+                {overAllocated && (
+                  <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 0.75 }}>
+                    Total requested exceeds allocated amount. Reduce one or more subparts before saving.
+                  </Typography>
+                )}
+                {claimEditable && allocatedAmount > 0 && remainingAllocated > 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                    Tip: keep Request 1 as a partial amount, then click &quot;Add Payment Subpart&quot; for the next installment
+                    (remaining {formatCurrency(remainingAllocated)} will be filled automatically).
+                  </Typography>
+                )}
+              </Box>
+
+              {claimRequestsArray.fields.map((field, index) => {
+                const requested = Number(claimRows[index]?.amountRequested) || 0;
+                const rowTds = Math.round((requested * CLAIM_TDS_PERCENT) / 100);
+                const rowAfterTds = Math.round(requested - rowTds);
+                // New (unsaved) rows stay editable even after previous requests were approved/paid
+                const rowEditable = claimEditable || (reRequestMode && !claimRows[index]?._id);
+                return (
+                  <Box
+                    key={field.id}
+                    sx={{
+                      p: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      bgcolor: 'background.default',
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.25 }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Payment Subpart {index + 1}
+                        {allocatedAmount > 0 && requested > 0
+                          ? ` · ${Math.min(100, Math.round((requested / allocatedAmount) * 100))}% of allocated`
+                          : ''}
+                      </Typography>
+                      {rowEditable && claimRequestsArray.fields.length > 1 && (
+                        <IconButton size="small" onClick={() => claimRequestsArray.remove(index)} aria-label="Remove subpart">
+                          <DeleteIcon fontSize="small" color="error" />
+                        </IconButton>
+                      )}
+                    </Stack>
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} sm={6}>
+                        <RHFDatePicker
+                          name={`claimRequests.${index}.date`}
+                          label="Date"
+                          disabled={!rowEditable && !clearedEditable}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <RHFTextField
+                          name={`claimRequests.${index}.amountRequested`}
+                          label="Amount Requested (this subpart)"
+                          type="number"
+                          disabled={!rowEditable}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label={`After TDS (${CLAIM_TDS_PERCENT}%)`}
+                          value={
+                            requested > 0
+                              ? `${formatCurrency(rowAfterTds)}  (TDS ${formatCurrency(rowTds)})`
+                              : '—'
+                          }
+                          size="small"
+                          fullWidth
+                          disabled
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <RHFTextField
+                          name={`claimRequests.${index}.amountCleared`}
+                          label="Amount Cleared"
+                          type="number"
+                          disabled={!clearedEditable}
+                          helperText={canApprove ? 'Filled by admin' : 'Set by admin when claim is cleared'}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <RHFTextField
+                          name={`claimRequests.${index}.note`}
+                          label="Note (optional)"
+                          disabled={!rowEditable && !clearedEditable}
+                          placeholder="e.g. 1st installment / after commissioning"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                );
+              })}
+
+              {(claimEditable || reRequestMode) && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={addPaymentSubpart}
+                  disabled={allocatedAmount > 0 && remainingAllocated <= 0}
+                  sx={{ alignSelf: 'flex-start' }}
+                >
+                  {remainingAllocated > 0
+                    ? `Add next subpart (remaining ${formatCurrency(remainingAllocated)})`
+                    : 'Add Payment Subpart'}
+                </Button>
+              )}
+
               <Divider />
-              <RHFTextField
-                name="amountCleared"
-                label="5. Amount Cleared"
-                type="number"
-                disabled={!canApprove || ![CLAIM_STATUS.APPROVED, CLAIM_STATUS.PAID, CLAIM_STATUS.PENDING_APPROVAL].includes(station.claimStatus)}
-                helperText={canApprove ? 'Filled by admin after reviewing the claim' : 'Set by admin when claim is cleared'}
-              />
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: '#f8fafc',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.75 }}>
+                  Totals across all payment subparts
+                </Typography>
+                <Stack spacing={0.5}>
+                  <Typography variant="body2">
+                    Total Requested: <b>{formatCurrency(totalRequested)}</b>
+                    {allocatedAmount > 0 ? ` / ${formatCurrency(allocatedAmount)} allocated` : ''}
+                  </Typography>
+                  <Typography variant="body2">
+                    Total After TDS: <b>{formatCurrency(totalAfterTds)}</b>
+                    {totalRequested > 0 ? ` (TDS ${formatCurrency(totalTds)})` : ''}
+                  </Typography>
+                  <Typography variant="body2">
+                    Total Cleared: <b>{formatCurrency(totalCleared)}</b>
+                  </Typography>
+                </Stack>
+              </Box>
             </Stack>
             <Typography variant="body2" color={mandatoryOk ? 'success.main' : 'text.secondary'} sx={{ mb: 2 }}>
               {mandatoryOk
                 ? 'All mandatory documents are in place.'
                 : 'Save the checklist, signed checklist, and work photos above to enable claim submission.'}
             </Typography>
-            {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && !(station.amountClaimed > 0) && (
+            {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && !(totalRequested > 0) && (
               <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1 }}>
-                Enter amount requested above and click "Save Changes" before submitting for approval.
+                Add at least one payment subpart and click &quot;Save Changes&quot; before submitting for approval.
+              </Typography>
+            )}
+            {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && totalRequested > 0 && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                On submit, selected admins receive a WhatsApp alert with the signed checklist PDF attached.
+              </Typography>
+            )}
+            {reRequestMode && remainingAllocated > 0 && !hasNewRequest && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                {formatCurrency(remainingAllocated)} still remaining — click &quot;Add Payment Subpart&quot; to request the
+                next installment.
+              </Typography>
+            )}
+            {hasNewRequest && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Click &quot;Submit New Request&quot; to save this subpart and send it for approval (admins get a WhatsApp
+                alert).
               </Typography>
             )}
             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
               {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && (
                 <Button
                   variant="contained"
-                  disabled={!mandatoryOk || !canManage || actionSubmitting || !(station.amountClaimed > 0)}
+                  disabled={!mandatoryOk || !canManage || actionSubmitting || !(station.amountClaimed > 0 || totalRequested > 0)}
                   onClick={() => runAction(submitStationClaim, { id: project._id, stationId: station._id }, 'Claim submitted for approval')}
                 >
                   Submit for Approval
                 </Button>
               )}
+              {hasNewRequest && (
+                <Button
+                  variant="contained"
+                  disabled={!mandatoryOk || actionSubmitting || submitting || overAllocated}
+                  onClick={handleReRequest}
+                >
+                  Submit New Request
+                </Button>
+              )}
               {station.claimStatus === CLAIM_STATUS.PENDING_APPROVAL && (
-                <StatusBadge status="Pending Approval" />
+                <Stack spacing={0.5}>
+                  <StatusBadge status="Pending Approval" />
+                  <Typography variant="caption" color="text.secondary">
+                    Requests are locked while waiting for admin approval. You can request the remaining amount once this
+                    is approved.
+                  </Typography>
+                </Stack>
               )}
               {station.claimStatus === CLAIM_STATUS.APPROVED && canApprove && (
                 <Button

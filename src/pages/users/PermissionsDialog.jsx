@@ -18,6 +18,7 @@ const LABELS = {
   payments: 'Payments',
   numbers: 'Numbers',
   cadDrawing: 'Cad Drawing',
+  claimApprovals: 'Claim Approvals + WhatsApp alerts',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];
@@ -47,6 +48,13 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
         {!isAdmin && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Installers can use Projects, Reports, and Cad Drawing unless restricted here.
+          </Typography>
+        )}
+        {isAdmin && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enable <b>Claim Approvals + WhatsApp alerts</b> for admins who should receive a WhatsApp message
+            when an installer submits a payment request. The admin must have a valid mobile number saved on their
+            profile ({user?.mobileNumber || 'not set'}).
           </Typography>
         )}
         <FormGroup>

@@ -18,6 +18,7 @@ import ReportDetailPage from '../pages/reports/ReportDetailPage';
 import PaymentsListPage from '../pages/payments/PaymentsListPage';
 import NumbersPage from '../pages/numbers/NumbersPage';
 import CadDrawingPage from '../pages/cadDrawing/CadDrawingPage';
+import WhatsAppLogsPage from '../pages/whatsapp/WhatsAppLogsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -89,8 +90,16 @@ export default function AppRoutes() {
           <Route
             path="/approvals"
             element={
-              <PermissionGate permission="projects" roles={[]}>
+              <PermissionGate permission="claimApprovals" roles={[]}>
                 <ApprovalsQueuePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/whatsapp-logs"
+            element={
+              <PermissionGate permission="users" roles={[]}>
+                <WhatsAppLogsPage />
               </PermissionGate>
             }
           />

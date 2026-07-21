@@ -253,7 +253,18 @@ export default function ProjectDetailPage() {
                           <Tooltip title={`Download ${station.name} PDF report`}>
                             <IconButton
                               size="small"
-                              onClick={() => downloadSingleStationReport(project, station)}
+                              onClick={async () => {
+                                try {
+                                  await downloadSingleStationReport(project, station);
+                                } catch (err) {
+                                  dispatch(
+                                    showSnackbar({
+                                      message: err?.message || 'Failed to generate PDF',
+                                      severity: 'error',
+                                    })
+                                  );
+                                }
+                              }}
                               sx={{ color: '#0f766e' }}
                             >
                               <DownloadIcon fontSize="small" />

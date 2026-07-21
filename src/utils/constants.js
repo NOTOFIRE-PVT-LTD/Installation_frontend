@@ -47,7 +47,16 @@ export const STATION_STAGE_LABELS = [
   'Paid',
 ];
 
-export const PERMISSION_KEYS = ['dashboard', 'users', 'projects', 'reports', 'payments', 'numbers', 'cadDrawing'];
+export const PERMISSION_KEYS = [
+  'dashboard',
+  'users',
+  'projects',
+  'reports',
+  'payments',
+  'numbers',
+  'cadDrawing',
+  'claimApprovals',
+];
 
 export const NUMBER_CATEGORIES = {
   GOVERNMENT_OFFICIAL: 'Government Official',
