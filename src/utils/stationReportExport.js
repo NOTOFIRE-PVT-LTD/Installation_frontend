@@ -655,7 +655,8 @@ async function renderStationSections(doc, project, station, startY) {
     [
       ['Checklist Uploaded', station.checklistFile ? 'Yes' : 'No'],
       ['Checklist Signed', station.checklistSignedFile ? 'Yes' : 'No'],
-      ['CAD Drawing', station.cadDrawingFile ? 'Yes' : 'No'],
+      ['CAD Drawing Installer', station.cadDrawingFile ? 'Yes' : 'No'],
+      ['CAD File Notofire', String(station.cadDrawingFiles?.length || 0)],
       ['Work Photos', String(station.workPhotos?.length || 0)],
       ['Complete Photos', String(station.completePhotos?.length || 0)],
       ['Remaining Photos', String(station.remainingPhotos?.length || 0)],
@@ -669,7 +670,17 @@ async function renderStationSections(doc, project, station, startY) {
   y = drawSectionTitle(doc, '6. Attached Documents & Photos', y);
   y = await drawSingleAttachment(doc, 'Checklist Uploaded', station.checklistFile, y);
   y = await drawSingleAttachment(doc, 'Checklist Signed', station.checklistSignedFile, y);
-  y = await drawSingleAttachment(doc, 'CAD Drawing', station.cadDrawingFile, y);
+  y = await drawSingleAttachment(doc, 'CAD Drawing Installer', station.cadDrawingFile, y);
+  {
+    const cadFiles = station.cadDrawingFiles || [];
+    if (cadFiles.length === 0) {
+      y = await drawSingleAttachment(doc, 'CAD File Notofire', null, y);
+    } else {
+      for (let i = 0; i < cadFiles.length; i += 1) {
+        y = await drawSingleAttachment(doc, `CAD File Notofire ${i + 1}`, cadFiles[i], y);
+      }
+    }
+  }
   y = await drawPhotoSection(doc, 'Photos of Work Done', station.workPhotos, y);
   y = await drawPhotoSection(doc, 'Complete Photos', station.completePhotos, y);
   y = await drawPhotoSection(doc, 'Remaining Photos', station.remainingPhotos, y);

@@ -17,7 +17,7 @@ const LABELS = {
   reports: 'Reports',
   payments: 'Payments',
   numbers: 'Numbers',
-  cadDrawing: 'Cad Drawing',
+  cadDrawing: 'Cad Drawing (inside Projects)',
   claimApprovals: 'Claim Approvals + WhatsApp alerts',
 };
 
@@ -47,7 +47,8 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       <DialogContent>
         {!isAdmin && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Installers can use Projects, Reports, and Cad Drawing unless restricted here.
+            Installers can use Projects and Reports by default. Cad Drawing is available inside each project when
+            Cad Drawing permission is enabled.
           </Typography>
         )}
         {isAdmin && (

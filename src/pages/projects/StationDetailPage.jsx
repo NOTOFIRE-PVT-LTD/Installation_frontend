@@ -25,6 +25,7 @@ import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import DocumentDropzone from '../../components/common/FileUpload/DocumentDropzone';
 import ImageDropzone from '../../components/common/FileUpload/ImageDropzone';
+import MixedFileDropzone from '../../components/common/FileUpload/MixedFileDropzone';
 import StationDailyReportingSection from './StationDailyReportingSection';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
@@ -138,6 +139,8 @@ export default function StationDetailPage() {
   const [workPhotos, setWorkPhotos] = useState([]);
   const [initialWorkPhotos, setInitialWorkPhotos] = useState([]);
   const [cadDrawingFile, setCadDrawingFile] = useState(null);
+  const [cadDrawingFiles, setCadDrawingFiles] = useState([]);
+  const [initialCadDrawingFiles, setInitialCadDrawingFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
@@ -177,7 +180,13 @@ export default function StationDetailPage() {
     setChecklistSignedFile(station.checklistSignedFile ? { ...station.checklistSignedFile, name: 'Signed Checklist.pdf' } : null);
     setWorkPhotos((station.workPhotos || []).map((p, i) => ({ ...p, name: `Photo ${i + 1}` })));
     setInitialWorkPhotos(station.workPhotos || []);
-    setCadDrawingFile(station.cadDrawingFile ? { ...station.cadDrawingFile, name: 'CAD Drawing' } : null);
+    setCadDrawingFile(station.cadDrawingFile ? { ...station.cadDrawingFile, name: 'CAD Drawing Installer' } : null);
+    const cadFiles = (station.cadDrawingFiles || []).map((f, i) => ({
+      ...f,
+      name: f.originalName || `CAD File Notofire ${i + 1}`,
+    }));
+    setCadDrawingFiles(cadFiles);
+    setInitialCadDrawingFiles(cadFiles.filter((f) => f.publicId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [station?._id, station?.updatedAt]);
 
@@ -276,11 +285,18 @@ export default function StationDetailPage() {
     if (checklistFile?.file) formData.append('checklistFile', checklistFile.file);
     if (checklistSignedFile?.file) formData.append('checklistSignedFile', checklistSignedFile.file);
     if (cadDrawingFile?.file) formData.append('cadDrawingFile', cadDrawingFile.file);
+    cadDrawingFiles.filter((f) => f.file).forEach((f) => formData.append('cadDrawingFiles', f.file));
     workPhotos.filter((p) => p.file).forEach((p) => formData.append('workPhotos', p.file));
 
     const remainingPhotoIds = workPhotos.filter((p) => !p.file).map((p) => p.publicId);
     const removedIds = initialWorkPhotos.filter((p) => !remainingPhotoIds.includes(p.publicId)).map((p) => p.publicId);
     if (removedIds.length > 0) formData.append('removePhotoIds', JSON.stringify(removedIds));
+
+    const remainingCadIds = cadDrawingFiles.filter((f) => !f.file && f.publicId).map((f) => f.publicId);
+    const removedCadIds = initialCadDrawingFiles
+      .filter((f) => f.publicId && !remainingCadIds.includes(f.publicId))
+      .map((f) => f.publicId);
+    if (removedCadIds.length > 0) formData.append('removeCadFileIds', JSON.stringify(removedCadIds));
 
     try {
       await dispatch(updateStation({ id: project._id, stationId: station._id, formData })).unwrap();
@@ -493,9 +509,17 @@ export default function StationDetailPage() {
                 <DocumentDropzone
                   value={cadDrawingFile}
                   onChange={canManage ? setCadDrawingFile : () => {}}
-                  label="CAD Drawing (optional)"
-                  accept="image/jpeg,image/png,image/webp"
-                  buttonLabel="Upload Image"
+                  label="CAD Drawing Installer"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  buttonLabel="Upload Image / PDF"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <MixedFileDropzone
+                  value={cadDrawingFiles}
+                  onChange={canManage ? setCadDrawingFiles : () => {}}
+                  label="CAD File Notofire"
+                  helperText="Upload multiple CAD images or PDF files"
                 />
               </Grid>
             </Grid>

@@ -17,7 +17,6 @@ import ReportFormPage from '../pages/reports/ReportFormPage';
 import ReportDetailPage from '../pages/reports/ReportDetailPage';
 import PaymentsListPage from '../pages/payments/PaymentsListPage';
 import NumbersPage from '../pages/numbers/NumbersPage';
-import CadDrawingPage from '../pages/cadDrawing/CadDrawingPage';
 import WhatsAppLogsPage from '../pages/whatsapp/WhatsAppLogsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -154,14 +153,7 @@ export default function AppRoutes() {
             }
           />
 
-          <Route
-            path="/cad-drawing"
-            element={
-              <PermissionGate permission="cadDrawing" roles={[ROLES.USER]}>
-                <CadDrawingPage />
-              </PermissionGate>
-            }
-          />
+          <Route path="/cad-drawing" element={<Navigate to="/projects" replace />} />
 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/403" element={<ForbiddenPage />} />

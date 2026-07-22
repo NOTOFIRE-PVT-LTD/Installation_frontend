@@ -3,7 +3,6 @@ import {
   faChartLine,
   faClipboardCheck,
   faCommentDots,
-  faCompassDrafting,
   faFolderOpen,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
@@ -34,14 +33,6 @@ export const NAV_ITEMS = [
     permission: 'projects',
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#14b8a6', bg: '#e6fffb' },
-  },
-  {
-    label: 'Cad Drawing',
-    path: '/cad-drawing',
-    icon: faCompassDrafting,
-    permission: 'cadDrawing',
-    roles: [ROLES.ADMIN, ROLES.USER],
-    accent: { color: '#ec4899', bg: '#ffe7f3' },
   },
   {
     label: 'Approvals',
