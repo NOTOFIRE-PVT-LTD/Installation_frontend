@@ -32,7 +32,17 @@ const schema = yup.object({
   date: yup.string().required('Date is required'),
 });
 
-export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
+export default function TenderFormDrawer({
+  open,
+  tenderId,
+  onClose,
+  onSaved,
+  defaultProjectId = '',
+  defaultProjectName = '',
+  lockProject = false,
+  createTitle = 'Add Tender',
+  editTitle = 'Edit Tender',
+}) {
   const isEdit = Boolean(tenderId);
   const dispatch = useAppDispatch();
   const { current: tender, currentStatus } = useAppSelector((state) => state.tenders);
@@ -59,11 +69,23 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
       setZone('');
       setFiles([]);
       setInitialFiles([]);
-      methods.reset({ division: '', project: '', tenderName: '', date: null });
+      methods.reset({
+        division: '',
+        project: defaultProjectId || '',
+        tenderName: '',
+        date: null,
+      });
     }
     return () => dispatch(clearCurrent());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, tenderId]);
+  }, [open, tenderId, defaultProjectId]);
+
+  useEffect(() => {
+    if (!isEdit && open && defaultProjectId) {
+      methods.setValue('project', defaultProjectId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultProjectId, isEdit]);
 
   useEffect(() => {
     if (isEdit && tender && open) {
@@ -97,7 +119,11 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
     setSubmitting(true);
     const formData = new FormData();
     formData.append('division', values.division);
-    if (values.project) formData.append('project', values.project);
+    if (lockProject && defaultProjectId) {
+      formData.append('project', defaultProjectId);
+    } else if (values.project) {
+      formData.append('project', values.project);
+    }
     formData.append('tenderName', values.tenderName);
     formData.append('date', values.date);
 
@@ -112,10 +138,10 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
       let saved;
       if (isEdit) {
         saved = await dispatch(updateTender({ id: tenderId, formData })).unwrap();
-        dispatch(showSnackbar({ message: 'Tender updated successfully' }));
+        dispatch(showSnackbar({ message: lockProject ? 'CAD drawing updated' : 'Tender updated successfully' }));
       } else {
         saved = await dispatch(createTender(formData)).unwrap();
-        dispatch(showSnackbar({ message: 'Tender created successfully' }));
+        dispatch(showSnackbar({ message: lockProject ? 'CAD drawing submitted successfully' : 'Tender created successfully' }));
       }
       onSaved?.(saved);
     } catch (err) {
@@ -132,7 +158,7 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
       <Box sx={{ width: { xs: '100vw', sm: 560 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
-            {isEdit ? 'Edit Tender' : 'Add Tender'}
+            {isEdit ? editTitle : createTitle}
           </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
@@ -184,24 +210,36 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
 
                 <Divider sx={{ my: 3 }} />
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                  3. Tender Details
+                  3. Drawing Details
                 </Typography>
                 <Grid container spacing={2.5}>
+                  {lockProject && defaultProjectId ? (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Project"
+                        value={defaultProjectName || 'Selected project'}
+                        disabled
+                        helperText="CAD drawing will be linked to this project"
+                      />
+                    </Grid>
+                  ) : (
+                    <Grid item xs={12}>
+                      <RHFSelect
+                        name="project"
+                        label="Project (optional)"
+                        options={projectOptions.map((p) => ({ value: p._id, label: p.projectName }))}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
-                    <RHFTextField name="tenderName" label="Tender Name" />
+                    <RHFTextField name="tenderName" label="Drawing / Tender Name" />
                   </Grid>
                   <Grid item xs={12}>
                     <RHFDatePicker name="date" label="Date" />
                   </Grid>
                   <Grid item xs={12}>
-                    <RHFSelect
-                      name="project"
-                      label="Project (optional)"
-                      options={projectOptions.map((p) => ({ value: p._id, label: p.projectName }))}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <MixedFileDropzone value={files} onChange={setFiles} label="Images / PDFs" />
+                    <MixedFileDropzone value={files} onChange={setFiles} label="CAD files (Images / PDFs)" />
                   </Grid>
                 </Grid>
               </Box>
@@ -213,7 +251,7 @@ export default function TenderFormDrawer({ open, tenderId, onClose, onSaved }) {
         <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: 2.5 }}>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" form="tender-form" variant="contained" disabled={submitting || loading}>
-            {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Tender'}
+            {submitting ? 'Saving…' : isEdit ? 'Save Changes' : lockProject ? 'Submit Drawing' : 'Create Tender'}
           </Button>
         </Stack>
       </Box>

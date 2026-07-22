@@ -40,7 +40,7 @@ export const NAV_ITEMS = [
     path: '/cad-drawing',
     icon: faCompassDrafting,
     permission: 'cadDrawing',
-    roles: [ROLES.ADMIN],
+    roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#ec4899', bg: '#ffe7f3' },
   },
   {

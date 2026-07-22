@@ -157,7 +157,7 @@ export default function AppRoutes() {
           <Route
             path="/cad-drawing"
             element={
-              <PermissionGate permission="cadDrawing" roles={[]}>
+              <PermissionGate permission="cadDrawing" roles={[ROLES.USER]}>
                 <CadDrawingPage />
               </PermissionGate>
             }
