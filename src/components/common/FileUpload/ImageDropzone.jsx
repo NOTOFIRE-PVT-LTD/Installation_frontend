@@ -37,8 +37,13 @@ export default function ImageDropzone({ value = [], onChange, label = 'Site Phot
           >
             <Box component="img" src={item.url} alt={item.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <IconButton
+              type="button"
               size="small"
-              onClick={() => handleRemove(index)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRemove(index);
+              }}
               sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}
             >
               <CloseIcon fontSize="small" />
@@ -46,6 +51,7 @@ export default function ImageDropzone({ value = [], onChange, label = 'Site Phot
           </Box>
         ))}
         <Button
+          type="button"
           variant="outlined"
           onClick={() => inputRef.current?.click()}
           sx={{ width: 96, height: 96, flexDirection: 'column', gap: 0.5 }}

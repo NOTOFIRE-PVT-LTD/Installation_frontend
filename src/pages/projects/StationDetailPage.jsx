@@ -139,9 +139,11 @@ export default function StationDetailPage() {
   const [workPhotos, setWorkPhotos] = useState([]);
   const [initialWorkPhotos, setInitialWorkPhotos] = useState([]);
   const [cadDrawingFile, setCadDrawingFile] = useState(null);
+  const [initialCadDrawingFile, setInitialCadDrawingFile] = useState(null);
   const [cadDrawingFiles, setCadDrawingFiles] = useState([]);
   const [initialCadDrawingFiles, setInitialCadDrawingFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [removingCadInstaller, setRemovingCadInstaller] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const canManage = isAdmin ? Boolean(permissions?.projects) : permissions ? permissions.projects !== false : true;
@@ -181,6 +183,7 @@ export default function StationDetailPage() {
     setWorkPhotos((station.workPhotos || []).map((p, i) => ({ ...p, name: `Photo ${i + 1}` })));
     setInitialWorkPhotos(station.workPhotos || []);
     setCadDrawingFile(station.cadDrawingFile ? { ...station.cadDrawingFile, name: 'CAD Drawing Installer' } : null);
+    setInitialCadDrawingFile(station.cadDrawingFile || null);
     const cadFiles = (station.cadDrawingFiles || []).map((f, i) => ({
       ...f,
       name: f.originalName || `CAD File Notofire ${i + 1}`,
@@ -285,6 +288,9 @@ export default function StationDetailPage() {
     if (checklistFile?.file) formData.append('checklistFile', checklistFile.file);
     if (checklistSignedFile?.file) formData.append('checklistSignedFile', checklistSignedFile.file);
     if (cadDrawingFile?.file) formData.append('cadDrawingFile', cadDrawingFile.file);
+    if (initialCadDrawingFile?.publicId && !cadDrawingFile) {
+      formData.append('removeCadDrawingFile', 'true');
+    }
     cadDrawingFiles.filter((f) => f.file).forEach((f) => formData.append('cadDrawingFiles', f.file));
     workPhotos.filter((p) => p.file).forEach((p) => formData.append('workPhotos', p.file));
 
@@ -320,6 +326,34 @@ export default function StationDetailPage() {
       'New payment request submitted for approval'
     );
   });
+
+  const handleRemoveCadDrawingInstaller = async () => {
+    const previous = cadDrawingFile;
+    const previousInitial = initialCadDrawingFile;
+    setCadDrawingFile(null);
+
+    // Local-only file (not yet saved) — nothing to delete on server
+    if (!previousInitial?.publicId) {
+      setInitialCadDrawingFile(null);
+      return;
+    }
+
+    setRemovingCadInstaller(true);
+    const formData = new FormData();
+    formData.append('removeCadDrawingFile', 'true');
+    try {
+      await dispatch(updateStation({ id: project._id, stationId: station._id, formData })).unwrap();
+      setInitialCadDrawingFile(null);
+      dispatch(showSnackbar({ message: 'CAD Drawing Installer removed' }));
+      await dispatch(fetchProjectById(id));
+    } catch (err) {
+      setCadDrawingFile(previous);
+      setInitialCadDrawingFile(previousInitial);
+      dispatch(showSnackbar({ message: err || 'Failed to remove CAD Drawing Installer', severity: 'error' }));
+    } finally {
+      setRemovingCadInstaller(false);
+    }
+  };
 
   const runAction = async (thunk, payload, successMessage) => {
     setActionSubmitting(true);
@@ -489,13 +523,19 @@ export default function StationDetailPage() {
             </Typography>
             <Grid container spacing={2.5}>
               <Grid item xs={12} sm={6}>
-                <DocumentDropzone value={checklistFile} onChange={canManage ? setChecklistFile : () => {}} label="Checklist Uploaded (mandatory)" />
+                <DocumentDropzone
+                  value={checklistFile}
+                  onChange={canManage ? setChecklistFile : () => {}}
+                  label="Checklist Uploaded (mandatory)"
+                  disabled={!canManage}
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <DocumentDropzone
                   value={checklistSignedFile}
                   onChange={canManage ? setChecklistSignedFile : () => {}}
                   label="Checklist Signed (mandatory)"
+                  disabled={!canManage}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -512,6 +552,9 @@ export default function StationDetailPage() {
                   label="CAD Drawing Installer"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   buttonLabel="Upload Image / PDF"
+                  disabled={!canManage}
+                  removing={removingCadInstaller}
+                  onRemove={canManage ? handleRemoveCadDrawingInstaller : undefined}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -520,6 +563,7 @@ export default function StationDetailPage() {
                   onChange={canManage ? setCadDrawingFiles : () => {}}
                   label="CAD File Notofire"
                   helperText="Upload multiple CAD images or PDF files"
+                  disabled={!canManage}
                 />
               </Grid>
             </Grid>
