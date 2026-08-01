@@ -47,7 +47,7 @@ export const STATION_STAGE_LABELS = [
   'Paid',
 ];
 
-export const PERMISSION_KEYS = [
+export const PERMISSION_KEYS = [    
   'dashboard',
   'users',
   'projects',
@@ -56,7 +56,24 @@ export const PERMISSION_KEYS = [
   'numbers',
   'cadDrawing',
   'claimApprovals',
+  'tenders',
+  'tenderWhatsappAlerts',
+  'inspections',
+  'financialDocuments',
+  'bgWhatsappAlerts',
 ];
+
+export const LOA_TYPES = {
+  NOTOFIRE: 'Notofire',
+  THIRD_PARTY: 'Third Party',
+};
+
+export const INSPECTION_STATUS = {
+  PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
+  PASSED: 'Passed',
+  FAILED: 'Failed',
+};
 
 export const NUMBER_CATEGORIES = {
   GOVERNMENT_OFFICIAL: 'Government Official',

@@ -7,6 +7,11 @@ import paymentsReducer from '../features/payments/paymentsSlice';
 import numbersReducer from '../features/numbers/numbersSlice';
 import divisionsReducer from '../features/divisions/divisionsSlice';
 import tendersReducer from '../features/tenders/tendersSlice';
+import nitTendersReducer from '../features/nitTenders/nitTendersSlice';
+import inspectionsReducer from '../features/inspections/inspectionsSlice';
+import financialDocumentsReducer from '../features/financialDocuments/financialDocumentsSlice';
+import contractAgreementsReducer from '../features/contractAgreements/contractAgreementsSlice';
+import callLettersReducer from '../features/callLetters/callLettersSlice';
 import uiReducer from '../features/ui/uiSlice';
 import { injectStore } from '../api/axiosInstance';
 
@@ -20,6 +25,11 @@ export const store = configureStore({
     numbers: numbersReducer,
     divisions: divisionsReducer,
     tenders: tendersReducer,
+    nitTenders: nitTendersReducer,
+    inspections: inspectionsReducer,
+    financialDocuments: financialDocumentsReducer,
+    contractAgreements: contractAgreementsReducer,
+    callLetters: callLettersReducer,
     ui: uiReducer,
   },
 });

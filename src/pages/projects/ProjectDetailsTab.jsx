@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
@@ -20,6 +21,7 @@ import { useAppDispatch } from '../../app/hooks';
 import { createProject, updateProject } from '../../features/projects/projectsThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { userApi } from '../../api/userApi';
+import { nitTenderApi } from '../../api/nitTenderApi';
 
 // yup's number schema transforms a blank string to NaN, which then fails typeError() even
 // though the field is notRequired() — treat blank input as 0 instead of failing validation.
@@ -190,11 +192,25 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
   const [submitting, setSubmitting] = useState(false);
   const [userOptions, setUserOptions] = useState([{ value: '', label: 'Select installer' }]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [tenderOptions, setTenderOptions] = useState([]);
+  const [selectedTenderId, setSelectedTenderId] = useState('');
+  const [loadingTenders, setLoadingTenders] = useState(false);
 
   const methods = useForm({ resolver: yupResolver(schema), defaultValues });
   const loaItemsArray = useFieldArray({ control: methods.control, name: 'loaItems' });
   const additionalOfficersArray = useFieldArray({ control: methods.control, name: 'additionalOfficers' });
   const serialType = methods.watch('serialType');
+
+  const tenderSelectOptions = useMemo(
+    () =>
+      tenderOptions.map((t) => ({
+        value: t._id,
+        label: [t.tenderName, t.loaNumber, t.loaDivisionName || t.nitNumber, t.contractorName]
+          .filter(Boolean)
+          .join(' — '),
+      })),
+    [tenderOptions]
+  );
 
   useEffect(() => {
     if (!canManage) return;
@@ -225,6 +241,26 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
       cancelled = true;
     };
   }, [canManage, dispatch]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    let cancelled = false;
+    setLoadingTenders(true);
+    nitTenderApi
+      .options()
+      .then(({ data }) => {
+        if (!cancelled) setTenderOptions(data.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setTenderOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTenders(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canManage]);
 
   useEffect(() => {
     if (project) {
@@ -292,8 +328,56 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
       setSupplyInvoiceDoc(null);
       setInstallationPoDoc(null);
     }
+    setSelectedTenderId('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
+
+  const applyTenderLoa = (tenderId) => {
+    setSelectedTenderId(tenderId);
+    if (!tenderId) return;
+
+    const tender = tenderOptions.find((t) => t._id === tenderId);
+    if (!tender) return;
+
+    methods.setValue('loaNo', tender.loaNumber || '', { shouldDirty: true });
+    methods.setValue('workName', tender.loaDivisionName || '', { shouldDirty: true });
+    methods.setValue(
+      'dateOfCompletionLOA',
+      tender.loaWorkCompletion ? String(tender.loaWorkCompletion).slice(0, 10) : null,
+      { shouldDirty: true }
+    );
+    if (tender.contractorName) {
+      methods.setValue('contractor', tender.contractorName, { shouldDirty: true });
+    }
+
+    const mappedItems =
+      (tender.loaItems || [])
+        .filter((item) => String(item.itemName || '').trim())
+        .map((item) => ({
+          item: item.loaType ? `${item.itemName} (${item.loaType})` : item.itemName,
+          qty: 0,
+          unit: 'Nos',
+        })) || [];
+
+    // Prefer LOA items; fall back to NIT items (which have quantity) if LOA items are empty.
+    const fallbackItems =
+      mappedItems.length > 0
+        ? mappedItems
+        : (tender.items || [])
+            .filter((item) => String(item.itemName || '').trim())
+            .map((item) => ({
+              item: item.itemName,
+              qty: item.quantity ?? 0,
+              unit: 'Nos',
+            }));
+
+    methods.setValue('loaItems', fallbackItems, { shouldDirty: true });
+    dispatch(
+      showSnackbar({
+        message: `LOA details filled from tender ${tender.loaNumber || tender.nitNumber}`,
+      })
+    );
+  };
 
   const onSubmit = async (values) => {
     setSubmitting(true);
@@ -465,6 +549,41 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           LOA Details
         </Typography>
+        {!readOnly && (
+          <Grid container spacing={1.25} sx={{ mb: 1.25 }}>
+            <Grid item xs={12}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Choose from Tender LOA"
+                value={selectedTenderId}
+                onChange={(e) => applyTenderLoa(e.target.value)}
+                disabled={loadingTenders}
+                helperText={
+                  loadingTenders
+                    ? 'Loading tender LOAs…'
+                    : tenderSelectOptions.length === 0
+                      ? 'No tenders with LOA Number found. Add one under Tender first.'
+                      : 'Selecting a tender fills LOA No., Division/Name, Work Completion, Contractor, and LOA items.'
+                }
+                sx={{
+                  '& .MuiInputBase-root': { fontSize: '0.8125rem' },
+                  '& .MuiInputLabel-root': { fontSize: '0.8125rem' },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Select a tender LOA</em>
+                </MenuItem>
+                {tenderSelectOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
+        )}
         <Grid container spacing={1.25}>
           <Grid item xs={12} sm={6}>
             <RHFTextField name="loaNo" label="LOA No." disabled={readOnly} />

@@ -18,6 +18,9 @@ import ReportDetailPage from '../pages/reports/ReportDetailPage';
 import PaymentsListPage from '../pages/payments/PaymentsListPage';
 import NumbersPage from '../pages/numbers/NumbersPage';
 import WhatsAppLogsPage from '../pages/whatsapp/WhatsAppLogsPage';
+import TendersListPage from '../pages/tenders/TendersListPage';
+import InspectionsListPage from '../pages/inspections/InspectionsListPage';
+import FinancialDocumentsListPage from '../pages/financialDocuments/FinancialDocumentsListPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -152,6 +155,36 @@ export default function AppRoutes() {
               </PermissionGate>
             }
           />
+
+          <Route
+            path="/tenders"
+            element={
+              <PermissionGate permission="tenders" roles={[]}>
+                <TendersListPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/inspections"
+            element={
+              <PermissionGate permission="inspections" roles={[]}>
+                <InspectionsListPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/financial-documents"
+            element={
+              <PermissionGate permission="financialDocuments" roles={[]}>
+                <FinancialDocumentsListPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route path="/contract-agreements" element={<Navigate to="/financial-documents" replace />} />
+          <Route path="/call-letters" element={<Navigate to="/financial-documents" replace />} />
 
           <Route path="/cad-drawing" element={<Navigate to="/projects" replace />} />
 

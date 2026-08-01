@@ -19,6 +19,11 @@ const LABELS = {
   numbers: 'Numbers',
   cadDrawing: 'Cad Drawing (inside Projects)',
   claimApprovals: 'Claim Approvals + WhatsApp alerts',
+  tenders: 'Tender',
+  tenderWhatsappAlerts: 'Tender WhatsApp alerts',
+  inspections: 'Inspection',
+  financialDocuments: 'Financial Document',
+  bgWhatsappAlerts: 'BG Deadline WhatsApp alerts',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];
@@ -53,9 +58,10 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
         )}
         {isAdmin && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enable <b>Claim Approvals + WhatsApp alerts</b> for admins who should receive a WhatsApp message
-            when an installer submits a payment request. The admin must have a valid mobile number saved on their
-            profile ({user?.mobileNumber || 'not set'}).
+            Enable <b>Claim Approvals + WhatsApp alerts</b> for claim notifications, <b>Tender WhatsApp alerts</b> for
+            tender-created notifications, and <b>BG Deadline WhatsApp alerts</b> for BG reminders (14 days after LOA
+            Date). The admin must have a valid mobile number saved on their profile (
+            {user?.mobileNumber || 'not set'}).
           </Typography>
         )}
         <FormGroup>

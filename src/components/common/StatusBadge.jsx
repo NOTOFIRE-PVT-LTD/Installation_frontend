@@ -17,6 +17,8 @@ const COLOR_MAP = {
   Verified: 'success',
   Approved: 'info',
   Paid: 'success',
+  Passed: 'success',
+  Failed: 'error',
   'Not Submitted': 'default',
   'Pending Approval': 'warning',
   Rejected: 'error',
