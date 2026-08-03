@@ -8,7 +8,7 @@ import { stationWorkDonePct } from './projectFlow';
 GlobalWorkerOptions.workerSrc = pdfWorker;
 
 /** Make text safe for Helvetica PDF fonts (no rupee / unicode gaps). */
-function pdfText(value) {
+export function pdfText(value) {
   if (value === null || value === undefined) return '-';
   return String(value)
     .replace(/\u20B9/g, 'Rs.') // rupee
@@ -22,7 +22,7 @@ function pdfText(value) {
     .trim();
 }
 
-function dash(value) {
+export function dash(value) {
   const text = pdfText(value);
   return text === '' || text === '-' ? '-' : text;
 }
@@ -34,7 +34,7 @@ function contactLabel(contact) {
 }
 
 /** PDF-safe Indian currency: Rs. 13,20,000 */
-function pdfCurrency(value) {
+export function pdfCurrency(value) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return 'Rs. 0';
 
@@ -60,11 +60,11 @@ function pdfCurrency(value) {
   return `${negative ? '-' : ''}Rs. ${formatted}`;
 }
 
-function safeFilePart(value, fallback = 'item') {
+export function safeFilePart(value, fallback = 'item') {
   return String(value || fallback).replace(/[^\w\-]+/g, '_');
 }
 
-function ensureSpace(doc, y, needed = 28) {
+export function ensureSpace(doc, y, needed = 28) {
   const pageHeight = doc.internal.pageSize.getHeight();
   if (y + needed > pageHeight - 12) {
     doc.addPage();
@@ -73,7 +73,7 @@ function ensureSpace(doc, y, needed = 28) {
   return y;
 }
 
-function drawHeader(doc, title, subtitle) {
+export function drawHeader(doc, title, subtitle) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFillColor(15, 118, 110);
@@ -94,7 +94,7 @@ function drawHeader(doc, title, subtitle) {
   return 22;
 }
 
-function drawSectionTitle(doc, title, y) {
+export function drawSectionTitle(doc, title, y) {
   y = ensureSpace(doc, y, 10);
   const width = doc.internal.pageSize.getWidth() - 24;
   doc.setFillColor(15, 118, 110);
@@ -106,7 +106,7 @@ function drawSectionTitle(doc, title, y) {
   return y + 5.5;
 }
 
-function drawSubheading(doc, title, y) {
+export function drawSubheading(doc, title, y) {
   y = ensureSpace(doc, y, 8);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
@@ -126,7 +126,7 @@ const VALUE_STYLES = {
   font: 'helvetica',
 };
 
-function drawKeyValueTable(doc, rows, startY) {
+export function drawKeyValueTable(doc, rows, startY) {
   autoTable(doc, {
     startY,
     theme: 'grid',
@@ -218,7 +218,7 @@ function drawDailyReportsTable(doc, dailyReports, startY) {
   return doc.lastAutoTable.finalY + 3.5;
 }
 
-function addFooter(doc) {
+export function addFooter(doc) {
   const pageCount = doc.getNumberOfPages();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();

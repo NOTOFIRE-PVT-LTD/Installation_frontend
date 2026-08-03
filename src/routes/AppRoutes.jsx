@@ -21,6 +21,8 @@ import WhatsAppLogsPage from '../pages/whatsapp/WhatsAppLogsPage';
 import TendersListPage from '../pages/tenders/TendersListPage';
 import InspectionsListPage from '../pages/inspections/InspectionsListPage';
 import FinancialDocumentsListPage from '../pages/financialDocuments/FinancialDocumentsListPage';
+import AccountsListPage from '../pages/accounts/AccountsListPage';
+import BgApplicationPrintPage from '../pages/accounts/BgApplicationPrintPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -186,11 +188,29 @@ export default function AppRoutes() {
           <Route path="/contract-agreements" element={<Navigate to="/financial-documents" replace />} />
           <Route path="/call-letters" element={<Navigate to="/financial-documents" replace />} />
 
+          <Route
+            path="/accounts"
+            element={
+              <PermissionGate permission="financialDocuments" roles={[]}>
+                <AccountsListPage />
+              </PermissionGate>
+            }
+          />
+
           <Route path="/cad-drawing" element={<Navigate to="/projects" replace />} />
 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/403" element={<ForbiddenPage />} />
         </Route>
+
+        <Route
+          path="/accounts/:id/print"
+          element={
+            <PermissionGate permission="financialDocuments" roles={[]}>
+              <BgApplicationPrintPage />
+            </PermissionGate>
+          }
+        />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

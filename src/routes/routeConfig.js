@@ -1,5 +1,6 @@
 import {
   faAddressBook,
+  faBuildingColumns,
   faChartLine,
   faClipboardCheck,
   faClipboardList,
@@ -60,6 +61,14 @@ export const NAV_ITEMS = [
     permission: 'financialDocuments',
     roles: [ROLES.ADMIN],
     accent: { color: '#0d9488', bg: '#f0fdfa' },
+  },
+  {
+    label: 'Accounts',
+    path: '/accounts',
+    icon: faBuildingColumns,
+    permission: 'financialDocuments',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#7c3aed', bg: '#f3ecff' },
   },
   {
     label: 'Approvals',

@@ -12,6 +12,7 @@ import inspectionsReducer from '../features/inspections/inspectionsSlice';
 import financialDocumentsReducer from '../features/financialDocuments/financialDocumentsSlice';
 import contractAgreementsReducer from '../features/contractAgreements/contractAgreementsSlice';
 import callLettersReducer from '../features/callLetters/callLettersSlice';
+import bgApplicationsReducer from '../features/bgApplications/bgApplicationsSlice';
 import uiReducer from '../features/ui/uiSlice';
 import { injectStore } from '../api/axiosInstance';
 
@@ -30,6 +31,7 @@ export const store = configureStore({
     financialDocuments: financialDocumentsReducer,
     contractAgreements: contractAgreementsReducer,
     callLetters: callLettersReducer,
+    bgApplications: bgApplicationsReducer,
     ui: uiReducer,
   },
 });
