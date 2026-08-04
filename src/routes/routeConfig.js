@@ -66,7 +66,7 @@ export const NAV_ITEMS = [
     label: 'Accounts',
     path: '/accounts',
     icon: faBuildingColumns,
-    permission: 'financialDocuments',
+    permission: 'accounts',
     roles: [ROLES.ADMIN],
     accent: { color: '#7c3aed', bg: '#f3ecff' },
   },

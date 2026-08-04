@@ -24,6 +24,7 @@ const LABELS = {
   inspections: 'Inspection',
   financialDocuments: 'Financial Document',
   bgWhatsappAlerts: 'BG Deadline WhatsApp alerts',
+  accounts: 'Accounts (BG Application)',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

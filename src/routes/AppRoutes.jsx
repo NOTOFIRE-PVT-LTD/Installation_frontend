@@ -191,7 +191,7 @@ export default function AppRoutes() {
           <Route
             path="/accounts"
             element={
-              <PermissionGate permission="financialDocuments" roles={[]}>
+              <PermissionGate permission="accounts" roles={[]}>
                 <AccountsListPage />
               </PermissionGate>
             }
@@ -206,7 +206,7 @@ export default function AppRoutes() {
         <Route
           path="/accounts/:id/print"
           element={
-            <PermissionGate permission="financialDocuments" roles={[]}>
+            <PermissionGate permission="accounts" roles={[]}>
               <BgApplicationPrintPage />
             </PermissionGate>
           }

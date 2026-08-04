@@ -61,6 +61,7 @@ export const PERMISSION_KEYS = [
   'inspections',
   'financialDocuments',
   'bgWhatsappAlerts',
+  'accounts',
 ];
 
 export const LOA_TYPES = {
