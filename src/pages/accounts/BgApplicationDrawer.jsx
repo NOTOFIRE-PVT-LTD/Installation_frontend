@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -11,6 +11,8 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import CloseIcon from '@mui/icons-material/Close';
 import PrintIcon from '@mui/icons-material/PrintOutlined';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
@@ -25,6 +27,80 @@ import { HDFC_LOGO_BASE64 } from '../../assets/hdfcLogoBase64';
 const APPLICATION_TYPES = ['Fresh Issuance', 'Amendment'];
 const BG_NATURES = ['Financial Guarantee', 'Performance Guarantee', 'Deferred Payment Guarantee', 'Advance Payment Guarantee', 'Others'];
 const BG_TYPE_OPTIONS = ['Physical BG', 'FCY BG', 'e-BG', 'GEM BG'];
+
+// Fixed prefill profiles for the 3 known applicants, sourced from "Bank Application form
+// Data.xlsx" — selecting one fills every field the sheet provides across the form.
+const APPLICANT_PROFILES = [
+  {
+    name: 'NotoFire Private Limited',
+    accountNumber: '50200112805161',
+    branchCode: '0657',
+    address: 'C-146,Ground Floor, Block-C,Sector 63 Noida,Gautam Buddha Nagar -201301,Uttar Pradesh',
+    pan: 'AAGCN7119L',
+    contactPerson: 'Monika Jain',
+    mobile: '9821003730',
+    email: 'Atlantatelecables@gmail.com',
+    registeredAddress: 'C-146,Ground Floor, Block-C,Sector 63 Noida,Gautam Buddha Nagar -201301,Uttar Pradesh',
+    purpose: 'Bank Guarantee (for work)',
+    amount: 100000,
+    amountWords: 'One Lakh Only',
+    tenorMonths: 12,
+    beneficiaryNameAddress: 'DRM Office, First Floor Bhusawal-425201 SR.DFM',
+    beneficiaryBankName: 'abcd',
+    beneficiaryBankAddress: 'c-146,noida',
+    beneficiaryBankIfscSwift: 'SBIN00DGSND',
+    claimDebitAccountNumber: '502001280561',
+    marginFdAmount: 15000,
+    declarationDate: '2026-08-05',
+    documents: 'Contract/Ageement Copy, Bank Guarantee Text',
+  },
+  {
+    name: 'Atlanta Tele Cables Limited',
+    accountNumber: '50200113744761',
+    branchCode: '0657',
+    address: 'Ground Floor, Plot no.22, Block B, Sector 65 Noida,Guatam Buddha Nagar-201301,Uttar Pradesh',
+    pan: 'ABACA5373L',
+    contactPerson: 'Tarun Jain',
+    mobile: '9821003722',
+    email: 'Atlantatelecables@gmail.com',
+    registeredAddress: 'Ground Floor, Plot no.22, Block B, Sector 65 Noida,Guatam Buddha Nagar-201301,Uttar Pradesh',
+    purpose: 'Performance Bank Guarantee (for Work)',
+    amount: 100000,
+    amountWords: 'One Lakh Only',
+    tenorMonths: 12,
+    beneficiaryNameAddress: 'DRM Office, First Floor Bhusawal-425201 SR.DFM',
+    beneficiaryBankName: 'abcd',
+    beneficiaryBankAddress: 'c-146,noida',
+    beneficiaryBankIfscSwift: 'SBIN00DGSND',
+    claimDebitAccountNumber: '502001280561',
+    marginFdAmount: 15000,
+    declarationDate: '2026-08-05',
+    documents: 'Contract/Ageement Copy, Bank Guarantee Text',
+  },
+  {
+    name: 'Atlanta Tele Cables',
+    accountNumber: '50200083982982',
+    branchCode: '7004',
+    address: 'Sunehra Road, 987/2 Salempur Indl Area,Rajputana Pargana, Near Eid Ghah Chowk,Roorkee, Haridwar, Uttarakhand, 247667',
+    pan: 'ACXPJ4171A',
+    contactPerson: 'Gurav Jain',
+    mobile: '9999991525',
+    email: 'Atlantatelecables@gmail.com',
+    registeredAddress: 'Sunehra Road, 987/2 Salempur Indl Area,Rajputana Pargana, Near Eid Ghah Chowk,Roorkee, Haridwar, Uttarakhand, 247667',
+    purpose: '',
+    amount: 100000,
+    amountWords: 'One Lakh Only',
+    tenorMonths: 12,
+    beneficiaryNameAddress: 'DRM Office, First Floor Bhusawal-425201 SR.DFM',
+    beneficiaryBankName: 'abcd',
+    beneficiaryBankAddress: 'c-146,noida',
+    beneficiaryBankIfscSwift: 'SBIN00DGSND',
+    claimDebitAccountNumber: '502001280561',
+    marginFdAmount: 15000,
+    declarationDate: '2026-08-05',
+    documents: 'Contract/Ageement Copy, Bank Guarantee Text',
+  },
+];
 
 function CheckboxSingleSelect({ name, options, control, disabled }) {
   return (
@@ -184,9 +260,42 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
   const isEdit = mode === 'edit';
 
   const methods = useForm({ resolver: yupResolver(schema), defaultValues });
+  const [profileName, setProfileName] = useState('');
+
+  const handleProfileChange = (name) => {
+    setProfileName(name);
+    const profile = APPLICANT_PROFILES.find((p) => p.name === name);
+    if (!profile) return;
+
+    const set = (field, value) => methods.setValue(field, value, { shouldDirty: true });
+
+    set('accountNumber', profile.accountNumber);
+    set('branchCode', profile.branchCode);
+    set('applicantNameAddress', `${profile.name}\n${profile.address}`);
+    set('applicantPan', profile.pan);
+    set('applicantContactPersonMobile', `${profile.contactPerson} / ${profile.mobile}`);
+    set('applicantEmail', profile.email);
+    set('applicantRegisteredAddress', profile.registeredAddress);
+    set('purpose', profile.purpose);
+    set('bgAmountFigures', `Rs. ${Number(profile.amount).toLocaleString('en-IN')}`);
+    set('bgAmountWords', profile.amountWords);
+    set('bgTenorMonths', profile.tenorMonths);
+    set('beneficiaryNameAddress', profile.beneficiaryNameAddress);
+    set('beneficiaryBankNameAddress', `${profile.beneficiaryBankName}\n${profile.beneficiaryBankAddress}`);
+    set('beneficiaryBankIfscSwift', profile.beneficiaryBankIfscSwift);
+    set('claimDebitAccountNumber', profile.claimDebitAccountNumber);
+    set('marginFdAmount', profile.marginFdAmount);
+    set('declarationDate', profile.declarationDate);
+
+    const documents = (profile.documents || '').toLowerCase();
+    set('documentsContractAgreementCopy', documents.includes('contract'));
+    set('documentsBankGuaranteeText', documents.includes('bank guarantee text'));
+    set('documentsCounterGuarantee', documents.includes('counter guarantee'));
+  };
 
   useEffect(() => {
     if (!open) return;
+    setProfileName('');
     if (application) {
       methods.reset({
         accountNumber: application.accountNumber || '',
@@ -271,6 +380,27 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
               <Typography variant="h6" fontWeight={800} textAlign="center" sx={{ mb: 2.5 }}>
                 APPLICATION FOR BANK GUARANTEE
               </Typography>
+
+              {!readOnly && (
+                <TextField
+                  select
+                  label="Prefill Applicant Details"
+                  value={profileName}
+                  onChange={(e) => handleProfileChange(e.target.value)}
+                  helperText="Select a saved applicant to auto-fill the applicant, beneficiary, amount, and document details from the standard template"
+                  sx={{ mb: 2.5 }}
+                  fullWidth
+                >
+                  <MenuItem value="">
+                    <em>— Select —</em>
+                  </MenuItem>
+                  {APPLICANT_PROFILES.map((profile) => (
+                    <MenuItem key={profile.name} value={profile.name}>
+                      {profile.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
 
               <Box sx={{ mb: 2.5 }}>
                 <SegmentedCodeField name="accountNumber" label="Account number" boxes={15} disabled={readOnly} />
