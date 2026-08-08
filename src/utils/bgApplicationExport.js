@@ -3,7 +3,6 @@ import { formatDate } from './formatters';
 import { pdfText, dash, pdfCurrency, ensureSpace, safeFilePart } from './stationReportExport';
 import { HDFC_LOGO_BASE64 } from '../assets/hdfcLogoBase64';
 
-const APPLICATION_TYPES = ['Fresh Issuance', 'Amendment'];
 const BG_NATURES = ['Financial Guarantee', 'Performance Guarantee', 'Deferred Payment Guarantee', 'Advance Payment Guarantee', 'Others'];
 const BG_TYPE_OPTIONS = ['Physical BG', 'FCY BG', 'e-BG', 'GEM BG'];
 
@@ -159,11 +158,13 @@ function drawInlineBox(doc, x, y, width, label, value, { labelWidth = 34, height
 
 function drawSegmentedBoxes(doc, label, value, boxes, y, { x = MARGIN, boxSize = 4.6 } = {}) {
   y = ensureSpace(doc, y, 12);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.2);
-  doc.setTextColor(...LABEL_COLOR);
-  doc.text(pdfText(label), x, y);
-  y += 2.5;
+  if (label) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(...LABEL_COLOR);
+    doc.text(pdfText(label), x, y);
+    y += 2.5;
+  }
 
   const chars = String(value || '').split('');
   const gap = 0.5;
@@ -243,6 +244,89 @@ function drawCheckbox(doc, x, y, checked) {
   return boxSize;
 }
 
+// A single checkbox + label on one line (baseline-anchored at y). Returns the x position
+// right after the label, so a caller can continue drawing on the same row (e.g. digit boxes).
+function drawCheckboxOption(doc, x, y, label, checked) {
+  const boxSize = drawCheckbox(doc, x, y, checked);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...VALUE_COLOR);
+  const text = pdfText(label);
+  doc.text(text, x + boxSize + 1.5, y - 0.5);
+  return x + boxSize + 1.5 + doc.getTextWidth(text);
+}
+
+// Digit boxes drawn inline on the same baseline as a preceding checkbox option (no own label).
+function drawInlineSegmentedBoxes(doc, value, boxes, x, y, { boxSize = 4.2 } = {}) {
+  const chars = String(value || '').split('');
+  const gap = 0.5;
+  const boxY = y - boxSize + 0.6;
+  let bx = x;
+
+  doc.setDrawColor(...BOX_LINE);
+  doc.setLineWidth(0.2);
+  for (let i = 0; i < boxes; i += 1) {
+    doc.rect(bx, boxY, boxSize, boxSize);
+    const ch = chars[i] || '';
+    if (ch) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...VALUE_COLOR);
+      doc.text(pdfText(ch), bx + boxSize / 2, boxY + boxSize / 2 + 1.2, { align: 'center' });
+    }
+    bx += boxSize + gap;
+  }
+  return bx;
+}
+
+// A label to the left spanning the full height of several stacked single-line boxes to its
+// right — matches the original form's "Amount (Rs/FCY) in figures & in words" field.
+function drawSharedLabelBoxes(doc, x, width, label, values, y, { labelWidth = 46, height = 5.2, gap = 1.5 } = {}) {
+  const totalHeight = height * values.length + gap * (values.length - 1);
+  y = ensureSpace(doc, y, totalHeight + 3);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.2);
+  doc.setTextColor(...LABEL_COLOR);
+  const labelLines = doc.splitTextToSize(pdfText(label), labelWidth - 2);
+  const textStartY = y + totalHeight / 2 - ((labelLines.length - 1) * 2.6) / 2 + 1;
+  doc.text(labelLines, x, textStartY);
+
+  const boxX = x + labelWidth;
+  const boxWidth = width - labelWidth;
+  doc.setDrawColor(...BOX_LINE);
+  doc.setLineWidth(0.2);
+  let by = y;
+  values.forEach((val) => {
+    doc.rect(boxX, by, boxWidth, height);
+    const rawValue = pdfText(val);
+    if (rawValue && rawValue !== '-') {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...VALUE_COLOR);
+      doc.text(rawValue, boxX + 2, by + height / 2 + 1.1, { maxWidth: boxWidth - 4 });
+    }
+    by += height + gap;
+  });
+
+  return y + totalHeight + 2.2;
+}
+
+// A date's D D M M Y Y Y Y digit boxes drawn on the same row as its label (label to the
+// left), matching the on-screen SegmentedDateField's `inline` mode.
+function drawInlineDateBoxes(doc, x, y, label, isoValue, { labelWidth = 30, boxSize = 4.2 } = {}) {
+  y = ensureSpace(doc, y, boxSize + 3);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.2);
+  doc.setTextColor(...LABEL_COLOR);
+  doc.text(pdfText(label), x, y + boxSize / 2 + 1.1);
+
+  const match = isoValue ? String(isoValue).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+  const digits = match ? `${match[3]}${match[2]}${match[1]}` : '';
+  drawInlineSegmentedBoxes(doc, digits, 8, x + labelWidth, y + boxSize, { boxSize });
+
+  return y + boxSize + 2.5;
+}
+
 export function downloadBgApplicationPdf(app) {
   if (!app) return;
 
@@ -250,17 +334,21 @@ export function downloadBgApplicationPdf(app) {
   const c = cols(doc);
   let y = drawFormHeader(doc);
 
-  y = drawSegmentedBoxes(doc, 'Account number', app.accountNumber, 15, y);
+  y = drawSegmentedBoxes(doc, 'Account number', app.accountNumber, 14, y);
   y += 2;
   {
     const rightY = drawInlineBox(doc, c.right, y + 2.5, c.width, 'Branch Name', app.branchName, { labelWidth: 24 });
-    const leftY = drawSegmentedBoxes(doc, 'Branch Code', app.branchCode, 6, y, { boxSize: 4.2 });
+    const leftY = drawSegmentedBoxes(doc, 'Branch Code', app.branchCode, 5, y, { boxSize: 4.2 });
     y = Math.max(leftY, rightY);
   }
 
   y = drawBoxedSection(doc, 1, 'Type of Application', y, (cy) => {
-    cy = drawCheckboxGroup(doc, APPLICATION_TYPES, app.typeOfApplication, cy + 2.5);
-    return drawSegmentedBoxes(doc, 'Amendment (Existing Guarantee Number)', app.amendmentExistingGuaranteeNumber, 15, cy + 1.5);
+    cy = ensureSpace(doc, cy + 4, 7);
+    drawCheckboxOption(doc, c.left, cy, 'Fresh Issuance', app.typeOfApplication === 'Fresh Issuance');
+    cy = ensureSpace(doc, cy + 7, 7);
+    const afterLabelX = drawCheckboxOption(doc, c.left, cy, 'Amendment (Existing Guarantee Number)', app.typeOfApplication === 'Amendment');
+    drawInlineSegmentedBoxes(doc, app.amendmentExistingGuaranteeNumber, 15, afterLabelX + 5, cy, { boxSize: 4.2 });
+    return cy + 2;
   });
 
   y = drawBoxedSection(doc, 2, 'Applicant Details', y, (cy) => {
@@ -289,21 +377,21 @@ export function downloadBgApplicationPdf(app) {
 
   y = drawBoxedSection(doc, 5, 'Details of Bank Guarantee', y, (cy) => {
     cy = drawStackedBox(doc, c.left, cy, c.fullWidth, 6.5, 'Purpose', app.purpose);
-    cy = drawInlineBox(doc, c.left, cy, c.fullWidth, 'Amount (Rs/FCY) in figures', app.bgAmountFigures, { labelWidth: 46 });
-    cy = drawInlineBox(doc, c.left, cy, c.fullWidth, 'Amount (Rs/FCY) in words', app.bgAmountWords, { labelWidth: 46 });
+    cy = drawSharedLabelBoxes(doc, c.left, c.fullWidth, 'Amount (Rs/FCY) in figures & in words', [app.bgAmountFigures, app.bgAmountWords], cy);
 
-    const leftY = drawDateBoxes(doc, 'Expiry Date', app.expiryDate, cy, { x: c.left });
-    const tenorLabelY = cy;
+    const dateColY = cy;
+    const leftAfterExpiry = drawInlineDateBoxes(doc, c.left, dateColY, 'Expiry Date', app.expiryDate, { labelWidth: 28 });
+    const leftAfterClaim = drawInlineDateBoxes(doc, c.left, leftAfterExpiry, 'Claim Expiry Date', app.claimExpiryDate, { labelWidth: 28 });
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.2);
     doc.setTextColor(...LABEL_COLOR);
-    doc.text('BG Tenor', c.right, tenorLabelY);
-    const halfWidth = (c.width - COL_GAP) / 2;
-    const t1 = drawInlineBox(doc, c.right, tenorLabelY + 1.5, halfWidth, 'Months', `${app.bgTenorMonths || 0}`, { labelWidth: 18 });
-    const t2 = drawInlineBox(doc, c.right + halfWidth + COL_GAP, tenorLabelY + 1.5, halfWidth, 'Days', `${app.bgTenorDays || 0}`, { labelWidth: 14 });
-    cy = Math.max(leftY, t1, t2);
+    doc.text('BG Tenor', c.right, dateColY + 3);
+    let tx = c.right + doc.getTextWidth('BG Tenor') + 4;
+    tx = drawInlineSegmentedBoxes(doc, String(app.bgTenorMonths ?? 0).padStart(2, '0'), 2, tx, dateColY + 5.5, { boxSize: 4.2 }) + 3;
+    drawInlineSegmentedBoxes(doc, String(app.bgTenorDays ?? 0).padStart(2, '0'), 2, tx, dateColY + 5.5, { boxSize: 4.2 });
 
-    return drawDateBoxes(doc, 'Claim Expiry Date', app.claimExpiryDate, cy, { x: c.left });
+    return Math.max(leftAfterClaim, dateColY + 8);
   });
 
   y = drawBoxedSection(doc, 6, 'Beneficiary Details', y, (cy) => {

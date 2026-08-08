@@ -135,6 +135,36 @@ function CheckboxSingleSelect({ name, options, control, disabled }) {
   );
 }
 
+// A single checkbox bound to one value of a shared field — used where options must stack
+// vertically (Type of Application) instead of CheckboxSingleSelect's side-by-side row.
+function RadioCheckboxOption({ name, value, label, control, disabled }) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => {
+        const checked = field.value === value;
+        return (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            onClick={() => !disabled && field.onChange(checked ? '' : value)}
+            sx={{ cursor: disabled ? 'default' : 'pointer', width: 'fit-content' }}
+          >
+            {checked ? (
+              <CheckBoxIcon fontSize="small" color={disabled ? 'disabled' : 'primary'} />
+            ) : (
+              <CheckBoxOutlineBlankIcon fontSize="small" color={disabled ? 'disabled' : 'action'} />
+            )}
+            <Typography variant="body2">{label}</Typography>
+          </Stack>
+        );
+      }}
+    />
+  );
+}
+
 function BoxedSection({ title, number, children }) {
   return (
     <Paper variant="outlined" sx={{ p: 2.5, mb: 2.5, borderRadius: 0, borderWidth: 1.5, borderColor: 'text.primary' }}>
@@ -403,11 +433,11 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
               )}
 
               <Box sx={{ mb: 2.5 }}>
-                <SegmentedCodeField name="accountNumber" label="Account number" boxes={15} disabled={readOnly} />
+                <SegmentedCodeField name="accountNumber" label="Account number" boxes={14} disabled={readOnly} />
               </Box>
               <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
                 <Grid item xs={12} sm={6}>
-                  <SegmentedCodeField name="branchCode" label="Branch Code" boxes={6} disabled={readOnly} />
+                  <SegmentedCodeField name="branchCode" label="Branch Code" boxes={5} disabled={readOnly} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <RHFTextField name="branchName" label="Branch Name" disabled={readOnly} />
@@ -415,14 +445,24 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
               </Grid>
 
               <BoxedSection number={1} title="Type of Application">
-                <Stack spacing={2.5}>
-                  <CheckboxSingleSelect name="typeOfApplication" options={APPLICATION_TYPES} control={methods.control} disabled={readOnly} />
-                  <SegmentedCodeField
-                    name="amendmentExistingGuaranteeNumber"
-                    label="Amendment (Existing Guarantee Number)"
-                    boxes={15}
+                <Stack spacing={3}>
+                  <RadioCheckboxOption
+                    name="typeOfApplication"
+                    value="Fresh Issuance"
+                    label="Fresh Issuance"
+                    control={methods.control}
                     disabled={readOnly}
                   />
+                  <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap rowGap={1.5}>
+                    <RadioCheckboxOption
+                      name="typeOfApplication"
+                      value="Amendment"
+                      label="Amendment (Existing Guarantee Number)"
+                      control={methods.control}
+                      disabled={readOnly}
+                    />
+                    <SegmentedCodeField name="amendmentExistingGuaranteeNumber" boxes={15} disabled={readOnly} />
+                  </Stack>
                 </Stack>
               </BoxedSection>
 
@@ -463,25 +503,38 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
               <BoxedSection number={5} title="Details of Bank Guarantee">
                 <Grid container spacing={2.5}>
                   <Grid item xs={12}>
-                    <RHFTextField name="purpose" label="Purpose" multiline minRows={2} disabled={readOnly} />
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                      <Typography variant="body2" sx={{ minWidth: 100, flexShrink: 0, pt: 1 }}>
+                        Purpose
+                      </Typography>
+                      <Box sx={{ flex: 1 }}>
+                        <RHFTextField name="purpose" multiline minRows={2} disabled={readOnly} />
+                      </Box>
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Typography variant="body2" sx={{ minWidth: 100, flexShrink: 0 }}>
+                        Amount (Rs/FCY) in figures & in words
+                      </Typography>
+                      <Stack spacing={1} sx={{ flex: 1 }}>
+                        <RHFTextField name="bgAmountFigures" disabled={readOnly} />
+                        <RHFTextField name="bgAmountWords" disabled={readOnly} />
+                      </Stack>
+                    </Stack>
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <RHFTextField name="bgAmountFigures" label="Amount (Rs/FCY) in figures" disabled={readOnly} />
+                    <Stack spacing={1.5}>
+                      <SegmentedDateField name="expiryDate" label="Expiry Date" inline labelWidth={100} disabled={readOnly} />
+                      <SegmentedDateField name="claimExpiryDate" label="Claim Expiry Date" inline labelWidth={100} disabled={readOnly} />
+                    </Stack>
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <RHFTextField name="bgAmountWords" label="Amount (Rs/FCY) in words" disabled={readOnly} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <SegmentedDateField name="expiryDate" label="Expiry Date" disabled={readOnly} />
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <RHFTextField name="bgTenorMonths" label="BG Tenor (Months)" type="number" disabled={readOnly} />
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <RHFTextField name="bgTenorDays" label="BG Tenor (Days)" type="number" disabled={readOnly} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <SegmentedDateField name="claimExpiryDate" label="Claim Expiry Date" disabled={readOnly} />
+                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Typography variant="body2">BG Tenor</Typography>
+                      <SegmentedCodeField name="bgTenorMonths" boxes={2} size="small" disabled={readOnly} />
+                      <SegmentedCodeField name="bgTenorDays" boxes={2} size="small" disabled={readOnly} />
+                    </Stack>
                   </Grid>
                 </Grid>
               </BoxedSection>

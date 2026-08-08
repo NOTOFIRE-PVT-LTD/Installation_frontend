@@ -21,7 +21,7 @@ function digitsToIso(digits) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function DateBoxes({ label, disabled, value, onChange }) {
+function DateBoxes({ label, disabled, value, onChange, inline, labelWidth }) {
   const inputRefs = useRef([]);
   const [digits, setDigits] = useState(() => isoToDigits(value));
 
@@ -40,64 +40,80 @@ function DateBoxes({ label, disabled, value, onChange }) {
 
   let boxIndex = 0;
 
+  const boxRow = (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {GROUPS.map((count, groupIdx) => (
+        <Box key={groupIdx} sx={{ display: 'flex', gap: 0.5 }}>
+          {Array.from({ length: count }).map(() => {
+            const i = boxIndex;
+            boxIndex += 1;
+            return (
+              <Box
+                key={i}
+                component="input"
+                ref={(el) => (inputRefs.current[i] = el)}
+                value={digits[i] || ''}
+                disabled={disabled}
+                onChange={(e) => {
+                  const char = e.target.value.replace(/\D/g, '').slice(-1);
+                  setChar(i, char);
+                  if (char && inputRefs.current[i + 1]) inputRefs.current[i + 1].focus();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Backspace' && !digits[i] && inputRefs.current[i - 1]) {
+                    inputRefs.current[i - 1].focus();
+                  }
+                }}
+                maxLength={1}
+                sx={{
+                  width: 22,
+                  height: 28,
+                  textAlign: 'center',
+                  fontSize: 13,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 0,
+                  fontFamily: 'inherit',
+                  bgcolor: disabled ? 'action.disabledBackground' : 'background.paper',
+                  color: 'text.primary',
+                  '&:focus': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -1 },
+                }}
+              />
+            );
+          })}
+        </Box>
+      ))}
+      <Typography variant="caption" color="text.secondary">
+        DD MM YYYY
+      </Typography>
+    </Box>
+  );
+
+  if (inline) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+        <Typography variant="body2" sx={{ minWidth: labelWidth, flexShrink: 0 }}>
+          {label}
+        </Typography>
+        {boxRow}
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Typography variant="body2" sx={{ mb: 1 }}>
         {label}
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {GROUPS.map((count, groupIdx) => (
-          <Box key={groupIdx} sx={{ display: 'flex', gap: 0.5 }}>
-            {Array.from({ length: count }).map(() => {
-              const i = boxIndex;
-              boxIndex += 1;
-              return (
-                <Box
-                  key={i}
-                  component="input"
-                  ref={(el) => (inputRefs.current[i] = el)}
-                  value={digits[i] || ''}
-                  disabled={disabled}
-                  onChange={(e) => {
-                    const char = e.target.value.replace(/\D/g, '').slice(-1);
-                    setChar(i, char);
-                    if (char && inputRefs.current[i + 1]) inputRefs.current[i + 1].focus();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Backspace' && !digits[i] && inputRefs.current[i - 1]) {
-                      inputRefs.current[i - 1].focus();
-                    }
-                  }}
-                  maxLength={1}
-                  sx={{
-                    width: 22,
-                    height: 28,
-                    textAlign: 'center',
-                    fontSize: 13,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 0,
-                    fontFamily: 'inherit',
-                    bgcolor: disabled ? 'action.disabledBackground' : 'background.paper',
-                    color: 'text.primary',
-                    '&:focus': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -1 },
-                  }}
-                />
-              );
-            })}
-          </Box>
-        ))}
-        <Typography variant="caption" color="text.secondary">
-          DD MM YYYY
-        </Typography>
-      </Box>
+      {boxRow}
     </Box>
   );
 }
 
 // Renders a date as a row of D D | M M | Y Y Y Y single-character boxes, matching the
-// original form's segmented date fields (Expiry Date, Claim Expiry Date, Date).
-export default function SegmentedDateField({ name, label, disabled }) {
+// original form's segmented date fields (Expiry Date, Claim Expiry Date, Date). Pass
+// `inline` to place the label to the left of the boxes on one row instead of above them.
+export default function SegmentedDateField({ name, label, disabled, inline = false, labelWidth = 110 }) {
   const { control } = useFormContext();
 
   return (
@@ -105,7 +121,14 @@ export default function SegmentedDateField({ name, label, disabled }) {
       name={name}
       control={control}
       render={({ field }) => (
-        <DateBoxes label={label} disabled={disabled} value={field.value} onChange={field.onChange} />
+        <DateBoxes
+          label={label}
+          disabled={disabled}
+          value={field.value}
+          onChange={field.onChange}
+          inline={inline}
+          labelWidth={labelWidth}
+        />
       )}
     />
   );
