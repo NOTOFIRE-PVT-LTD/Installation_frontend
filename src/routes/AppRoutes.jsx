@@ -23,6 +23,7 @@ import InspectionsListPage from '../pages/inspections/InspectionsListPage';
 import FinancialDocumentsListPage from '../pages/financialDocuments/FinancialDocumentsListPage';
 import AccountsListPage from '../pages/accounts/AccountsListPage';
 import BgApplicationPrintPage from '../pages/accounts/BgApplicationPrintPage';
+import StockItemsPage from '../pages/stock/StockItemsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -193,6 +194,15 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="accounts" roles={[]}>
                 <AccountsListPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/stock-items"
+            element={
+              <PermissionGate permission="stockItems" roles={[]}>
+                <StockItemsPage />
               </PermissionGate>
             }
           />

@@ -3,20 +3,21 @@ import { formatDate } from './formatters';
 import { pdfText, dash, pdfCurrency, ensureSpace, safeFilePart } from './stationReportExport';
 import { HDFC_LOGO_BASE64 } from '../assets/hdfcLogoBase64';
 
-const BG_NATURES = ['Financial Guarantee', 'Performance Guarantee', 'Deferred Payment Guarantee', 'Advance Payment Guarantee', 'Others'];
 const BG_TYPE_OPTIONS = ['Physical BG', 'FCY BG', 'e-BG', 'GEM BG'];
 
 const MARGIN = 10;
 const COL_GAP = 5;
-const HEADER_BLUE = [30, 58, 138];
-const LABEL_COLOR = [51, 65, 85];
+const SECTION_GAP = 4.2;
+const HEADER_BLUE = [15, 50, 120];
+const LABEL_COLOR = [71, 85, 105];
 const VALUE_COLOR = [15, 23, 42];
-const BOX_LINE = [148, 163, 184];
+const BOX_LINE = [180, 188, 198];
+const SECTION_BORDER = [190, 196, 204];
 
 const DECLARATION_ITEMS = [
   'i) I/We hereby authorise HDFC Bank Ltd to mark lien on Deposit accounts which are /will be kept as margin money against the Bank Guarantee.',
   'ii) I/We hereby agree and confirm that the above Bank Guarantee is subject to the terms and conditions as contained herein and in the sanction letter for the bank Guarantee entered into between the applicant and The Bank.',
-  'iii) I /We, am/are fully aware that in the event of invocation of Bank Guarantee (BG) by beneficiary, HDFC Bank Ltd is entitled to make the payment immediately to the beneficiary by debiting my/our operative account (CC/OD/CA), notwithstanding any dispute that I/we might have with the beneficiary.',
+  'iii) I/We, am/are fully aware that in the event of invocation of Bank Guarantee (BG) by beneficiary, HDFC Bank Ltd is entitled to make the payment immediately to the beneficiary by debiting my/our operative account (CC/OD/CA), notwithstanding any dispute that I/we might have with the beneficiary.',
   'iv) I/We hereby agree that margin money would be released by the Bank only on receipt of the Original Bank Guarantee along with discharge letter/ no claim letter from the Beneficiary.',
 ];
 const DECLARATION_ITEMS_AFTER_CLAIM = [
@@ -42,28 +43,25 @@ function versionFooter(doc) {
     doc.setPage(i);
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(...LABEL_COLOR);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 166, 174);
     doc.text('Version 2.0 06-Nov-23', pageWidth - MARGIN, pageHeight - 4, { align: 'right' });
   }
 }
 
 function drawFormHeader(doc) {
   const pageWidth = doc.internal.pageSize.getWidth();
-  doc.addImage(HDFC_LOGO_BASE64, 'PNG', MARGIN, 6, 24, 4.8);
+  doc.addImage(HDFC_LOGO_BASE64, 'PNG', MARGIN, 7, 52, 10);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
+  doc.setFontSize(12);
   doc.setTextColor(...VALUE_COLOR);
-  doc.text('APPLICATION FOR BANK GUARANTEE', pageWidth / 2, 18, { align: 'center' });
-  return 24;
+  doc.text('APPLICATION FOR BANK GUARANTEE', pageWidth / 2, 26, { align: 'center' });
+  return 34;
 }
 
-function drawBoxedSection(doc, number, title, y, contentFn, { bordered = true } = {}) {
-  // Reserve a modest buffer so a section header isn't orphaned alone at the bottom of a
-  // page; if a section still ends up spilling onto a later page, the border-closing logic
-  // below handles that correctly rather than needing a large up-front safety margin.
-  y = ensureSpace(doc, y, 18);
+function drawBoxedSection(doc, number, title, y, contentFn, { bordered = true, gap = SECTION_GAP, contentOffset = 7.5, allowNewPage = true } = {}) {
+  if (allowNewPage) y = ensureSpace(doc, y, 18);
   const pageWidth = doc.internal.pageSize.getWidth();
   const boxLeft = MARGIN - 2;
   const boxWidth = pageWidth - (MARGIN - 2) * 2;
@@ -71,76 +69,221 @@ function drawBoxedSection(doc, number, title, y, contentFn, { bordered = true } 
   const startPage = doc.internal.getNumberOfPages();
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setTextColor(...HEADER_BLUE);
-  doc.text(pdfText(number ? `${number}. ${title}` : title), boxLeft + 2, y + 3);
+  doc.text(pdfText(number ? `${number}. ${title}` : title), boxLeft + 3, y + 4);
 
-  const contentY = contentFn(y + 6.5);
+  const contentY = contentFn(y + contentOffset);
   const endPage = doc.internal.getNumberOfPages();
 
   if (bordered) {
-    doc.setDrawColor(...VALUE_COLOR);
-    doc.setLineWidth(0.3);
+    doc.setDrawColor(...SECTION_BORDER);
+    doc.setLineWidth(0.25);
     if (endPage === startPage) {
-      doc.rect(boxLeft, startY - 2, boxWidth, contentY - startY + 1.5);
+      doc.rect(boxLeft, startY - 1.5, boxWidth, contentY - startY + 2.2);
     } else {
-      // Content spilled onto a later page — close the box on each page it touches rather
-      // than drawing a single rect with coordinates that span pages (which jsPDF can't do).
       const pageHeight = doc.internal.pageSize.getHeight();
       doc.setPage(startPage);
-      doc.rect(boxLeft, startY - 2, boxWidth, pageHeight - 10 - (startY - 2));
+      doc.rect(boxLeft, startY - 1.5, boxWidth, pageHeight - 10 - (startY - 1.5));
       doc.setPage(endPage);
-      doc.rect(boxLeft, 8, boxWidth, contentY - 8 + 1.5);
+      doc.rect(boxLeft, 8, boxWidth, contentY - 8 + 2.2);
     }
   }
 
-  return contentY + 2.5;
+  return contentY + gap;
 }
 
-function drawParagraphs(doc, paragraphs, y, fontSize = 6.2, indent = MARGIN) {
-  const width = doc.internal.pageSize.getWidth() - indent - MARGIN;
+function drawPage2BankDetailsBox(doc, number, title, y, nameAddress, ifscSwift, c) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const boxLeft = MARGIN - 2;
+  const boxWidth = pageWidth - (MARGIN - 2) * 2;
+  const startY = y;
+  const gutter = 6;
+  const nameW = c.fullWidth * 0.52;
+  const ifscX = c.left + nameW + gutter;
+  const ifscW = c.left + c.fullWidth - ifscX;
+  const nameH = 14.8;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...HEADER_BLUE);
+  doc.text(pdfText(`${number}. ${title}`), boxLeft + 3, y + 4);
+
+  const labelY = y + 7.2;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(fontSize);
+  doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
+  doc.text('Name & Address', c.left, labelY);
+  doc.text('IFSC / SWIFT code', ifscX, labelY);
+
+  const boxY = labelY + 1.3;
+  doc.setDrawColor(...BOX_LINE);
+  doc.setLineWidth(0.2);
+  doc.rect(c.left, boxY, nameW, nameH);
+  doc.rect(ifscX, boxY, ifscW, 5.6);
+
+  const nameLines = wrapFieldLines(doc, nameAddress, nameW);
+  if (nameLines.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.4);
+    doc.setTextColor(...VALUE_COLOR);
+    doc.text(nameLines.slice(0, 4), c.left + 2, boxY + 3.4);
+  }
+  const ifscValue = pdfText(ifscSwift);
+  if (ifscValue && ifscValue !== '-') {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...VALUE_COLOR);
+    doc.text(ifscValue, ifscX + 2, boxY + 3.8, { maxWidth: ifscW - 4 });
+  }
+
+  const bottom = boxY + nameH + 2.2;
+  doc.setDrawColor(...SECTION_BORDER);
+  doc.setLineWidth(0.25);
+  doc.rect(boxLeft, startY - 1.5, boxWidth, bottom - startY + 1.2);
+  return bottom + 3.4;
+}
+
+function drawMarginDetailsBox(doc, app, y, c) {
+  // Stay on the current page — page 2 must not spill onto a third sheet.
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const boxLeft = MARGIN - 2;
+  const boxWidth = pageWidth - (MARGIN - 2) * 2;
+  const startY = y;
+  const midX = MARGIN + c.fullWidth * 0.58;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...HEADER_BLUE);
+  doc.text('9. Margin Details', boxLeft + 3, y + 4);
+  doc.text('New FD', midX + 4, y + 4);
+
+  const contentY = y + 8;
+  const leftColW = midX - c.left - 4;
+  const fdW = (leftColW - COL_GAP) / 2;
+  const stay = { allowNewPage: false };
+  let leftY = drawInlineBox(doc, c.left, contentY, fdW, 'FD No', app.marginFdNo, { labelWidth: 14, height: 5.5, ...stay });
+  const amtY = drawInlineBox(
+    doc,
+    c.left + fdW + COL_GAP,
+    contentY,
+    fdW,
+    'Amount',
+    pdfCurrency(app.marginFdAmount),
+    { labelWidth: 16, height: 5.5, ...stay }
+  );
+  leftY = Math.max(leftY, amtY);
+  leftY = drawInlineBox(doc, c.left, leftY, fdW, 'Other', app.marginOther, { labelWidth: 14, height: 5.5, ...stay });
+
+  const rightW = c.left + c.fullWidth - midX - 4;
+  let rightY = drawInlineBox(doc, midX + 4, contentY, rightW, 'Debit A/C', app.marginNewFdDebitAccount, {
+    labelWidth: 20,
+    height: 5.5,
+    ...stay,
+  });
+  rightY = drawInlineBox(doc, midX + 4, rightY, rightW, 'Amount', pdfCurrency(app.marginNewFdAmount), {
+    labelWidth: 20,
+    height: 5.5,
+    ...stay,
+  });
+
+  const bottom = Math.max(leftY, rightY);
+  doc.setDrawColor(...SECTION_BORDER);
+  doc.setLineWidth(0.25);
+  doc.rect(boxLeft, startY - 1.5, boxWidth, bottom - startY + 3);
+  doc.line(midX, startY - 1.5, midX, bottom + 1.5);
+  return bottom + 3.5;
+}
+
+function drawParagraphs(doc, paragraphs, y, fontSize = 6.2, indent = MARGIN, { lineHeight = 2.6, paraGap = 1.3, allowNewPage = true, color = LABEL_COLOR, fontStyle = 'normal' } = {}) {
+  const width = doc.internal.pageSize.getWidth() - indent - MARGIN;
+  doc.setFont('helvetica', fontStyle);
+  doc.setFontSize(fontSize);
+  doc.setTextColor(...color);
   paragraphs.forEach((text) => {
     const lines = doc.splitTextToSize(text, width);
-    y = ensureSpace(doc, y, lines.length * 2.6 + 1.3);
+    const block = lines.length * lineHeight + paraGap;
+    if (allowNewPage) y = ensureSpace(doc, y, block);
     doc.text(lines, indent, y);
-    y += lines.length * 2.6 + 1.3;
+    y += block;
+  });
+  return y;
+}
+
+function measureDeclarationList(doc, clauses, fontSize, lineHeight, paraGap, { listLeft = 6 } = {}) {
+  const textW = doc.internal.pageSize.getWidth() - MARGIN * 2 - listLeft;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(fontSize);
+  return clauses.reduce((sum, text, idx) => {
+    const gap = idx === clauses.length - 1 ? 0 : paraGap;
+    return sum + doc.splitTextToSize(text, textW).length * lineHeight + gap;
+  }, 0);
+}
+
+function drawDeclarationList(doc, clauses, y, { fontSize = 6.2, lineHeight = 2.7, paraGap = 2.6, listLeft = 6 } = {}) {
+  const textX = MARGIN + listLeft;
+  const textW = doc.internal.pageSize.getWidth() - MARGIN - textX;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(fontSize);
+  doc.setTextColor(...VALUE_COLOR);
+  clauses.forEach((text, idx) => {
+    const lines = doc.splitTextToSize(text, textW);
+    doc.text(lines, textX, y);
+    y += lines.length * lineHeight + (idx === clauses.length - 1 ? 0 : paraGap);
   });
   return y;
 }
 
 // A bordered box with its label ABOVE it — used for multi-line fields like Name & Address.
-function drawStackedBox(doc, x, y, width, height, label, value) {
-  y = ensureSpace(doc, y, height + 5);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.2);
+function wrapFieldLines(doc, value, width, fontSize = 6.4) {
+  const rawValue = pdfText(value);
+  if (!rawValue || rawValue === '-') return [];
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(fontSize);
+  return doc.splitTextToSize(rawValue, Math.max(12, width - 4));
+}
+
+function stackedBoxHeight(doc, width, value, minHeight) {
+  const lines = wrapFieldLines(doc, value, width);
+  return Math.max(minHeight, 3.6 + Math.max(lines.length, 1) * 2.85);
+}
+
+function drawStackedBox(doc, x, y, width, height, label, value, { maxHeight, allowNewPage = true, labelIndent = 0 } = {}) {
+  const lines = wrapFieldLines(doc, value, width);
+  let boxHeight = Math.max(height, 3.6 + Math.max(lines.length, 1) * 2.85);
+  if (maxHeight) boxHeight = Math.min(boxHeight, maxHeight);
+  if (allowNewPage) y = ensureSpace(doc, y, boxHeight + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
-  doc.text(pdfText(label), x, y);
-  const boxY = y + 1;
+  doc.text(pdfText(label), x + labelIndent, y);
+  const boxY = y + 1.2;
   doc.setDrawColor(...BOX_LINE);
   doc.setLineWidth(0.2);
-  doc.rect(x, boxY, width, height);
-  const rawValue = pdfText(value);
-  if (rawValue && rawValue !== '-') {
+  doc.rect(x, boxY, width, boxHeight);
+  if (lines.length) {
+    const maxLines = Math.max(1, Math.floor((boxHeight - 2) / 2.85));
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6.4);
     doc.setTextColor(...VALUE_COLOR);
-    const lines = doc.splitTextToSize(rawValue, width - 4).slice(0, Math.floor((height - 2.5) / 2.9));
-    doc.text(lines, x + 2, boxY + 3.5);
+    doc.text(lines.slice(0, maxLines), x + 2, boxY + 3.4);
   }
-  return boxY + height + 3;
+  return boxY + boxHeight + 3;
 }
 
 // A bordered box with its label to the LEFT — used for short single-line fields.
-function drawInlineBox(doc, x, y, width, label, value, { labelWidth = 34, height = 5.2 } = {}) {
-  y = ensureSpace(doc, y, height + 3);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.2);
+function drawInlineBox(doc, x, y, width, label, value, { labelWidth = 34, height = 5.2, allowNewPage = true } = {}) {
+  if (allowNewPage) y = ensureSpace(doc, y, height + 3);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
-  const labelLines = doc.splitTextToSize(pdfText(label), labelWidth - 2);
-  doc.text(labelLines, x, y + height / 2 + (labelLines.length > 1 ? -1 : 1.1));
+  const labelText = pdfText(label);
+  if (doc.getTextWidth(labelText) <= labelWidth) {
+    doc.text(labelText, x, y + height / 2 + 1.1);
+  } else {
+    const labelLines = doc.splitTextToSize(labelText, Math.max(8, labelWidth - 1));
+    doc.text(labelLines, x, y + height / 2 + (labelLines.length > 1 ? -1 : 1.1));
+  }
   const boxX = x + labelWidth;
   const boxWidth = width - labelWidth;
   doc.setDrawColor(...BOX_LINE);
@@ -167,7 +310,7 @@ function drawSegmentedBoxes(doc, label, value, boxes, y, { x = MARGIN, boxSize =
   }
 
   const chars = String(value || '').split('');
-  const gap = 0.5;
+  const gap = 0;
   let bx = x;
 
   doc.setDrawColor(...BOX_LINE);
@@ -215,14 +358,9 @@ function drawCheckboxGroup(doc, options, selected, y, { columns = null, x = MARG
     }
 
     const checked = option === selected;
-    doc.setDrawColor(100, 116, 139);
-    doc.setLineWidth(0.25);
-    doc.rect(bx, y - boxSize, boxSize, boxSize);
-    if (checked) {
-      doc.setLineWidth(0.45);
-      doc.line(bx + 0.4, y - boxSize + 0.4, bx + boxSize - 0.4, y - 0.4);
-      doc.line(bx + boxSize - 0.4, y - boxSize + 0.4, bx + 0.4, y - 0.4);
-    }
+    drawCheckbox(doc, bx, y, checked);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
     doc.setTextColor(...VALUE_COLOR);
     doc.text(label, bx + boxSize + 1.5, y - 0.5);
     bx += itemWidth;
@@ -237,11 +375,56 @@ function drawCheckbox(doc, x, y, checked) {
   doc.setLineWidth(0.25);
   doc.rect(x, y - boxSize, boxSize, boxSize);
   if (checked) {
-    doc.setLineWidth(0.45);
-    doc.line(x + 0.4, y - boxSize + 0.4, x + boxSize - 0.4, y - 0.4);
-    doc.line(x + boxSize - 0.4, y - boxSize + 0.4, x + 0.4, y - 0.4);
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.55);
+    doc.line(x + 0.55, y - boxSize + 1.75, x + 1.35, y - 0.65);
+    doc.line(x + 1.35, y - 0.65, x + boxSize - 0.45, y - boxSize + 0.55);
   }
   return boxSize;
+}
+
+function drawNatureGrid(doc, selected, y, { x = MARGIN, width }) {
+  const colWidth = width / 3;
+  const columns = [
+    ['Financial Guarantee', 'Advance Payment Guarantee'],
+    ['Performance Guarantee', 'Others'],
+    ['Deferred Payment Guarantee'],
+  ];
+  let maxY = y;
+  columns.forEach((col, colIdx) => {
+    let cy = y;
+    const cx = x + colIdx * colWidth;
+    col.forEach((option) => {
+      drawCheckboxOption(doc, cx, cy, option, option === selected);
+      cy += 6.5;
+    });
+    maxY = Math.max(maxY, cy);
+  });
+  return maxY;
+}
+
+function drawBgTenor(doc, x, y, months, days) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
+  doc.setTextColor(...LABEL_COLOR);
+  doc.text('BG Tenor', x, y + 3.4);
+  const boxesX = x + 22;
+  const boxSize = 4.2;
+  const rowY = y + boxSize;
+  doc.setFontSize(5);
+  doc.setTextColor(150, 158, 168);
+  doc.text('M', boxesX + boxSize / 2, y + 0.8, { align: 'center' });
+  doc.text('D', boxesX + boxSize * 2 + 5 + boxSize / 2, y + 0.8, { align: 'center' });
+  let bx = drawInlineSegmentedBoxes(
+    doc,
+    String(months ?? '').padStart(2, '0'),
+    2,
+    boxesX,
+    rowY,
+    { boxSize }
+  );
+  drawInlineSegmentedBoxes(doc, String(days ?? '').padStart(2, '0'), 2, bx + 5, rowY, { boxSize });
+  return rowY + 2.5;
 }
 
 // A single checkbox + label on one line (baseline-anchored at y). Returns the x position
@@ -257,9 +440,9 @@ function drawCheckboxOption(doc, x, y, label, checked) {
 }
 
 // Digit boxes drawn inline on the same baseline as a preceding checkbox option (no own label).
-function drawInlineSegmentedBoxes(doc, value, boxes, x, y, { boxSize = 4.2 } = {}) {
+function drawInlineSegmentedBoxes(doc, value, boxes, x, y, { boxSize = 4.2, placeholders = [] } = {}) {
   const chars = String(value || '').split('');
-  const gap = 0.5;
+  const gap = 0;
   const boxY = y - boxSize + 0.6;
   let bx = x;
 
@@ -273,22 +456,61 @@ function drawInlineSegmentedBoxes(doc, value, boxes, x, y, { boxSize = 4.2 } = {
       doc.setFontSize(6.5);
       doc.setTextColor(...VALUE_COLOR);
       doc.text(pdfText(ch), bx + boxSize / 2, boxY + boxSize / 2 + 1.2, { align: 'center' });
+    } else if (placeholders[i]) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.2);
+      doc.setTextColor(190, 196, 204);
+      doc.text(placeholders[i], bx + boxSize / 2, boxY + boxSize / 2 + 1.1, { align: 'center' });
     }
     bx += boxSize + gap;
   }
   return bx;
 }
 
+function drawLeftLabelBox(doc, x, y, width, label, value, { labelWidth = 28, height = 10, maxHeight, allowNewPage = true } = {}) {
+  const boxWidth = width - labelWidth;
+  const lines = wrapFieldLines(doc, value, boxWidth);
+  let boxHeight = Math.max(height, 3.6 + Math.max(lines.length, 1) * 2.85);
+  if (maxHeight) boxHeight = Math.min(boxHeight, maxHeight);
+  if (allowNewPage) y = ensureSpace(doc, y, boxHeight + 3);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
+  doc.setTextColor(...LABEL_COLOR);
+  doc.text(pdfText(label), x, y + 3.2);
+  const boxX = x + labelWidth;
+  doc.setDrawColor(...BOX_LINE);
+  doc.setLineWidth(0.2);
+  doc.rect(boxX, y, boxWidth, boxHeight);
+  if (lines.length) {
+    const maxLines = Math.max(1, Math.floor((boxHeight - 2) / 2.85));
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.4);
+    doc.setTextColor(...VALUE_COLOR);
+    doc.text(lines.slice(0, maxLines), boxX + 2, y + 3.4);
+  }
+  return y + boxHeight + 2.2;
+}
+
+function drawEvenCheckboxRow(doc, options, selected, y, x, width) {
+  const colW = width / options.length;
+  options.forEach((option, idx) => {
+    drawCheckboxOption(doc, x + idx * colW, y, option, option === selected);
+  });
+  return y + 5;
+}
+
 // A label to the left spanning the full height of several stacked single-line boxes to its
 // right — matches the original form's "Amount (Rs/FCY) in figures & in words" field.
-function drawSharedLabelBoxes(doc, x, width, label, values, y, { labelWidth = 46, height = 5.2, gap = 1.5 } = {}) {
-  const totalHeight = height * values.length + gap * (values.length - 1);
-  y = ensureSpace(doc, y, totalHeight + 3);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.2);
+function drawSharedLabelBoxes(doc, x, width, label, values, y, { labelWidth = 46, heights = [5.5, 8], gap = 1.4, allowNewPage = true } = {}) {
+  const boxHeights = values.map((_, i) => heights[i] ?? heights[heights.length - 1] ?? 5.5);
+  const totalHeight = boxHeights.reduce((sum, h) => sum + h, 0) + gap * Math.max(values.length - 1, 0);
+  if (allowNewPage) y = ensureSpace(doc, y, totalHeight + 3);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
-  const labelLines = doc.splitTextToSize(pdfText(label), labelWidth - 2);
-  const textStartY = y + totalHeight / 2 - ((labelLines.length - 1) * 2.6) / 2 + 1;
+  const labelLines = Array.isArray(label) ? label : doc.splitTextToSize(pdfText(label), labelWidth - 2);
+  const lineH = 2.7;
+  const textStartY = y + totalHeight / 2 - ((labelLines.length - 1) * lineH) / 2 + 1;
   doc.text(labelLines, x, textStartY);
 
   const boxX = x + labelWidth;
@@ -296,16 +518,22 @@ function drawSharedLabelBoxes(doc, x, width, label, values, y, { labelWidth = 46
   doc.setDrawColor(...BOX_LINE);
   doc.setLineWidth(0.2);
   let by = y;
-  values.forEach((val) => {
-    doc.rect(boxX, by, boxWidth, height);
+  values.forEach((val, idx) => {
+    const h = boxHeights[idx];
+    doc.rect(boxX, by, boxWidth, h);
     const rawValue = pdfText(val);
     if (rawValue && rawValue !== '-') {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(...VALUE_COLOR);
-      doc.text(rawValue, boxX + 2, by + height / 2 + 1.1, { maxWidth: boxWidth - 4 });
+      if (idx === 0) {
+        doc.text(rawValue, boxX + 2, by + h / 2 + 1.1, { maxWidth: boxWidth - 4 });
+      } else {
+        const lines = doc.splitTextToSize(rawValue, boxWidth - 4);
+        doc.text(lines.slice(0, 2), boxX + 2, by + 3.2);
+      }
     }
-    by += height + gap;
+    by += h + gap;
   });
 
   return y + totalHeight + 2.2;
@@ -313,18 +541,31 @@ function drawSharedLabelBoxes(doc, x, width, label, values, y, { labelWidth = 46
 
 // A date's D D M M Y Y Y Y digit boxes drawn on the same row as its label (label to the
 // left), matching the on-screen SegmentedDateField's `inline` mode.
-function drawInlineDateBoxes(doc, x, y, label, isoValue, { labelWidth = 30, boxSize = 4.2 } = {}) {
-  y = ensureSpace(doc, y, boxSize + 3);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.2);
+function drawInlineDateBoxes(doc, x, y, label, isoValue, { labelWidth = 30, boxSize = 4.2, allowNewPage = true } = {}) {
+  if (allowNewPage) y = ensureSpace(doc, y, boxSize + 3);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
   doc.text(pdfText(label), x, y + boxSize / 2 + 1.1);
 
   const match = isoValue ? String(isoValue).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
   const digits = match ? `${match[3]}${match[2]}${match[1]}` : '';
-  drawInlineSegmentedBoxes(doc, digits, 8, x + labelWidth, y + boxSize, { boxSize });
+  drawInlineSegmentedBoxes(doc, digits, 8, x + labelWidth, y + boxSize, {
+    boxSize,
+    placeholders: ['D', 'D', 'M', 'M', 'Y', 'Y', 'Y', 'Y'],
+  });
 
-  return y + boxSize + 2.5;
+  return y + boxSize + 0.8;
+}
+
+function drawLabeledConnectedBoxes(doc, x, y, label, value, boxes, { boxSize = 4.4 } = {}) {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...LABEL_COLOR);
+  doc.text(pdfText(label), x, y + boxSize / 2 + 1.3);
+  const startX = x + doc.getTextWidth(pdfText(label)) + 3;
+  drawInlineSegmentedBoxes(doc, value, boxes, startX, y + boxSize, { boxSize });
+  return y + boxSize;
 }
 
 export function downloadBgApplicationPdf(app) {
@@ -334,194 +575,352 @@ export function downloadBgApplicationPdf(app) {
   const c = cols(doc);
   let y = drawFormHeader(doc);
 
-  y = drawSegmentedBoxes(doc, 'Account number', app.accountNumber, 14, y);
-  y += 2;
+  y = drawLabeledConnectedBoxes(doc, c.left, y, 'Account number', app.accountNumber, 14, { boxSize: 4.5 });
+  y += 8;
   {
-    const rightY = drawInlineBox(doc, c.right, y + 2.5, c.width, 'Branch Name', app.branchName, { labelWidth: 24 });
-    const leftY = drawSegmentedBoxes(doc, 'Branch Code', app.branchCode, 5, y, { boxSize: 4.2 });
-    y = Math.max(leftY, rightY);
-  }
-
-  y = drawBoxedSection(doc, 1, 'Type of Application', y, (cy) => {
-    cy = ensureSpace(doc, cy + 4, 7);
-    drawCheckboxOption(doc, c.left, cy, 'Fresh Issuance', app.typeOfApplication === 'Fresh Issuance');
-    cy = ensureSpace(doc, cy + 7, 7);
-    const afterLabelX = drawCheckboxOption(doc, c.left, cy, 'Amendment (Existing Guarantee Number)', app.typeOfApplication === 'Amendment');
-    drawInlineSegmentedBoxes(doc, app.amendmentExistingGuaranteeNumber, 15, afterLabelX + 5, cy, { boxSize: 4.2 });
-    return cy + 2;
-  });
-
-  y = drawBoxedSection(doc, 2, 'Applicant Details', y, (cy) => {
-    const leftY = drawStackedBox(doc, c.left, cy, c.width, 9, 'Name & Address', app.applicantNameAddress);
-    const rightY = drawStackedBox(doc, c.right, cy, c.width, 9, 'Contact Person Name & Mobile No.', app.applicantContactPersonMobile);
-    cy = Math.max(leftY, rightY);
-
-    const thirdWidth = (c.fullWidth - COL_GAP * 2) / 3;
-    const x2 = c.left + thirdWidth + COL_GAP;
-    const x3 = x2 + thirdWidth + COL_GAP;
-    const r1a = drawInlineBox(doc, c.left, cy, thirdWidth, 'PAN No', app.applicantPan, { labelWidth: 15 });
-    const r1b = drawDateBoxes(doc, 'Date of Incorporation', app.applicantDateOfIncorporation, cy, { x: x2, boxSize: 3.6 });
-    const r1c = drawInlineBox(doc, x3, cy, thirdWidth, 'LEI Code', app.applicantLeiCode, { labelWidth: 16 });
-    cy = Math.max(r1a, r1b, r1c);
-
-    const leftY2 = drawInlineBox(doc, c.left, cy, c.width, 'Email ID', app.applicantEmail, { labelWidth: 18 });
-    const rightY2 = drawStackedBox(doc, c.right, cy, c.width, 7.5, 'Registered Address', app.applicantRegisteredAddress);
-    return Math.max(leftY2, rightY2);
-  });
-
-  y = drawBoxedSection(doc, 3, 'Nature of Bank Guarantee', y, (cy) =>
-    drawCheckboxGroup(doc, BG_NATURES, app.natureOfBankGuarantee, cy + 2.5, { columns: 3 })
-  );
-
-  y = drawBoxedSection(doc, 4, 'Type of BG', y, (cy) => drawCheckboxGroup(doc, BG_TYPE_OPTIONS, app.typeOfBG, cy + 2.5));
-
-  y = drawBoxedSection(doc, 5, 'Details of Bank Guarantee', y, (cy) => {
-    cy = drawStackedBox(doc, c.left, cy, c.fullWidth, 6.5, 'Purpose', app.purpose);
-    cy = drawSharedLabelBoxes(doc, c.left, c.fullWidth, 'Amount (Rs/FCY) in figures & in words', [app.bgAmountFigures, app.bgAmountWords], cy);
-
-    const dateColY = cy;
-    const leftAfterExpiry = drawInlineDateBoxes(doc, c.left, dateColY, 'Expiry Date', app.expiryDate, { labelWidth: 28 });
-    const leftAfterClaim = drawInlineDateBoxes(doc, c.left, leftAfterExpiry, 'Claim Expiry Date', app.claimExpiryDate, { labelWidth: 28 });
-
+    const rowY = y;
+    const codeBox = 4.5;
+    drawLabeledConnectedBoxes(doc, c.left, rowY, 'Branch Code', app.branchCode, 5, { boxSize: codeBox });
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.2);
+    doc.setFontSize(6.5);
     doc.setTextColor(...LABEL_COLOR);
-    doc.text('BG Tenor', c.right, dateColY + 3);
-    let tx = c.right + doc.getTextWidth('BG Tenor') + 4;
-    tx = drawInlineSegmentedBoxes(doc, String(app.bgTenorMonths ?? 0).padStart(2, '0'), 2, tx, dateColY + 5.5, { boxSize: 4.2 }) + 3;
-    drawInlineSegmentedBoxes(doc, String(app.bgTenorDays ?? 0).padStart(2, '0'), 2, tx, dateColY + 5.5, { boxSize: 4.2 });
-
-    return Math.max(leftAfterClaim, dateColY + 8);
-  });
-
-  y = drawBoxedSection(doc, 6, 'Beneficiary Details', y, (cy) => {
-    const leftY = drawStackedBox(doc, c.left, cy, c.width, 9, 'Name & Address', app.beneficiaryNameAddress);
-    const rightY = drawStackedBox(doc, c.right, cy, c.width, 9, 'Contact Person Name & Mobile No', app.beneficiaryContactPersonMobile);
-    cy = Math.max(leftY, rightY);
-
-    const leftY2 = drawInlineBox(doc, c.left, cy, c.width, 'EMail ID', app.beneficiaryEmail, { labelWidth: 18 });
-    const rightY2 = drawInlineBox(doc, c.right, cy, c.width, 'GST Number', app.beneficiaryGstNumber, { labelWidth: 22 });
-    cy = Math.max(leftY2, rightY2);
-
-    const thirdWidth = (c.fullWidth - COL_GAP * 2) / 3;
-    const x2 = c.left + thirdWidth + COL_GAP;
-    const x3 = x2 + thirdWidth + COL_GAP;
-    const r1a = drawInlineBox(doc, c.left, cy, thirdWidth, 'PAN No', app.beneficiaryPan, { labelWidth: 15 });
-    const r1b = drawDateBoxes(doc, 'Date of Incorporation', app.beneficiaryDateOfIncorporation, cy, { x: x2, boxSize: 3.6 });
-    const r1c = drawInlineBox(doc, x3, cy, thirdWidth, 'LEI Code', app.beneficiaryLeiCode, { labelWidth: 16 });
-    cy = Math.max(r1a, r1b, r1c);
-
-    return drawParagraphs(doc, ['*If e-BG with NeSL, please provide UIN allotted to Beneficiary by NeSL'], cy, 5.6);
-  });
-
-  y = drawBoxedSection(doc, 7, 'Beneficiary Bank Details for SFMS', y, (cy) => {
-    const leftY = drawStackedBox(doc, c.left, cy, c.width, 7.5, 'Name & Address', app.beneficiaryBankNameAddress);
-    const rightY = drawInlineBox(doc, c.right, cy, c.width, 'IFSC / SWIFT code', app.beneficiaryBankIfscSwift, { labelWidth: 30 });
-    return Math.max(leftY, rightY);
-  });
-
-  y = drawBoxedSection(doc, 8, 'Advising Bank Details (if Advising Bank is other than Beneficiary Bank)', y, (cy) => {
-    const leftY = drawStackedBox(doc, c.left, cy, c.width, 7.5, 'Name & Address', app.advisingBankNameAddress);
-    const rightY = drawInlineBox(doc, c.right, cy, c.width, 'IFSC / SWIFT code', app.advisingBankIfscSwift, { labelWidth: 30 });
-    return Math.max(leftY, rightY);
-  });
-
-  y = drawBoxedSection(doc, 9, 'Margin Details', y, (cy) => {
-    const halfWidth = (c.width - COL_GAP) / 2;
-    let leftY = drawInlineBox(doc, c.left, cy, halfWidth, 'FD No', app.marginFdNo, { labelWidth: 15 });
-    const amountY = drawInlineBox(doc, c.left + halfWidth + COL_GAP, cy, halfWidth, 'Amount', pdfCurrency(app.marginFdAmount), { labelWidth: 17 });
-    leftY = Math.max(leftY, amountY);
-    leftY = drawInlineBox(doc, c.left, leftY, c.width, 'Other', app.marginOther, { labelWidth: 15 });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.2);
-    doc.setTextColor(...LABEL_COLOR);
-    doc.text('New FD', c.right, cy);
-    let rightY = drawInlineBox(doc, c.right, cy + 1.5, c.width, 'Debit A/C', app.marginNewFdDebitAccount, { labelWidth: 18 });
-    rightY = drawInlineBox(doc, c.right, rightY, c.width, 'Amount', pdfCurrency(app.marginNewFdAmount), { labelWidth: 17 });
-
-    return Math.max(leftY, rightY);
-  });
-
-  y = drawBoxedSection(
-    doc,
-    10,
-    'Instruction on Bank Charges',
-    y,
-    (cy) =>
-      drawParagraphs(
-        doc,
-        [
-          '"I/We agree to pay all applicable taxes, duties (including stamp duty), cesses, fees and charges for issuance of this Guarantee and consent that necessary deductions in this regard may be made from my/our account number"',
-        ],
-        cy,
-        6
-      ),
-    { bordered: false }
-  );
-
-  y = drawBoxedSection(
-    doc,
-    11,
-    'General Declaration',
-    y,
-    (cy) => {
-      cy = drawParagraphs(doc, DECLARATION_ITEMS, cy, 6);
-      cy = drawParagraphs(
-        doc,
-        [
-          'v) We hereby authorize you to debit our account number to make the payment immediately in case of receipt of any claim from the beneficiary. You are also authorised to debit our account with the interest towards delayed payment claimed by the beneficiary.',
-        ],
-        cy,
-        6
-      );
-      const leftY = drawInlineBox(doc, c.left, cy, c.width, 'Debit Account Number (for claims)', app.claimDebitAccountNumber, { labelWidth: 46 });
-      const rightY = drawInlineBox(doc, c.right, cy, c.width, 'Delayed Payment Interest %', `${app.delayedPaymentInterestPercent || 0}%`, { labelWidth: 46 });
-      cy = Math.max(leftY, rightY);
-      cy = drawParagraphs(doc, DECLARATION_ITEMS_AFTER_CLAIM, cy, 6);
-      cy = drawDateBoxes(doc, 'Date', app.declarationDate, cy + 1.5, { x: c.left });
-      cy = ensureSpace(doc, cy + 1.5, 8);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.2);
-      doc.setTextColor(...LABEL_COLOR);
-      doc.text('Authorized Signatory', c.left, cy);
-      doc.text('(Stamp to be affixed by firm/ Company)', c.left, cy + 3);
-      return cy + 4;
-    },
-    { bordered: false }
-  );
-
-  y = drawBoxedSection(
-    doc,
-    null,
-    'Details of documents enclosed: (please tick all that are relevant)',
-    y,
-    (cy) => {
-      cy += 2.5;
+    const nameLabel = 'Branch Name';
+    const codeBoxesEnd = c.left + doc.getTextWidth('Branch Code') + 3 + 5 * codeBox;
+    const nameLabelX = Math.max(c.left + 62, codeBoxesEnd + 8);
+    const nameBoxH = codeBox;
+    const nameBoxY = rowY + 0.6;
+    doc.text(nameLabel, nameLabelX, nameBoxY + nameBoxH / 2 + 1.1);
+    const nameBoxX = nameLabelX + doc.getTextWidth(nameLabel) + 2;
+    const nameBoxW = 68;
+    doc.setDrawColor(...BOX_LINE);
+    doc.setLineWidth(0.2);
+    doc.rect(nameBoxX, nameBoxY, nameBoxW, nameBoxH);
+    const branchName = pdfText(app.branchName);
+    if (branchName && branchName !== '-') {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(...VALUE_COLOR);
+      doc.text(branchName, nameBoxX + 2, nameBoxY + nameBoxH / 2 + 1.1, { maxWidth: nameBoxW - 4 });
+    }
+    y = rowY + 12;
+  }
 
-      let boxSize = drawCheckbox(doc, c.left, cy, Boolean(app.documentsContractAgreementCopy));
-      doc.text('Contract/Agreement copy', c.left + boxSize + 1.5, cy - 0.5);
-      boxSize = drawCheckbox(doc, c.right, cy, Boolean(app.documentsCounterGuarantee));
-      doc.text('Counter Guarantee', c.right + boxSize + 1.5, cy - 0.5);
-      cy += 5;
+  const page1 = { allowNewPage: false, gap: 3.2, contentOffset: 6.5 };
+  const capBox = { allowNewPage: false };
 
-      boxSize = drawCheckbox(doc, c.left, cy, Boolean(app.documentsBankGuaranteeText));
-      doc.text('Bank Guarantee Text', c.left + boxSize + 1.5, cy - 0.5);
-      cy += 5;
+  y = drawBoxedSection(doc, 1, 'Type of Application', y, (cy) => {
+    cy += 4;
+    drawCheckboxOption(doc, c.left, cy, 'Fresh Issuance', app.typeOfApplication === 'Fresh Issuance');
+    cy += 8;
+    const afterLabelX = drawCheckboxOption(
+      doc,
+      c.left,
+      cy,
+      'Amendment (Existing Guarantee Number)',
+      app.typeOfApplication === 'Amendment'
+    );
+    drawInlineSegmentedBoxes(doc, app.amendmentExistingGuaranteeNumber, 15, afterLabelX + 3, cy, { boxSize: 4.2 });
+    return cy + 4;
+  }, page1);
 
-      boxSize = drawCheckbox(doc, c.left, cy, Boolean(app.documentsOther));
-      doc.text(`Other documents if any, please specify ${dash(app.otherDocumentsSpecify)}`, c.left + boxSize + 1.5, cy - 0.5);
-      cy += 2.5;
-      return cy;
-    },
-    { bordered: false }
+  y = drawBoxedSection(doc, 2, 'Applicant Details', y, (cy) => {
+    const nameCap = { maxHeight: 12, allowNewPage: false };
+    const leftY = drawStackedBox(doc, c.left, cy, c.width, 11, 'Name & Address', app.applicantNameAddress, nameCap);
+    const rightY = drawStackedBox(
+      doc,
+      c.right,
+      cy,
+      c.width,
+      11,
+      'Contact Person Name & Mobile No.',
+      app.applicantContactPersonMobile,
+      nameCap
+    );
+    cy = Math.max(leftY, rightY) + 1.8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.3);
+    const smallBoxW = 28;
+    const panLabelW = 14;
+    const panFieldW = panLabelW + smallBoxW;
+    const dateLabel = 'Date of Incorporation';
+    const dateLabelW = doc.getTextWidth(dateLabel) + 2.2;
+    const dateFieldW = dateLabelW + smallBoxW;
+    const dateX = c.left + panFieldW + 3.5;
+    const leiX = dateX + dateFieldW + 3.5;
+    const panY = drawInlineBox(doc, c.left, cy, panFieldW, 'PAN No', app.applicantPan, {
+      labelWidth: panLabelW,
+      height: 5.5,
+      ...capBox,
+    });
+    const dateY = drawInlineBox(
+      doc,
+      dateX,
+      cy,
+      dateFieldW,
+      dateLabel,
+      app.applicantDateOfIncorporation ? formatDate(app.applicantDateOfIncorporation) : '',
+      { labelWidth: dateLabelW, height: 5.5, ...capBox }
+    );
+    const leiY = drawInlineBox(doc, leiX, cy, c.left + c.fullWidth - leiX, 'LEI Code', app.applicantLeiCode, {
+      labelWidth: 16,
+      height: 5.5,
+      ...capBox,
+    });
+    cy = Math.max(panY, dateY, leiY) + 2.2;
+
+    const emailY = drawStackedBox(doc, c.left, cy, c.width, 5.2, 'Email ID', app.applicantEmail, {
+      maxHeight: 5.4,
+      allowNewPage: false,
+      labelIndent: 6.5,
+    });
+    const regY = drawStackedBox(doc, c.right, cy, c.width, 8.5, 'Registered Address', app.applicantRegisteredAddress, {
+      maxHeight: 9.5,
+      allowNewPage: false,
+    });
+    return Math.max(emailY, regY);
+  }, page1);
+
+  y = drawBoxedSection(doc, 3, 'Nature of Bank Guarantee', y, (cy) =>
+    drawNatureGrid(doc, app.natureOfBankGuarantee, cy + 3.5, { x: c.left, width: c.fullWidth })
+  , page1);
+
+  y = drawBoxedSection(doc, 4, 'Type of BG', y, (cy) =>
+    drawEvenCheckboxRow(doc, BG_TYPE_OPTIONS, app.typeOfBG, cy + 3.5, c.left, c.fullWidth)
+  , page1);
+
+  y = drawBoxedSection(doc, 5, 'Details of Bank Guarantee', y, (cy) => {
+    const labelWidth = 46;
+    cy = drawLeftLabelBox(doc, c.left, cy, c.fullWidth, 'Purpose', app.purpose, {
+      labelWidth,
+      height: 9,
+      maxHeight: 10,
+      allowNewPage: false,
+    });
+    cy = drawSharedLabelBoxes(
+      doc,
+      c.left,
+      c.fullWidth,
+      ['Amount (Rs/FCY)', 'in figures &', 'in words'],
+      [app.bgAmountFigures, app.bgAmountWords],
+      cy,
+      { labelWidth, heights: [5.4, 7.4], gap: 1.3, allowNewPage: false }
+    );
+
+    const dateLabelW = 36;
+    const dateBox = 4.2;
+    const dateColY = cy + 1.2;
+    const leftAfterExpiry = drawInlineDateBoxes(doc, c.left, dateColY, 'Expiry Date', app.expiryDate, {
+      labelWidth: dateLabelW,
+      boxSize: dateBox,
+      allowNewPage: false,
+    });
+    const leftAfterClaim = drawInlineDateBoxes(
+      doc,
+      c.left,
+      leftAfterExpiry + 0.4,
+      'Claim Expiry Date',
+      app.claimExpiryDate,
+      { labelWidth: dateLabelW, boxSize: dateBox, allowNewPage: false }
+    );
+    const tenorX = c.left + dateLabelW + dateBox * 8 + 8;
+    const tenorY = drawBgTenor(doc, tenorX, dateColY, app.bgTenorMonths, app.bgTenorDays);
+    return Math.max(leftAfterClaim, tenorY) + 5;
+  }, page1);
+
+  y = drawBoxedSection(doc, 6, 'Beneficiary Details', y, (cy) => {
+    const nameCap = { maxHeight: 11.5, allowNewPage: false };
+    const leftY = drawStackedBox(doc, c.left, cy, c.width, 10.5, 'Name & Address', app.beneficiaryNameAddress, nameCap);
+    const rightY = drawStackedBox(
+      doc,
+      c.right,
+      cy,
+      c.width,
+      10.5,
+      'Contact Person Name & Mobile No',
+      app.beneficiaryContactPersonMobile,
+      nameCap
+    );
+    cy = Math.max(leftY, rightY);
+
+    const emailY = drawStackedBox(doc, c.left, cy, c.width, 5.5, 'EMail ID', app.beneficiaryEmail, {
+      maxHeight: 6.2,
+      allowNewPage: false,
+    });
+    const gstY = drawStackedBox(doc, c.right, cy, c.width, 5.5, 'GST Number', app.beneficiaryGstNumber, {
+      maxHeight: 6.2,
+      allowNewPage: false,
+    });
+    cy = Math.max(emailY, gstY);
+
+    const panY = drawInlineBox(doc, c.left, cy, 48, 'PAN No', app.beneficiaryPan, { labelWidth: 16, height: 5.5, ...capBox });
+    const dateY = drawInlineBox(
+      doc,
+      c.left + 50,
+      cy,
+      68,
+      'Date of Incorporation',
+      app.beneficiaryDateOfIncorporation ? formatDate(app.beneficiaryDateOfIncorporation) : '',
+      { labelWidth: 36, height: 5.5, ...capBox }
+    );
+    const leiY = drawInlineBox(doc, c.left + 120, cy, c.fullWidth - 120, 'LEI Code', app.beneficiaryLeiCode, {
+      labelWidth: 18,
+      height: 5.5,
+      ...capBox,
+    });
+    return Math.max(panY, dateY, leiY);
+  }, page1);
+
+  {
+    doc.setPage(1);
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const notesY = pageHeight - 16;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.3);
+    doc.setTextColor(...LABEL_COLOR);
+    doc.text('*If e-BG with NeSL, please provide UIN allotted to Beneficiary by NeSL', MARGIN, notesY);
+    doc.text('*Please note that in case of e-BG, the stamp duty will be procured through NeSL', MARGIN, notesY + 4.2);
+  }
+
+  doc.addPage();
+  y = 10;
+  const page2Bottom = doc.internal.pageSize.getHeight() - 8;
+
+  y = drawPage2BankDetailsBox(
+    doc,
+    7,
+    'Beneficiary Bank Details for SFMS',
+    y,
+    app.beneficiaryBankNameAddress,
+    app.beneficiaryBankIfscSwift,
+    c
+  );
+  y = drawPage2BankDetailsBox(
+    doc,
+    8,
+    'Advising Bank Details (if Advising Bank is other than Beneficiary Bank)',
+    y,
+    app.advisingBankNameAddress,
+    app.advisingBankIfscSwift,
+    c
   );
 
-  y = drawParagraphs(doc, ['*Please note that in case of e-BG, the stamp duty will be procured through NeSL'], y, 5.6);
+  y = drawMarginDetailsBox(doc, app, y, c);
 
+  const chargesText =
+    '"I/We agree to pay all applicable taxes, duties (including stamp duty), cesses, fees and charges for issuance of this Guarantee and consent that necessary deductions in this regard may be made from my/our account number"';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...HEADER_BLUE);
+  doc.text('10. Instruction on Bank Charges', c.left, y + 4);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(...VALUE_COLOR);
+  const chargesLines = doc.splitTextToSize(chargesText, c.fullWidth);
+  doc.text(chargesLines, c.left, y + 8.2);
+  y += 8.2 + chargesLines.length * 3.05 + 5.5;
+
+  const claimAccount = String(app.claimDebitAccountNumber || '').trim() || '.......................................';
+  const interestRaw = app.delayedPaymentInterestPercent;
+  const claimInterest =
+    interestRaw !== 0 && interestRaw !== '0' && interestRaw !== null && interestRaw !== undefined && String(interestRaw).trim() !== ''
+      ? String(interestRaw)
+      : '...................';
+  const clauseV =
+    `v) We hereby authorize you to debit our account number ${claimAccount} to make the payment immediately in case of receipt of any claim from the beneficiary. You are also authorised to debit our account with the interest @ ${claimInterest} % towards delayed payment claimed by the beneficiary.`;
+
+  const clauses = [...DECLARATION_ITEMS, clauseV, ...DECLARATION_ITEMS_AFTER_CLAIM];
+  const signBlockH = 18;
+  const docsBlockH = 22;
+  const gapAfterDecl = 2;
+  const gapBeforeDocs = 5.5;
+  const header11H = 6.4;
+  const reservedAfterDecl = gapAfterDecl + signBlockH + gapBeforeDocs + docsBlockH;
+  const availDecl = Math.max(70, page2Bottom - reservedAfterDecl - (y + header11H));
+  const declOpts = { listLeft: 6 };
+
+  let clauseFont = 7.3;
+  let lineH = 3.15;
+  let paraGap = 2.9;
+  let clauseTextH = measureDeclarationList(doc, clauses, clauseFont, lineH, paraGap, declOpts);
+  if (clauseTextH > availDecl) {
+    const scale = availDecl / Math.max(clauseTextH, 1);
+    lineH = Math.max(2.85, lineH * scale);
+    clauseFont = Math.max(6.8, clauseFont * Math.min(1, scale + 0.06));
+    paraGap = Math.max(2.2, paraGap * scale);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...HEADER_BLUE);
+  doc.text('11. General Declaration', c.left, y + 4);
+  y = drawDeclarationList(doc, clauses, y + header11H, {
+    fontSize: clauseFont,
+    lineHeight: lineH,
+    paraGap,
+    ...declOpts,
+  });
+
+  y += gapAfterDecl;
+  const signX = c.left + 6;
+  const dateBox = 4.1;
+  const boxesX = signX + 16;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...VALUE_COLOR);
+  doc.text('Authorized Signatory', boxesX, y);
+  y += 2.1;
+  doc.text('Date', signX, y + dateBox / 2 + 1);
+  const match = app.declarationDate ? String(app.declarationDate).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+  const dateDigits = match ? `${match[3]}${match[2]}${match[1]}` : '';
+  drawInlineSegmentedBoxes(doc, dateDigits, 8, boxesX, y + dateBox, {
+    boxSize: dateBox,
+    placeholders: ['D', 'D', 'M', 'M', 'Y', 'Y', 'Y', 'Y'],
+  });
+  y += dateBox + 2.2;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(...VALUE_COLOR);
+  doc.text('(Stamp to be affixed by firm/ Company)', boxesX, y);
+
+  y += gapBeforeDocs;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...HEADER_BLUE);
+  doc.text('Details of documents enclosed: (please tick all that are relevant)', c.left, y);
+  y += 6.2;
+
+  const rightColX = c.left + c.fullWidth * 0.55;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.6);
+  doc.setTextColor(...VALUE_COLOR);
+  let boxSize = drawCheckbox(doc, c.left, y, Boolean(app.documentsContractAgreementCopy));
+  doc.text('Contract/Agreement copy', c.left + boxSize + 1.5, y - 0.5);
+  boxSize = drawCheckbox(doc, rightColX, y, Boolean(app.documentsCounterGuarantee));
+  doc.text('Counter Guarantee', rightColX + boxSize + 1.5, y - 0.5);
+  y += 6.2;
+  boxSize = drawCheckbox(doc, c.left, y, Boolean(app.documentsBankGuaranteeText));
+  doc.text('Bank Guarantee Text', c.left + boxSize + 1.5, y - 0.5);
+  y += 6.2;
+  boxSize = drawCheckbox(doc, c.left, y, Boolean(app.documentsOther));
+  const otherLine = 'Other documents if any, please specify';
+  doc.text(otherLine, c.left + boxSize + 1.5, y - 0.5);
+  const specifyX = c.left + boxSize + 1.5 + doc.getTextWidth(otherLine) + 1.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.6);
+  doc.setTextColor(...VALUE_COLOR);
+  const dotsWidth = c.left + c.fullWidth - specifyX;
+  let dots = '';
+  while (doc.getTextWidth(dots) < dotsWidth - 1) dots += '.';
+  doc.text(dots, specifyX, y - 0.5);
+  if (app.otherDocumentsSpecify) {
+    doc.setTextColor(...VALUE_COLOR);
+    doc.text(pdfText(app.otherDocumentsSpecify), specifyX + 1, y - 1.2, { maxWidth: dotsWidth - 2 });
+  }
+
+  while (doc.internal.getNumberOfPages() > 2) {
+    doc.deletePage(doc.internal.getNumberOfPages());
+  }
   versionFooter(doc);
   doc.save(`${safeFilePart(app.applicantNameAddress, 'bg-application')}_bank_guarantee.pdf`);
 }

@@ -13,13 +13,17 @@ export default function RHFSelect({ name, label, options, helperText, ...rest })
           {...field}
           {...rest}
           select
-          label={label}
+          {...(label ? { label } : {})}
           fullWidth
           error={Boolean(error)}
           helperText={error?.message || helperText}
         >
           {options.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
+            <MenuItem
+              key={String(opt.value)}
+              value={opt.value}
+              sx={opt.value === '' ? { color: 'text.secondary' } : undefined}
+            >
               {opt.label}
             </MenuItem>
           ))}

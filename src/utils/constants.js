@@ -62,7 +62,31 @@ export const PERMISSION_KEYS = [
   'financialDocuments',
   'bgWhatsappAlerts',
   'accounts',
+  'stockItems',
 ];
+
+export const STOCK_MOVEMENT_TYPES = {
+  SUPPLIER_IN: 'supplier_in',
+  ISSUE_OUT: 'issue_out',
+  UTILIZE: 'utilize',
+  RETURN_IN: 'return_in',
+};
+
+export const STOCK_MOVEMENT_LABELS = {
+  supplier_in: 'Receive from Supplier',
+  issue_out: 'Issue to Person',
+  utilize: 'Utilize / Consume',
+  return_in: 'Return to Warehouse',
+};
+
+export const STOCK_CATALOG_KINDS = {
+  CATEGORY: 'category',
+  COMPONENT: 'component',
+  SUB_COMPONENT: 'subComponent',
+};
+
+export const STOCK_ITEM_TYPES = ['Single Use', 'Reusable'];
+export const STOCK_OTHER_VALUE = '__other__';
 
 export const LOA_TYPES = {
   NOTOFIRE: 'Notofire',

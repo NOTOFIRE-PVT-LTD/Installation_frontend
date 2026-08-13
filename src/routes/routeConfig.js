@@ -8,6 +8,7 @@ import {
   faFileContract,
   faFileInvoiceDollar,
   faFolderOpen,
+  faBoxesStacked,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
@@ -61,6 +62,14 @@ export const NAV_ITEMS = [
     permission: 'financialDocuments',
     roles: [ROLES.ADMIN],
     accent: { color: '#0d9488', bg: '#f0fdfa' },
+  },
+  {
+    label: 'Stock Items',
+    path: '/stock-items',
+    icon: faBoxesStacked,
+    permission: 'stockItems',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#ea580c', bg: '#fff7ed' },
   },
   {
     label: 'Accounts',

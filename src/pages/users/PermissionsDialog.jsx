@@ -25,6 +25,7 @@ const LABELS = {
   financialDocuments: 'Financial Document',
   bgWhatsappAlerts: 'BG Deadline WhatsApp alerts',
   accounts: 'Accounts (BG Application)',
+  stockItems: 'Stock Items',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];
