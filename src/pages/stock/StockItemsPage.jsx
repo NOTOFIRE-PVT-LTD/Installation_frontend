@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -100,33 +99,6 @@ const WAREHOUSE_COLUMNS = [
     width: 130,
     valueGetter: (value) => value ?? 0,
   },
-  {
-    field: 'people',
-    headerName: 'With People',
-    flex: 1.5,
-    minWidth: 220,
-    valueGetter: (_value, row) =>
-      (row.people || [])
-        .filter((p) => Number(p.holding) > 0)
-        .map((p) => `${p.name}: ${p.holding}`)
-        .join(' · ') || '-',
-    renderCell: (params) => {
-      const list = (params.row.people || []).filter((p) => Number(p.holding) > 0);
-      if (list.length === 0) return '-';
-      return (
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ py: 0.5 }}>
-          {list.map((p) => (
-            <Chip key={p.name} size="small" label={`${p.name} ${p.holding}`} variant="outlined" />
-          ))}
-        </Stack>
-      );
-    },
-    csvValue: (row) =>
-      (row.people || [])
-        .filter((p) => Number(p.holding) > 0)
-        .map((p) => `${p.name}: ${p.holding}`)
-        .join(' | ') || '-',
-  },
 ];
 
 function movementColumns(type) {
@@ -161,7 +133,7 @@ function movementColumns(type) {
       width: 110,
       valueGetter: (value) => value ?? 0,
     });
-  } else {
+  } else if (type === STOCK_MOVEMENT_TYPES.RETURN_IN || type === STOCK_MOVEMENT_TYPES.ISSUE_OUT) {
     cols.splice(1, 0, {
       field: 'issuedTo',
       headerName: 'Person',
@@ -459,10 +431,8 @@ export default function StockItemsPage() {
     │  +qty receive
     ↓
 WAREHOUSE
-    │  −qty utilize
-    ↓
-  PERSON
-    └── return unused → Warehouse`}
+    │  −qty utilize (consumed)
+    └── +qty return unused`}
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>

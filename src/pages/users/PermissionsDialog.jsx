@@ -26,6 +26,7 @@ const LABELS = {
   bgWhatsappAlerts: 'BG Deadline WhatsApp alerts',
   accounts: 'Accounts (BG Application)',
   stockItems: 'Stock Items',
+  bom: 'BOM',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

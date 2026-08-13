@@ -102,34 +102,71 @@ const APPLICANT_PROFILES = [
   },
 ];
 
-function CheckboxSingleSelect({ name, options, control, disabled }) {
+function CheckboxSingleSelect({ name, options, control, disabled, columns }) {
   return (
     <Controller
       name={name}
       control={control}
       render={({ field }) => (
-        <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap rowGap={1}>
-          {options.map((option) => {
-            const checked = field.value === option;
-            return (
-              <Stack
-                key={option}
-                direction="row"
-                alignItems="center"
-                spacing={0.5}
-                onClick={() => !disabled && field.onChange(checked ? '' : option)}
-                sx={{ cursor: disabled ? 'default' : 'pointer' }}
-              >
-                {checked ? (
-                  <CheckBoxIcon fontSize="small" color={disabled ? 'disabled' : 'primary'} />
-                ) : (
-                  <CheckBoxOutlineBlankIcon fontSize="small" color={disabled ? 'disabled' : 'action'} />
-                )}
-                <Typography variant="body2">{option}</Typography>
-              </Stack>
-            );
-          })}
-        </Stack>
+        <Box
+          sx={
+            columns
+              ? {
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${columns}, minmax(0, max-content))`,
+                  columnGap: 4,
+                  rowGap: 1.25,
+                  justifyContent: 'start',
+                }
+              : undefined
+          }
+        >
+          {columns ? (
+            options.map((option) => {
+              const checked = field.value === option;
+              return (
+                <Stack
+                  key={option}
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.5}
+                  onClick={() => !disabled && field.onChange(checked ? '' : option)}
+                  sx={{ cursor: disabled ? 'default' : 'pointer', width: 'fit-content' }}
+                >
+                  {checked ? (
+                    <CheckBoxIcon fontSize="small" color={disabled ? 'disabled' : 'primary'} />
+                  ) : (
+                    <CheckBoxOutlineBlankIcon fontSize="small" color={disabled ? 'disabled' : 'action'} />
+                  )}
+                  <Typography variant="body2">{option}</Typography>
+                </Stack>
+              );
+            })
+          ) : (
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap rowGap={1}>
+              {options.map((option) => {
+                const checked = field.value === option;
+                return (
+                  <Stack
+                    key={option}
+                    direction="row"
+                    alignItems="center"
+                    spacing={0.5}
+                    onClick={() => !disabled && field.onChange(checked ? '' : option)}
+                    sx={{ cursor: disabled ? 'default' : 'pointer' }}
+                  >
+                    {checked ? (
+                      <CheckBoxIcon fontSize="small" color={disabled ? 'disabled' : 'primary'} />
+                    ) : (
+                      <CheckBoxOutlineBlankIcon fontSize="small" color={disabled ? 'disabled' : 'action'} />
+                    )}
+                    <Typography variant="body2">{option}</Typography>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+        </Box>
       )}
     />
   );
@@ -493,11 +530,23 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
               </BoxedSection>
 
               <BoxedSection number={3} title="Nature of Bank Guarantee">
-                <CheckboxSingleSelect name="natureOfBankGuarantee" options={BG_NATURES} control={methods.control} disabled={readOnly} />
+                <CheckboxSingleSelect
+                  name="natureOfBankGuarantee"
+                  options={BG_NATURES}
+                  control={methods.control}
+                  disabled={readOnly}
+                  columns={3}
+                />
               </BoxedSection>
 
               <BoxedSection number={4} title="Type of BG">
-                <CheckboxSingleSelect name="typeOfBG" options={BG_TYPE_OPTIONS} control={methods.control} disabled={readOnly} />
+                <CheckboxSingleSelect
+                  name="typeOfBG"
+                  options={BG_TYPE_OPTIONS}
+                  control={methods.control}
+                  disabled={readOnly}
+                  columns={4}
+                />
               </BoxedSection>
 
               <BoxedSection number={5} title="Details of Bank Guarantee">

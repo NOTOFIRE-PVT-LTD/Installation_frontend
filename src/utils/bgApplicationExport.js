@@ -159,13 +159,14 @@ function drawMarginDetailsBox(doc, app, y, c) {
   doc.text('New FD', midX + 4, y + 4);
 
   const contentY = y + 8;
-  const leftColW = midX - c.left - 4;
+  const contentLeft = c.left + 8;
+  const leftColW = midX - contentLeft - 4;
   const fdW = (leftColW - COL_GAP) / 2;
   const stay = { allowNewPage: false };
-  let leftY = drawInlineBox(doc, c.left, contentY, fdW, 'FD No', app.marginFdNo, { labelWidth: 14, height: 5.5, ...stay });
+  let leftY = drawInlineBox(doc, contentLeft, contentY, fdW, 'FD No', app.marginFdNo, { labelWidth: 14, height: 5.5, ...stay });
   const amtY = drawInlineBox(
     doc,
-    c.left + fdW + COL_GAP,
+    contentLeft + fdW + COL_GAP,
     contentY,
     fdW,
     'Amount',
@@ -173,7 +174,7 @@ function drawMarginDetailsBox(doc, app, y, c) {
     { labelWidth: 16, height: 5.5, ...stay }
   );
   leftY = Math.max(leftY, amtY);
-  leftY = drawInlineBox(doc, c.left, leftY, fdW, 'Other', app.marginOther, { labelWidth: 14, height: 5.5, ...stay });
+  leftY = drawInlineBox(doc, contentLeft, leftY, fdW, 'Other', app.marginOther, { labelWidth: 14, height: 5.5, ...stay });
 
   const rightW = c.left + c.fullWidth - midX - 4;
   let rightY = drawInlineBox(doc, midX + 4, contentY, rightW, 'Debit A/C', app.marginNewFdDebitAccount, {
@@ -384,7 +385,9 @@ function drawCheckbox(doc, x, y, checked) {
 }
 
 function drawNatureGrid(doc, selected, y, { x = MARGIN, width }) {
-  const colWidth = width / 3;
+  // Official form: compact 3 columns (not stretched edge-to-edge), 2 rows.
+  const colWidth = Math.min(width / 3, 56);
+  const rowGap = 7.2;
   const columns = [
     ['Financial Guarantee', 'Advance Payment Guarantee'],
     ['Performance Guarantee', 'Others'],
@@ -396,7 +399,7 @@ function drawNatureGrid(doc, selected, y, { x = MARGIN, width }) {
     const cx = x + colIdx * colWidth;
     col.forEach((option) => {
       drawCheckboxOption(doc, cx, cy, option, option === selected);
-      cy += 6.5;
+      cy += rowGap;
     });
     maxY = Math.max(maxY, cy);
   });
@@ -492,9 +495,19 @@ function drawLeftLabelBox(doc, x, y, width, label, value, { labelWidth = 28, hei
 }
 
 function drawEvenCheckboxRow(doc, options, selected, y, x, width) {
-  const colW = width / options.length;
+  // Official form Type of BG: left-aligned with even gaps (not full-width columns).
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  const boxSize = 3.4;
+  const labelGap = 1.5;
+  const itemGap = 18;
+  const widths = options.map((option) => boxSize + labelGap + doc.getTextWidth(pdfText(option)));
+  const total = widths.reduce((sum, w) => sum + w, 0) + itemGap * Math.max(options.length - 1, 0);
+  const gap = total <= width ? itemGap : Math.max(6, (width - widths.reduce((sum, w) => sum + w, 0)) / Math.max(options.length - 1, 1));
+  let bx = x;
   options.forEach((option, idx) => {
-    drawCheckboxOption(doc, x + idx * colW, y, option, option === selected);
+    drawCheckboxOption(doc, bx, y, option, option === selected);
+    bx += widths[idx] + gap;
   });
   return y + 5;
 }
@@ -682,12 +695,15 @@ export function downloadBgApplicationPdf(app) {
   }, page1);
 
   y = drawBoxedSection(doc, 3, 'Nature of Bank Guarantee', y, (cy) =>
-    drawNatureGrid(doc, app.natureOfBankGuarantee, cy + 3.5, { x: c.left, width: c.fullWidth })
-  , page1);
+    drawNatureGrid(doc, app.natureOfBankGuarantee, cy + 2.2, {
+      x: c.left + 6,
+      width: c.fullWidth - 6,
+    })
+  , { ...page1, contentOffset: 6 });
 
   y = drawBoxedSection(doc, 4, 'Type of BG', y, (cy) =>
-    drawEvenCheckboxRow(doc, BG_TYPE_OPTIONS, app.typeOfBG, cy + 3.5, c.left, c.fullWidth)
-  , page1);
+    drawEvenCheckboxRow(doc, BG_TYPE_OPTIONS, app.typeOfBG, cy + 2.2, c.left + 24, c.fullWidth - 24)
+  , { ...page1, contentOffset: 6 });
 
   y = drawBoxedSection(doc, 5, 'Details of Bank Guarantee', y, (cy) => {
     const labelWidth = 46;

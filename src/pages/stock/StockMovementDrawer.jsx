@@ -30,11 +30,7 @@ function buildSchema(type) {
     base.supplierName = yup.string().trim().required('Supplier name is required');
     base.amount = yup.number().typeError('Must be a number').min(0, 'Amount must be 0 or greater').required('Amount is required');
   }
-  if (
-    type === STOCK_MOVEMENT_TYPES.ISSUE_OUT ||
-    type === STOCK_MOVEMENT_TYPES.UTILIZE ||
-    type === STOCK_MOVEMENT_TYPES.RETURN_IN
-  ) {
+  if (type === STOCK_MOVEMENT_TYPES.ISSUE_OUT || type === STOCK_MOVEMENT_TYPES.RETURN_IN) {
     base.issuedTo = yup.string().trim().required('Person name is required');
   }
   return yup.object(base);
@@ -77,12 +73,10 @@ export default function StockMovementDrawer({ open, type, onClose, onSubmit, sub
   }, [open, type]);
 
   const needsPerson =
-    type === STOCK_MOVEMENT_TYPES.ISSUE_OUT ||
-    type === STOCK_MOVEMENT_TYPES.UTILIZE ||
-    type === STOCK_MOVEMENT_TYPES.RETURN_IN;
+    type === STOCK_MOVEMENT_TYPES.ISSUE_OUT || type === STOCK_MOVEMENT_TYPES.RETURN_IN;
 
-  // For UTILIZE (and other person-based flows), the user should directly type the person's name.
-  const personLabel = 'Person';
+  const personLabel =
+    type === STOCK_MOVEMENT_TYPES.RETURN_IN ? 'Returned By (Person)' : 'Person';
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>

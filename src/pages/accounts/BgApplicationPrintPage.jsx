@@ -179,21 +179,36 @@ export default function BgApplicationPrintPage() {
         </SectionBox>
 
         <SectionBox number={3} title="Nature of Bank Guarantee">
-          <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap rowGap={1}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, minmax(0, max-content))',
+              columnGap: 4,
+              rowGap: 1.25,
+              justifyContent: 'start',
+            }}
+          >
             {['Financial Guarantee', 'Performance Guarantee', 'Deferred Payment Guarantee', 'Advance Payment Guarantee', 'Others'].map(
               (option) => (
                 <CheckedOption key={option} label={option} checked={app.natureOfBankGuarantee === option} />
               )
             )}
-          </Stack>
+          </Box>
         </SectionBox>
 
         <SectionBox number={4} title="Type of BG">
-          <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap rowGap={1}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, minmax(0, max-content))',
+              columnGap: 4,
+              justifyContent: 'start',
+            }}
+          >
             {['Physical BG', 'FCY BG', 'e-BG', 'GEM BG'].map((option) => (
               <CheckedOption key={option} label={option} checked={app.typeOfBG === option} />
             ))}
-          </Stack>
+          </Box>
         </SectionBox>
 
         <SectionBox number={5} title="Details of Bank Guarantee">

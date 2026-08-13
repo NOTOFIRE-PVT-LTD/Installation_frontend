@@ -63,6 +63,7 @@ export const PERMISSION_KEYS = [
   'bgWhatsappAlerts',
   'accounts',
   'stockItems',
+  'bom',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {
@@ -87,6 +88,11 @@ export const STOCK_CATALOG_KINDS = {
 
 export const STOCK_ITEM_TYPES = ['Single Use', 'Reusable'];
 export const STOCK_OTHER_VALUE = '__other__';
+
+export const BOM_TYPES = {
+  STANDARD: 'Standard',
+  ROUTE: 'Route BOM',
+};
 
 export const LOA_TYPES = {
   NOTOFIRE: 'Notofire',

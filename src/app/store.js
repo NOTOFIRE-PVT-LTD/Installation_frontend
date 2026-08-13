@@ -15,6 +15,8 @@ import callLettersReducer from '../features/callLetters/callLettersSlice';
 import bgApplicationsReducer from '../features/bgApplications/bgApplicationsSlice';
 import stockItemsReducer from '../features/stockItems/stockItemsSlice';
 import stockMovementsReducer from '../features/stockMovements/stockMovementsSlice';
+import bomReducer from '../features/bom/bomSlice';
+import bomProductionsReducer from '../features/bom/bomProductionsSlice';
 import uiReducer from '../features/ui/uiSlice';
 import { injectStore } from '../api/axiosInstance';
 
@@ -36,6 +38,8 @@ export const store = configureStore({
     bgApplications: bgApplicationsReducer,
     stockItems: stockItemsReducer,
     stockMovements: stockMovementsReducer,
+    bom: bomReducer,
+    bomProductions: bomProductionsReducer,
     ui: uiReducer,
   },
 });
