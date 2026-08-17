@@ -25,6 +25,7 @@ import {
 import {
   fetchStockMovements,
   createStockMovement,
+  updateStockMovement,
   deleteStockMovement,
 } from '../../features/stockMovements/stockMovementsThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
@@ -101,15 +102,22 @@ const WAREHOUSE_COLUMNS = [
   },
 ];
 
+function movementItemLabel(item) {
+  if (!item) return '-';
+  return (
+    [item.componentName, item.subComponentName || item.name].filter(Boolean).join(' / ') || item.name || '-'
+  );
+}
+
 function movementColumns(type) {
   const cols = [
     {
       field: 'stockItem',
       headerName: 'Item',
-      flex: 1,
-      minWidth: 140,
-      valueGetter: (_value, row) => row.stockItem?.name || '-',
-      csvValue: (row) => row.stockItem?.name || '-',
+      flex: 1.6,
+      minWidth: 220,
+      valueGetter: (_value, row) => movementItemLabel(row.stockItem),
+      csvValue: (row) => movementItemLabel(row.stockItem),
     },
     { field: 'quantity', headerName: 'Qty', width: 90 },
     {
@@ -119,22 +127,28 @@ function movementColumns(type) {
       valueFormatter: (value) => formatDate(value),
     },
   ];
+  // Party columns sit right after the item column.
+  const afterItem = 1;
   if (type === STOCK_MOVEMENT_TYPES.SUPPLIER_IN) {
-    cols.splice(1, 0, {
-      field: 'supplierName',
-      headerName: 'Supplier',
-      flex: 1,
-      minWidth: 140,
-      valueGetter: (value) => value || '-',
-    });
-    cols.splice(2, 0, {
-      field: 'amount',
-      headerName: 'Amount',
-      width: 110,
-      valueGetter: (value) => value ?? 0,
-    });
+    cols.splice(
+      afterItem,
+      0,
+      {
+        field: 'supplierName',
+        headerName: 'Supplier',
+        flex: 1,
+        minWidth: 140,
+        valueGetter: (value) => value || '-',
+      },
+      {
+        field: 'amount',
+        headerName: 'Amount',
+        width: 110,
+        valueGetter: (value) => value ?? 0,
+      }
+    );
   } else if (type === STOCK_MOVEMENT_TYPES.RETURN_IN || type === STOCK_MOVEMENT_TYPES.ISSUE_OUT) {
-    cols.splice(1, 0, {
+    cols.splice(afterItem, 0, {
       field: 'issuedTo',
       headerName: 'Person',
       flex: 1,
@@ -315,7 +329,7 @@ function MovementsPanel({ type, actionLabel }) {
   const { items, total, status } = useAppSelector((state) => state.stockMovements);
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
     useTableQueryParams();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawer, setDrawer] = useState({ open: false, movement: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const columns = movementColumns(type);
@@ -329,15 +343,22 @@ function MovementsPanel({ type, actionLabel }) {
 
   const refresh = () => dispatch(fetchStockMovements(listParams));
 
+  const closeDrawer = () => setDrawer({ open: false, movement: null });
+
   const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
-      await dispatch(createStockMovement(payload)).unwrap();
-      dispatch(showSnackbar({ message: 'Stock movement recorded' }));
-      setDrawerOpen(false);
+      if (drawer.movement) {
+        await dispatch(updateStockMovement({ id: drawer.movement._id, payload })).unwrap();
+        dispatch(showSnackbar({ message: 'Stock movement updated' }));
+      } else {
+        await dispatch(createStockMovement(payload)).unwrap();
+        dispatch(showSnackbar({ message: 'Stock movement recorded' }));
+      }
+      closeDrawer();
       refresh();
     } catch (err) {
-      dispatch(showSnackbar({ message: err || 'Failed to record movement', severity: 'error' }));
+      dispatch(showSnackbar({ message: err || 'Failed to save movement', severity: 'error' }));
     } finally {
       setSubmitting(false);
     }
@@ -357,7 +378,7 @@ function MovementsPanel({ type, actionLabel }) {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button startIcon={<AddIcon />} variant="contained" onClick={() => setDrawerOpen(true)}>
+        <Button startIcon={<AddIcon />} variant="contained" onClick={() => setDrawer({ open: true, movement: null })}>
           {actionLabel}
         </Button>
       </Box>
@@ -375,6 +396,11 @@ function MovementsPanel({ type, actionLabel }) {
         onSearchChange={setSearch}
         actions={[
           {
+            label: 'Edit',
+            icon: <EditIcon fontSize="small" />,
+            onClick: (row) => setDrawer({ open: true, movement: row }),
+          },
+          {
             label: 'Delete',
             icon: <DeleteIcon fontSize="small" color="error" />,
             onClick: setConfirmDelete,
@@ -386,10 +412,11 @@ function MovementsPanel({ type, actionLabel }) {
         storageKey={`stock-movements-${type}`}
       />
       <StockMovementDrawer
-        open={drawerOpen}
+        open={drawer.open}
         type={type}
+        movement={drawer.movement}
         submitting={submitting}
-        onClose={() => setDrawerOpen(false)}
+        onClose={closeDrawer}
         onSubmit={handleSubmit}
       />
       <ConfirmDialog

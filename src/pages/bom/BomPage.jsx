@@ -9,6 +9,8 @@ import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import DownloadIcon from '@mui/icons-material/DownloadOutlined';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
@@ -16,6 +18,7 @@ import { buildCsvColumns } from '../../components/common/DataTable/DataTable.hel
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import BomDrawer from './BomDrawer';
 import UseBomDrawer from './UseBomDrawer';
+import ProductionDetailDialog from './ProductionDetailDialog';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import {
@@ -29,6 +32,7 @@ import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
 import { formatDate } from '../../utils/formatters';
 import { bomApi } from '../../api/bomApi';
+import { downloadBomCsv, downloadBomPdf } from './bomExport';
 
 const BOM_COLUMNS = [
   {
@@ -36,12 +40,6 @@ const BOM_COLUMNS = [
     headerName: 'BOM Name',
     flex: 1.2,
     minWidth: 160,
-    valueGetter: (value) => value || '-',
-  },
-  {
-    field: 'bomType',
-    headerName: 'Type',
-    width: 130,
     valueGetter: (value) => value || '-',
   },
   {
@@ -169,6 +167,19 @@ function BomListPanel() {
     }
   };
 
+  // The list rows are not populated deeply enough for component labels.
+  const handleDownload = async (row, format) => {
+    try {
+      const { data } = await bomApi.getById(row._id);
+      if (format === 'pdf') downloadBomPdf(data.data);
+      else downloadBomCsv(data.data);
+    } catch (err) {
+      dispatch(
+        showSnackbar({ message: err.response?.data?.message || 'Failed to download BOM', severity: 'error' })
+      );
+    }
+  };
+
   const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
@@ -234,6 +245,16 @@ function BomListPanel() {
             onClick: (row) => openViewOrEdit(row, 'edit'),
           },
           {
+            label: 'Download CSV',
+            icon: <DownloadIcon fontSize="small" />,
+            onClick: (row) => handleDownload(row, 'csv'),
+          },
+          {
+            label: 'Download PDF',
+            icon: <PictureAsPdfIcon fontSize="small" />,
+            onClick: (row) => handleDownload(row, 'pdf'),
+          },
+          {
             label: 'Delete',
             icon: <DeleteIcon fontSize="small" color="error" />,
             onClick: setConfirmDelete,
@@ -241,7 +262,7 @@ function BomListPanel() {
         ]}
         onExportCsv={() => exportToCsv('bom-list', items, buildCsvColumns(BOM_COLUMNS))}
         loading={status === 'loading'}
-        emptyMessage="No BOMs yet. Create a Route BOM with qty required for 1 PCS."
+        emptyMessage="No BOMs yet. Create a BOM with qty required for 1 PCS."
         storageKey="bom-list"
       />
       <BomDrawer
@@ -272,6 +293,7 @@ function ProductionPanel() {
     useTableQueryParams();
   const [useOpen, setUseOpen] = useState(false);
   const [activeBoms, setActiveBoms] = useState([]);
+  const [detail, setDetail] = useState({ open: false, production: null, loading: false });
 
   useEffect(() => {
     dispatch(fetchBomProductions(queryParams));
@@ -286,6 +308,22 @@ function ProductionPanel() {
   }, [useOpen]);
 
   const refresh = () => dispatch(fetchBomProductions(queryParams));
+
+  const openDetail = async (row) => {
+    setDetail({ open: true, production: row, loading: true });
+    try {
+      const { data } = await bomApi.getProductionById(row._id);
+      setDetail({ open: true, production: data.data, loading: false });
+    } catch (err) {
+      setDetail({ open: false, production: null, loading: false });
+      dispatch(
+        showSnackbar({
+          message: err.response?.data?.message || 'Failed to load production details',
+          severity: 'error',
+        })
+      );
+    }
+  };
 
   return (
     <>
@@ -310,6 +348,14 @@ function ProductionPanel() {
         onSortChange={(model) => model && setSort(model.field, model.sort)}
         searchValue={search}
         onSearchChange={setSearch}
+        onRowClick={openDetail}
+        actions={[
+          {
+            label: 'View',
+            icon: <VisibilityIcon fontSize="small" />,
+            onClick: openDetail,
+          },
+        ]}
         onExportCsv={() => exportToCsv('bom-productions', items, buildCsvColumns(PRODUCTION_COLUMNS))}
         loading={status === 'loading'}
         emptyMessage="No BOM productions yet."
@@ -320,6 +366,12 @@ function ProductionPanel() {
         bomOptions={activeBoms}
         onClose={() => setUseOpen(false)}
         onSuccess={refresh}
+      />
+      <ProductionDetailDialog
+        open={detail.open}
+        production={detail.production}
+        loading={detail.loading}
+        onClose={() => setDetail({ open: false, production: null, loading: false })}
       />
     </>
   );
@@ -348,7 +400,7 @@ export default function BomPage() {
         }}
       >
         {`Item Master → Receive → Warehouse
-Create Route BOM (Qty / 1 PCS)
+Create BOM (Qty / 1 PCS)
 Use BOM → Production Qty → Auto Calculate → Check Stock
 Person → Confirm → Utilize → Warehouse Update → Return`}
       </Box>

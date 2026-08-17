@@ -19,46 +19,30 @@ import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { fetchStockItemOptions } from '../../features/stockItems/stockItemsThunks';
-import { BOM_TYPES } from '../../utils/constants';
 
 const componentSchema = yup.object({
   stockItem: yup.string().required('Item is required'),
-  partNo: yup.string().trim().nullable(),
-  package: yup.string().trim().nullable(),
-  vendor: yup.string().trim().nullable(),
   qtyPerPcs: yup
     .number()
     .typeError('Must be a number')
     .moreThan(0, 'Qty for 1 PCS must be greater than 0')
     .required('Qty for 1 PCS is required'),
-  unit: yup.string().trim().nullable(),
-  remarks: yup.string().trim().nullable(),
 });
 
 const schema = yup.object({
   name: yup.string().trim().required('BOM name is required'),
   finishedItem: yup.string().nullable(),
-  bomType: yup.string().oneOf(Object.values(BOM_TYPES)).required('BOM type is required'),
   version: yup.string().trim().required('Version is required'),
   effectiveDate: yup.string().nullable(),
   remarks: yup.string().trim().nullable(),
   isActive: yup.string().oneOf(['true', 'false']).required(),
-  components: yup.array().when('bomType', {
-    is: BOM_TYPES.ROUTE,
-    then: (s) => s.of(componentSchema).min(1, 'Route BOM needs at least one component'),
-    otherwise: (s) => s.of(componentSchema),
-  }),
+  components: yup.array().of(componentSchema).min(1, 'Add at least one component'),
 });
 
 function emptyComponent() {
   return {
     stockItem: '',
-    partNo: '',
-    package: '',
-    vendor: '',
     qtyPerPcs: '',
-    unit: 'Nos',
-    remarks: '',
   };
 }
 
@@ -67,7 +51,6 @@ function mapBomToForm(bom) {
     return {
       name: '',
       finishedItem: '',
-      bomType: BOM_TYPES.ROUTE,
       version: '1.0',
       effectiveDate: new Date().toISOString().slice(0, 10),
       remarks: '',
@@ -78,7 +61,6 @@ function mapBomToForm(bom) {
   return {
     name: bom.name || '',
     finishedItem: bom.finishedItem?._id || bom.finishedItem || '',
-    bomType: bom.bomType || BOM_TYPES.STANDARD,
     version: bom.version || '1.0',
     effectiveDate: bom.effectiveDate ? String(bom.effectiveDate).slice(0, 10) : '',
     remarks: bom.remarks || '',
@@ -87,12 +69,7 @@ function mapBomToForm(bom) {
       bom.components?.length > 0
         ? bom.components.map((c) => ({
             stockItem: c.stockItem?._id || c.stockItem || '',
-            partNo: c.partNo || '',
-            package: c.package || '',
-            vendor: c.vendor || '',
             qtyPerPcs: c.qtyPerPcs ?? '',
-            unit: c.unit || 'Nos',
-            remarks: c.remarks || '',
           }))
         : [emptyComponent()],
   };
@@ -119,8 +96,6 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
     control: methods.control,
     name: 'components',
   });
-
-  const bomType = methods.watch('bomType');
 
   useEffect(() => {
     if (!open) return;
@@ -157,7 +132,6 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                 onSubmit({
                   name: String(values.name || '').trim(),
                   finishedItem: values.finishedItem || null,
-                  bomType: values.bomType,
                   version: String(values.version || '1.0').trim(),
                   effectiveDate: values.effectiveDate || null,
                   remarks: String(values.remarks || '').trim(),
@@ -166,12 +140,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                     .filter((c) => c.stockItem)
                     .map((c) => ({
                       stockItem: c.stockItem,
-                      partNo: String(c.partNo || '').trim(),
-                      package: String(c.package || '').trim(),
-                      vendor: String(c.vendor || '').trim(),
                       qtyPerPcs: Number(c.qtyPerPcs),
-                      unit: String(c.unit || 'Nos').trim() || 'Nos',
-                      remarks: String(c.remarks || '').trim(),
                     })),
                 })
               )}
@@ -185,15 +154,9 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                     name="finishedItem"
                     label="Finished Item"
                     disabled={readOnly}
+                    searchable
+                    searchPlaceholder="Search item"
                     options={[{ value: '', label: 'Select finished item' }, ...itemOpts]}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <RHFSelect
-                    name="bomType"
-                    label="BOM Type"
-                    disabled={readOnly}
-                    options={Object.values(BOM_TYPES).map((type) => ({ value: type, label: type }))}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
@@ -221,7 +184,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography variant="subtitle1" fontWeight={700}>
-                    Components {bomType === BOM_TYPES.ROUTE ? '(Qty for 1 PCS)' : ''}
+                    Components (Qty for 1 PCS)
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     BOM recipe only — does not change warehouse stock.
@@ -238,24 +201,17 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                 {fields.map((field, index) => (
                   <Paper key={field.id} variant="outlined" sx={{ p: 1.5 }}>
                     <Grid container spacing={1.25} alignItems="flex-start">
-                      <Grid item xs={12} sm={6}>
+                      <Grid item xs={12} sm={readOnly ? 7 : 6}>
                         <RHFSelect
                           name={`components.${index}.stockItem`}
                           label="Item"
                           disabled={readOnly}
+                          searchable
+                          searchPlaceholder="Search item"
                           options={[{ value: '', label: 'Select item' }, ...itemOpts]}
                         />
                       </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <RHFTextField name={`components.${index}.partNo`} label="Part No." disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <RHFTextField name={`components.${index}.package`} label="Package" disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <RHFTextField name={`components.${index}.vendor`} label="Vendor" disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid item xs={readOnly ? 12 : 10} sm={5}>
                         <RHFTextField
                           name={`components.${index}.qtyPerPcs`}
                           label="Qty Required for 1 PCS"
@@ -263,12 +219,6 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                           disabled={readOnly}
                           required
                         />
-                      </Grid>
-                      <Grid item xs={6} sm={2}>
-                        <RHFTextField name={`components.${index}.unit`} label="Unit" disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={10} sm={3}>
-                        <RHFTextField name={`components.${index}.remarks`} label="Remarks" disabled={readOnly} />
                       </Grid>
                       {!readOnly && (
                         <Grid item xs={2} sm={1}>

@@ -36,16 +36,28 @@ function buildSchema(type) {
   return yup.object(base);
 }
 
-function defaultValues() {
+function defaultValues(movement) {
+  if (!movement) {
+    return {
+      stockItem: '',
+      quantity: '',
+      amount: '',
+      movementDate: new Date().toISOString().slice(0, 10),
+      supplierName: '',
+      issuedTo: '',
+      referenceNo: '',
+      remarks: '',
+    };
+  }
   return {
-    stockItem: '',
-    quantity: '',
-    amount: '',
-    movementDate: new Date().toISOString().slice(0, 10),
-    supplierName: '',
-    issuedTo: '',
-    referenceNo: '',
-    remarks: '',
+    stockItem: movement.stockItem?._id || movement.stockItem || '',
+    quantity: movement.quantity ?? '',
+    amount: movement.amount ?? '',
+    movementDate: movement.movementDate ? String(movement.movementDate).slice(0, 10) : '',
+    supplierName: movement.supplierName || '',
+    issuedTo: movement.issuedTo || '',
+    referenceNo: movement.referenceNo || '',
+    remarks: movement.remarks || '',
   };
 }
 
@@ -56,21 +68,22 @@ const TITLE = {
   [STOCK_MOVEMENT_TYPES.RETURN_IN]: 'Return to Warehouse',
 };
 
-export default function StockMovementDrawer({ open, type, onClose, onSubmit, submitting }) {
+export default function StockMovementDrawer({ open, type, movement, onClose, onSubmit, submitting }) {
   const dispatch = useAppDispatch();
   const { options: itemOptions } = useAppSelector((state) => state.stockItems);
+  const isEdit = Boolean(movement);
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(type)),
-    defaultValues: defaultValues(),
+    defaultValues: defaultValues(null),
   });
 
   useEffect(() => {
     if (!open) return;
     dispatch(fetchStockItemOptions());
-    methods.reset(defaultValues());
+    methods.reset(defaultValues(movement));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, type]);
+  }, [open, type, movement]);
 
   const needsPerson =
     type === STOCK_MOVEMENT_TYPES.ISSUE_OUT || type === STOCK_MOVEMENT_TYPES.RETURN_IN;
@@ -84,7 +97,7 @@ export default function StockMovementDrawer({ open, type, onClose, onSubmit, sub
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
           <Box>
             <Typography variant="h6" fontWeight={700}>
-              {TITLE[type] || 'Stock Movement'}
+              {isEdit ? `Edit ${TITLE[type] || 'Stock Movement'}` : TITLE[type] || 'Stock Movement'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {STOCK_MOVEMENT_LABELS[type]}
@@ -120,6 +133,8 @@ export default function StockMovementDrawer({ open, type, onClose, onSubmit, sub
                   <RHFSelect
                     name="stockItem"
                     label="Stock Item"
+                    searchable
+                    searchPlaceholder="Search stock item"
                     options={(itemOptions || []).map((item) => {
                       const path = [item.categoryName, item.componentName, item.subComponentName]
                         .filter(Boolean)

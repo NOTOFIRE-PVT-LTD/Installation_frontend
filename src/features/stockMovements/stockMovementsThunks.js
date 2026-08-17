@@ -25,6 +25,18 @@ export const createStockMovement = createAsyncThunk(
   }
 );
 
+export const updateStockMovement = createAsyncThunk(
+  'stockMovements/update',
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      const { data } = await stockApi.updateMovement(id, payload);
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to update stock movement');
+    }
+  }
+);
+
 export const deleteStockMovement = createAsyncThunk(
   'stockMovements/delete',
   async (id, { rejectWithValue }) => {

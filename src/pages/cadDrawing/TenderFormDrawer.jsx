@@ -227,7 +227,7 @@ export default function TenderFormDrawer({
                     <Grid item xs={12}>
                       <RHFSelect
                         name="project"
-                        label="Project (optional)"
+                        label="Project"
                         options={projectOptions.map((p) => ({ value: p._id, label: p.projectName }))}
                       />
                     </Grid>

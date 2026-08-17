@@ -14,5 +14,6 @@ export const stockApi = {
   summary: () => axiosInstance.get('/stock/summary'),
   listMovements: (params) => axiosInstance.get('/stock/movements', { params }),
   createMovement: (payload) => axiosInstance.post('/stock/movements', payload),
+  updateMovement: (id, payload) => axiosInstance.put(`/stock/movements/${id}`, payload),
   removeMovement: (id) => axiosInstance.delete(`/stock/movements/${id}`),
 };

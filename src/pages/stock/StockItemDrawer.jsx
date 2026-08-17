@@ -31,12 +31,8 @@ const schema = yup.object({
     then: (s) => s.trim().required('Enter a new component'),
     otherwise: (s) => s.nullable(),
   }),
-  subComponent: yup.string().required('Sub component name is required'),
-  newSubComponent: yup.string().when('subComponent', {
-    is: OTHER,
-    then: (s) => s.trim().required('Enter a new sub component'),
-    otherwise: (s) => s.nullable(),
-  }),
+  subComponent: yup.string().nullable(),
+  newSubComponent: yup.string().nullable(),
   itemType: yup.string().oneOf(STOCK_ITEM_TYPES).required('Type is required'),
 });
 
@@ -78,17 +74,27 @@ function CatalogField({
   readOnly,
   onAdd,
   adding,
+  searchable = false,
+  optional = false,
 }) {
   const value = useWatch({ name });
   return (
     <Stack spacing={0.75}>
       <Typography variant="body2" fontWeight={600}>
         {label}
+        {optional && (
+          <Typography component="span" variant="body2" color="text.secondary" fontWeight={400}>
+            {' '}
+            
+          </Typography>
+        )}
       </Typography>
       <RHFSelect
         name={name}
         size="small"
         disabled={disabled || readOnly}
+        searchable={searchable}
+        searchPlaceholder={`Search ${label.toLowerCase()}`}
         SelectProps={{
           displayEmpty: true,
           renderValue: (selected) => {
@@ -214,7 +220,7 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
                 const formData = new FormData();
                 formData.append('category', values.category);
                 formData.append('component', values.component);
-                formData.append('subComponent', values.subComponent);
+                formData.append('subComponent', values.subComponent || '');
                 if (values.category === OTHER) formData.append('newCategory', String(values.newCategory || '').trim());
                 if (values.component === OTHER) formData.append('newComponent', String(values.newComponent || '').trim());
                 if (values.subComponent === OTHER) {
@@ -247,6 +253,7 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
                     label="Component Name"
                     placeholder="Select component"
                     options={components}
+                    searchable
                     readOnly={readOnly}
                     adding={adding === STOCK_CATALOG_KINDS.COMPONENT}
                     onAdd={() =>
@@ -259,8 +266,14 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
                     name="subComponent"
                     otherName="newSubComponent"
                     label="Sub Component Name"
-                    placeholder={component && component !== OTHER ? 'Select sub component' : 'Select a component first'}
+                    optional
+                    placeholder={
+                      component && component !== OTHER
+                        ? 'Select sub component (optional)'
+                        : 'Select a component first'
+                    }
                     options={subComponents}
+                    searchable
                     disabled={!component || component === OTHER}
                     readOnly={readOnly}
                     adding={adding === STOCK_CATALOG_KINDS.SUB_COMPONENT}
