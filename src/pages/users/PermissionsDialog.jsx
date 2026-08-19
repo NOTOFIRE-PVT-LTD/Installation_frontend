@@ -27,6 +27,7 @@ const LABELS = {
   accounts: 'Accounts (BG Application)',
   stockItems: 'Stock Items',
   bom: 'BOM',
+  itemsMaster: 'Items Master',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

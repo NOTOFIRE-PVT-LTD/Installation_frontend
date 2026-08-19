@@ -64,6 +64,7 @@ export const PERMISSION_KEYS = [
   'accounts',
   'stockItems',
   'bom',
+  'itemsMaster',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {
@@ -88,6 +89,15 @@ export const STOCK_CATALOG_KINDS = {
 
 export const STOCK_ITEM_TYPES = ['Single Use', 'Reusable'];
 export const STOCK_OTHER_VALUE = '__other__';
+
+// Each kind is also the MasterItem field it fills (kept in sync with the backend).
+export const ITEM_MASTER_CATALOG_KINDS = {
+  ITEM_CATEGORY: 'itemCategory',
+  QTY_TYPE: 'qtyType',
+  PAYMENT: 'payment',
+};
+
+export const ITEM_MASTER_CATALOG_FIELDS = Object.values(ITEM_MASTER_CATALOG_KINDS);
 
 export const LOA_TYPES = {
   NOTOFIRE: 'Notofire',
