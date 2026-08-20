@@ -19,6 +19,7 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCameraOutlined';
 import CollectionsIcon from '@mui/icons-material/CollectionsOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { itemMasterApi } from '../../api/itemMasterApi';
 import { CATALOG_FIELDS, OTHER, newNameField } from './itemMasterFields';
 
@@ -98,7 +99,7 @@ function FieldLabel({ children, required }) {
   );
 }
 
-function CatalogSelect({ field, options, readOnly, adding, onAdd }) {
+function CatalogSelect({ field, options, readOnly, adding, onAdd, onRemove }) {
   const value = useWatch({ name: field.name });
   const otherName = newNameField(field.name);
 
@@ -111,6 +112,7 @@ function CatalogSelect({ field, options, readOnly, adding, onAdd }) {
         disabled={readOnly}
         searchable={options.length > 8}
         searchPlaceholder={`Search ${field.label.toLowerCase()}`}
+        onRemoveOption={readOnly ? undefined : onRemove}
         SelectProps={{
           displayEmpty: true,
           renderValue: (selected) => {
@@ -121,7 +123,7 @@ function CatalogSelect({ field, options, readOnly, adding, onAdd }) {
         }}
         options={[
           { value: '', label: field.placeholder },
-          ...options.map((opt) => ({ value: opt._id, label: opt.name })),
+          ...options.map((opt) => ({ value: opt._id, label: opt.name, removable: true })),
           { value: OTHER, label: 'Others (add new)' },
         ]}
       />
@@ -248,6 +250,8 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
   const [catalog, setCatalog] = useState({});
   const [adding, setAdding] = useState('');
   const [image, setImage] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(null);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -292,6 +296,25 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
     }
   };
 
+  const handleRemoveCatalog = async () => {
+    if (!confirmRemove) return;
+    const { field, option } = confirmRemove;
+    setRemoving(true);
+    try {
+      await itemMasterApi.removeCatalog(option.value);
+      setCatalog((prev) => ({
+        ...prev,
+        [field.name]: (prev[field.name] || []).filter((entry) => entry._id !== option.value),
+      }));
+      if (methods.getValues(field.name) === option.value) {
+        methods.setValue(field.name, '', { shouldValidate: true });
+      }
+      setConfirmRemove(null);
+    } finally {
+      setRemoving(false);
+    }
+  };
+
   const submit = (values) => {
     const formData = new FormData();
     formData.append('endUse', String(values.endUse ?? '').trim());
@@ -321,12 +344,14 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
       readOnly={readOnly}
       adding={adding === name}
       onAdd={() => addCatalogEntry(field(name))}
+      onRemove={(option) => setConfirmRemove({ field: field(name), option })}
     />
   );
 
   const titleMap = { create: 'New Master Item', edit: 'Edit Master Item', view: 'Master Item Details' };
 
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
       <DialogTitle sx={{ pb: 0.5 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
@@ -348,7 +373,7 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
           <Box component="form" id="master-item-form" onSubmit={methods.handleSubmit(submit)}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <FieldLabel>End Use In Item or location</FieldLabel>
+                <FieldLabel>End Use (Item/Location)</FieldLabel>
                 <RHFTextField
                   name="endUse"
                   size="small"
@@ -358,7 +383,7 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <FieldLabel>Name of Person asked</FieldLabel>
+                <FieldLabel>Requested By</FieldLabel>
                 <RHFTextField name="personAsked" size="small" placeholder="e.g. Ramesh Kumar" disabled={readOnly} />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -422,5 +447,18 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
         )}
       </DialogActions>
     </Dialog>
+      <ConfirmDialog
+        open={Boolean(confirmRemove)}
+        title={`Remove ${confirmRemove?.field?.label || 'option'}`}
+        message={`Remove "${confirmRemove?.option?.label}" from ${confirmRemove?.field?.label}? It will also be cleared on items that used it.`}
+        confirmLabel="Remove"
+        confirmColor="error"
+        loading={removing}
+        onConfirm={handleRemoveCatalog}
+        onClose={() => {
+          if (!removing) setConfirmRemove(null);
+        }}
+      />
+    </>
   );
 }

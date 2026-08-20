@@ -5,6 +5,7 @@ const multipart = { headers: { 'Content-Type': 'multipart/form-data' } };
 export const itemMasterApi = {
   listCatalog: (params) => axiosInstance.get('/item-master/catalog', { params }),
   createCatalog: (payload) => axiosInstance.post('/item-master/catalog', payload),
+  removeCatalog: (id) => axiosInstance.delete(`/item-master/catalog/${id}`),
   listItems: (params) => axiosInstance.get('/item-master/items', { params }),
   getItemById: (id) => axiosInstance.get(`/item-master/items/${id}`),
   createItem: (formData) => axiosInstance.post('/item-master/items', formData, multipart),

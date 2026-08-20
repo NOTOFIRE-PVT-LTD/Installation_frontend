@@ -4,7 +4,10 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import ListSubheader from '@mui/material/ListSubheader';
 import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
 import SearchIcon from '@mui/icons-material/Search';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 export default function RHFSelect({
   name,
@@ -13,6 +16,7 @@ export default function RHFSelect({
   helperText,
   searchable = false,
   searchPlaceholder = 'Search…',
+  onRemoveOption,
   ...rest
 }) {
   const { control } = useFormContext();
@@ -46,7 +50,7 @@ export default function RHFSelect({
             helperText={error?.message || helperText}
             SelectProps={{
               ...SelectProps,
-              ...(searchable
+              ...(searchable || onRemoveOption
                 ? {
                     onClose: (event) => {
                       setQuery('');
@@ -88,9 +92,40 @@ export default function RHFSelect({
               <MenuItem
                 key={String(opt.value)}
                 value={opt.value}
-                sx={opt.value === '' ? { color: 'text.secondary' } : undefined}
+                sx={{
+                  color: opt.value === '' ? 'text.secondary' : undefined,
+                  ...(opt.removable ? { pr: 0.5 } : {}),
+                }}
               >
-                {opt.label}
+                {opt.removable && onRemoveOption ? (
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={1}
+                    sx={{ width: '100%' }}
+                  >
+                    <span>{opt.label}</span>
+                    <IconButton
+                      size="small"
+                      aria-label={`Remove ${opt.label}`}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onRemoveOption(opt);
+                      }}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                ) : (
+                  opt.label
+                )}
               </MenuItem>
             ))}
             {searchable && visibleOptions.length === 0 && (

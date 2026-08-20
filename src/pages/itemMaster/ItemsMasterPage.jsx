@@ -54,12 +54,12 @@ const money = (value) =>
 const COLUMNS = [
   {
     field: 'endUse',
-    headerName: 'End Use In Item or location',
+    headerName: 'End Use (Item/Location)',
     flex: 1.2,
     minWidth: 190,
     valueGetter: (value) => value || '-',
   },
-  { field: 'personAsked', headerName: 'Name of Person asked', flex: 1, minWidth: 160, valueGetter: (value) => value || '-' },
+  { field: 'personAsked', headerName: 'Requested By', flex: 1, minWidth: 140, valueGetter: (value) => value || '-' },
   {
     field: 'priceGuarantee',
     headerName: 'Price Guarantee',
@@ -176,7 +176,7 @@ function CardsToolbar({ search, onSearchChange, filterOptions, filterValues, onF
               height: 34,
               borderRadius: '8px',
               bgcolor: '#ecfdf5',
-              color: '#059669',
+              color: '#059669',   
               border: '1px solid #a7f3d0',
               '&:hover': { bgcolor: '#d1fae5', color: '#047857' },
             }}

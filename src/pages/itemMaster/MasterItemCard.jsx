@@ -60,8 +60,8 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
     { label: 'Price', value: formatPrice(item.price) },
     { label: 'Total Amount', value: formatPrice(item.totalAmount), emphasis: true },
     { label: 'Payment', value: catalogName(item.payment) },
-    { label: 'End Use', value: item.endUse || '' },
-    { label: 'Person Asked', value: item.personAsked || '' },
+    { label: 'End Use (Item/Location)', value: item.endUse || '' },
+    { label: 'Requested By', value: item.personAsked || '' },
     { label: 'Price Guarantee', value: item.priceGuarantee || '' },
   ].filter((row) => row.value !== '');
 

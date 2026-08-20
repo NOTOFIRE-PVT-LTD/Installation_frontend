@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -18,6 +18,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DownloadIcon from '@mui/icons-material/Download';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import StageStepper from '../../components/common/StageStepper';
 import StatusBadge from '../../components/common/StatusBadge';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
@@ -145,6 +147,57 @@ export default function StationDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [removingCadInstaller, setRemovingCadInstaller] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null, address: '', accuracy: null });
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState('');
+
+  const fetchCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationLoading(false);
+      setLocationError('Geolocation is not supported by this browser.');
+      return;
+    }
+    setLocationLoading(true);
+    setLocationError('');
+
+    // Use watchPosition so the browser keeps refining accuracy
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        // Stop watching once we get a fix accurate to within 50 m
+        if (accuracy <= 50) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+        let address = '';
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const json = await res.json();
+          address = json.display_name || '';
+        } catch {
+          // reverse geocoding failed — coordinates still shown
+        }
+        setCurrentLocation({ latitude, longitude, address, accuracy: Math.round(accuracy) });
+        setLocationLoading(false);
+      },
+      (err) => {
+        setLocationLoading(false);
+        setLocationError(
+          err.code === 1
+            ? 'Location access denied. Please enable it in browser/device settings.'
+            : 'Unable to retrieve location. Try refreshing.'
+        );
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+    // Auto-stop watching after 20 s regardless
+    setTimeout(() => navigator.geolocation.clearWatch(watchId), 20000);
+  }, []);
+
+  useEffect(() => {
+    fetchCurrentLocation();
+  }, [fetchCurrentLocation]);
 
   const canManage = isAdmin ? Boolean(permissions?.projects) : permissions ? permissions.projects !== false : true;
   const canApprove = isAdmin && Boolean(permissions?.claimApprovals);
@@ -182,11 +235,11 @@ export default function StationDetailPage() {
     setChecklistSignedFile(station.checklistSignedFile ? { ...station.checklistSignedFile, name: 'Signed Checklist.pdf' } : null);
     setWorkPhotos((station.workPhotos || []).map((p, i) => ({ ...p, name: `Photo ${i + 1}` })));
     setInitialWorkPhotos(station.workPhotos || []);
-    setCadDrawingFile(station.cadDrawingFile ? { ...station.cadDrawingFile, name: 'CAD Drawing Installer' } : null);
+    setCadDrawingFile(station.cadDrawingFile ? { ...station.cadDrawingFile, name: 'Station Layout Installer' } : null);
     setInitialCadDrawingFile(station.cadDrawingFile || null);
     const cadFiles = (station.cadDrawingFiles || []).map((f, i) => ({
       ...f,
-      name: f.originalName || `CAD File Notofire ${i + 1}`,
+      name: f.originalName || `Cad File Signed ${i + 1}`,
     }));
     setCadDrawingFiles(cadFiles);
     setInitialCadDrawingFiles(cadFiles.filter((f) => f.publicId));
@@ -213,7 +266,7 @@ export default function StationDetailPage() {
   }
 
   const stage = stationStage(station);
-  const mandatoryOk = Boolean(station.checklistFile && station.checklistSignedFile && station.workPhotos?.length > 0);
+  const mandatoryOk = Boolean(station.workPhotos?.length > 0);
   const effectiveBonusPercent = project.bonusPercentOverride != null ? project.bonusPercentOverride : DEFAULT_BONUS_PERCENT;
   const claimRows = Array.isArray(claimRequestsWatch) ? claimRequestsWatch : [];
   const allocatedAmount = Number(methods.watch('installationAmount')) || 0;
@@ -272,6 +325,9 @@ export default function StationDetailPage() {
     formData.append('installer', JSON.stringify(values.installer || {}));
     formData.append('supervisor', JSON.stringify(values.supervisor || {}));
     formData.append('materials', JSON.stringify(values.materials || []));
+    if (currentLocation.latitude != null) {
+      formData.append('location', JSON.stringify(currentLocation));
+    }
     formData.append(
       'claimRequests',
       JSON.stringify(
@@ -344,12 +400,12 @@ export default function StationDetailPage() {
     try {
       await dispatch(updateStation({ id: project._id, stationId: station._id, formData })).unwrap();
       setInitialCadDrawingFile(null);
-      dispatch(showSnackbar({ message: 'CAD Drawing Installer removed' }));
+      dispatch(showSnackbar({ message: 'Station Layout Installer removed' }));
       await dispatch(fetchProjectById(id));
     } catch (err) {
       setCadDrawingFile(previous);
       setInitialCadDrawingFile(previousInitial);
-      dispatch(showSnackbar({ message: err || 'Failed to remove CAD Drawing Installer', severity: 'error' }));
+      dispatch(showSnackbar({ message: err || 'Failed to remove Station Layout Installer', severity: 'error' }));
     } finally {
       setRemovingCadInstaller(false);
     }
@@ -475,6 +531,69 @@ export default function StationDetailPage() {
                 </Stack>
               </Paper>
             </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <MyLocationIcon fontSize="small" color="primary" />
+                    <Typography variant="subtitle1" fontWeight={600}>Current Location</Typography>
+                  </Stack>
+                  <IconButton size="small" onClick={fetchCurrentLocation} disabled={locationLoading} title="Refresh location">
+                    {locationLoading ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
+                  </IconButton>
+                </Stack>
+
+                {locationLoading && currentLocation.latitude == null ? (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={18} />
+                    <Typography variant="body2" color="text.secondary">Acquiring GPS fix — this may take a few seconds…</Typography>
+                  </Stack>
+                ) : locationError ? (
+                  <Typography variant="body2" color="error">{locationError}</Typography>
+                ) : currentLocation.latitude != null ? (
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                      <Typography variant="body2">
+                        <strong>Lat:</strong> {currentLocation.latitude.toFixed(6)}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>Lng:</strong> {currentLocation.longitude.toFixed(6)}
+                      </Typography>
+                      {currentLocation.accuracy != null && (
+                        <Typography variant="caption" color={currentLocation.accuracy <= 50 ? 'success.main' : 'warning.main'}>
+                          ±{currentLocation.accuracy} m accuracy
+                        </Typography>
+                      )}
+                      <Typography
+                        component="a"
+                        href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="caption"
+                        color="primary"
+                        sx={{ textDecoration: 'none', fontWeight: 600 }}
+                      >
+                        Open in Google Maps ↗
+                      </Typography>
+                    </Stack>
+                    {currentLocation.address && (
+                      <Typography variant="body2" color="text.secondary">{currentLocation.address}</Typography>
+                    )}
+                    {station.location?.latitude != null && (
+                      <Typography variant="caption" color="text.disabled">
+                        Last saved: {station.location.latitude.toFixed(6)}, {station.location.longitude.toFixed(6)}
+                        {station.location.address ? ` — ${station.location.address}` : ''}
+                      </Typography>
+                    )}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Location unavailable. Please enable location access in your browser/device settings.
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
           </Grid>
 
           <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
@@ -519,14 +638,14 @@ export default function StationDetailPage() {
 
           <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 2.5 }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-              Mandatory Site Documentation
+              Site Documentation
             </Typography>
             <Grid container spacing={2.5}>
               <Grid item xs={12} sm={6}>
                 <DocumentDropzone
                   value={checklistFile}
                   onChange={canManage ? setChecklistFile : () => {}}
-                  label="Checklist Uploaded (mandatory)"
+                  label="Checklist Uploaded"
                   disabled={!canManage}
                 />
               </Grid>
@@ -534,7 +653,7 @@ export default function StationDetailPage() {
                 <DocumentDropzone
                   value={checklistSignedFile}
                   onChange={canManage ? setChecklistSignedFile : () => {}}
-                  label="Checklist Signed (mandatory)"
+                  label="Checklist Signed"
                   disabled={!canManage}
                 />
               </Grid>
@@ -549,7 +668,7 @@ export default function StationDetailPage() {
                 <DocumentDropzone
                   value={cadDrawingFile}
                   onChange={canManage ? setCadDrawingFile : () => {}}
-                  label="CAD Drawing Installer"
+                  label="Station Layout Installer"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   buttonLabel="Upload Image / PDF"
                   disabled={!canManage}
@@ -561,7 +680,7 @@ export default function StationDetailPage() {
                 <MixedFileDropzone
                   value={cadDrawingFiles}
                   onChange={canManage ? setCadDrawingFiles : () => {}}
-                  label="CAD File Notofire"
+                  label="Cad File Signed"
                   helperText="Upload multiple CAD images or PDF files"
                   disabled={!canManage}
                 />
