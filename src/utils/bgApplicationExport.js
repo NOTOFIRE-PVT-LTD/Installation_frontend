@@ -406,7 +406,7 @@ function drawNatureGrid(doc, selected, y, { x = MARGIN, width }) {
   return maxY;
 }
 
-function drawBgTenor(doc, x, y, months, days) {
+function drawBgTenor(doc, x, y, years, months) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.3);
   doc.setTextColor(...LABEL_COLOR);
@@ -414,20 +414,25 @@ function drawBgTenor(doc, x, y, months, days) {
   const boxesX = x + 22;
   const boxSize = 4.2;
   const rowY = y + boxSize;
-  doc.setFontSize(5);
-  doc.setTextColor(150, 158, 168);
-  doc.text('M', boxesX + boxSize / 2, y + 0.8, { align: 'center' });
-  doc.text('D', boxesX + boxSize * 2 + 5 + boxSize / 2, y + 0.8, { align: 'center' });
   let bx = drawInlineSegmentedBoxes(
     doc,
-    String(months ?? '').padStart(2, '0'),
+    String(years ?? '').padStart(2, '0'),
     2,
     boxesX,
     rowY,
     { boxSize }
   );
-  drawInlineSegmentedBoxes(doc, String(days ?? '').padStart(2, '0'), 2, bx + 5, rowY, { boxSize });
-  return rowY + 2.5;
+  const monthsX = bx + 5;
+  drawInlineSegmentedBoxes(doc, String(months ?? '').padStart(2, '0'), 2, monthsX, rowY, { boxSize });
+
+  // Labels below boxes (no border) — Year / Months
+  const labelY = rowY + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...VALUE_COLOR);
+  doc.text('Year', boxesX + boxSize, labelY, { align: 'center' });
+  doc.text('Months', monthsX + boxSize, labelY, { align: 'center' });
+  return labelY + 2.2;
 }
 
 // A single checkbox + label on one line (baseline-anchored at y). Returns the x position
@@ -740,8 +745,20 @@ export function downloadBgApplicationPdf(app) {
       { labelWidth: dateLabelW, boxSize: dateBox, allowNewPage: false }
     );
     const tenorX = c.left + dateLabelW + dateBox * 8 + 8;
-    const tenorY = drawBgTenor(doc, tenorX, dateColY, app.bgTenorMonths, app.bgTenorDays);
-    return Math.max(leftAfterClaim, tenorY) + 5;
+    const tenorY = drawBgTenor(doc, tenorX, dateColY, app.bgTenorYears, app.bgTenorMonths);
+
+    // Borderless claim-period text under Claim Expiry Date — e.g. "2 year"
+    const claimYears = app.claimExpiryYear;
+    const metaY = Math.max(leftAfterClaim, tenorY) + 2;
+    if (claimYears != null && claimYears !== '' && Number(claimYears) > 0) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...VALUE_COLOR);
+      const yearLabel = `${Number(claimYears)} year`;
+      doc.text(yearLabel, c.left + dateLabelW, metaY);
+      return metaY + 4;
+    }
+    return Math.max(leftAfterClaim, tenorY) + 3;
   }, page1);
 
   y = drawBoxedSection(doc, 6, 'Beneficiary Details', y, (cy) => {

@@ -24,6 +24,17 @@ import CheckboxBooleanField from '../../components/common/FormFields/CheckboxBoo
 import { downloadBgApplicationPdf } from '../../utils/bgApplicationExport';
 import { HDFC_LOGO_BASE64 } from '../../assets/hdfcLogoBase64';
 
+const BORDERLESS_FIELD_SX = {
+  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'transparent',
+    px: 0,
+    '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: 'none' },
+  },
+  '& .MuiInputBase-input': { px: 0 },
+};
+
 const APPLICATION_TYPES = ['Fresh Issuance', 'Amendment'];
 const BG_NATURES = ['Financial Guarantee', 'Performance Guarantee', 'Deferred Payment Guarantee', 'Advance Payment Guarantee', 'Others'];
 const BG_TYPE_OPTIONS = ['Physical BG', 'FCY BG', 'e-BG', 'GEM BG'];
@@ -244,6 +255,8 @@ const schema = yup.object({
   bgAmountWords: yup.string().notRequired(),
   expiryDate: yup.string().nullable().notRequired(),
   claimExpiryDate: yup.string().nullable().notRequired(),
+  claimExpiryYear: optionalNumber(),
+  bgTenorYears: optionalNumber(),
   bgTenorMonths: optionalNumber(),
   bgTenorDays: optionalNumber(),
   beneficiaryNameAddress: yup.string().required('Beneficiary name & address is required'),
@@ -292,6 +305,8 @@ const defaultValues = {
   bgAmountWords: '',
   expiryDate: null,
   claimExpiryDate: null,
+  claimExpiryYear: '',
+  bgTenorYears: '',
   bgTenorMonths: '',
   bgTenorDays: '',
   beneficiaryNameAddress: '',
@@ -320,7 +335,13 @@ const defaultValues = {
   otherDocumentsSpecify: '',
 };
 
-const DATE_FIELDS = ['applicantDateOfIncorporation', 'beneficiaryDateOfIncorporation', 'expiryDate', 'claimExpiryDate', 'declarationDate'];
+const DATE_FIELDS = [
+  'applicantDateOfIncorporation',
+  'beneficiaryDateOfIncorporation',
+  'expiryDate',
+  'claimExpiryDate',
+  'declarationDate',
+];
 
 export default function BgApplicationDrawer({ open, mode = 'create', application, onClose, onSubmit, submitting }) {
   const readOnly = mode === 'view';
@@ -346,6 +367,7 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
     set('purpose', profile.purpose);
     set('bgAmountFigures', `Rs. ${Number(profile.amount).toLocaleString('en-IN')}`);
     set('bgAmountWords', profile.amountWords);
+    set('bgTenorYears', 0);
     set('bgTenorMonths', profile.tenorMonths);
     set('beneficiaryNameAddress', profile.beneficiaryNameAddress);
     set('beneficiaryBankNameAddress', `${profile.beneficiaryBankName}\n${profile.beneficiaryBankAddress}`);
@@ -384,6 +406,8 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
         bgAmountWords: application.bgAmountWords || '',
         expiryDate: application.expiryDate?.slice(0, 10) || null,
         claimExpiryDate: application.claimExpiryDate?.slice(0, 10) || null,
+        claimExpiryYear: application.claimExpiryYear ?? '',
+        bgTenorYears: application.bgTenorYears ?? '',
         bgTenorMonths: application.bgTenorMonths ?? '',
         bgTenorDays: application.bgTenorDays ?? '',
         beneficiaryNameAddress: application.beneficiaryNameAddress || '',
@@ -576,13 +600,49 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
                     <Stack spacing={1.5}>
                       <SegmentedDateField name="expiryDate" label="Expiry Date" inline labelWidth={100} disabled={readOnly} />
                       <SegmentedDateField name="claimExpiryDate" label="Claim Expiry Date" inline labelWidth={100} disabled={readOnly} />
+                      <Stack direction="row" spacing={0.75} alignItems="baseline" sx={{ pl: '100px' }}>
+                        <RHFTextField
+                          name="claimExpiryYear"
+                          type="number"
+                          disabled={readOnly}
+                          placeholder="0"
+                          sx={{
+                            width: 40,
+                            ...BORDERLESS_FIELD_SX,
+                            '& .MuiInputBase-input': {
+                              px: 0,
+                              textAlign: 'right',
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              lineHeight: 1.3,
+                            },
+                          }}
+                        />
+                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.3, color: 'text.primary' }}>
+                          year
+                        </Typography>
+                      </Stack>
                     </Stack>
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-                      <Typography variant="body2">BG Tenor</Typography>
-                      <SegmentedCodeField name="bgTenorMonths" boxes={2} size="small" disabled={readOnly} />
-                      <SegmentedCodeField name="bgTenorDays" boxes={2} size="small" disabled={readOnly} />
+                    <Stack spacing={0.5}>
+                      <Stack direction="row" spacing={1.5} alignItems="flex-start" flexWrap="wrap" useFlexGap>
+                        <Typography variant="body2" sx={{ pt: 1 }}>
+                          BG Tenor
+                        </Typography>
+                        <Stack alignItems="center" spacing={0.5}>
+                          <SegmentedCodeField name="bgTenorYears" boxes={2} size="small" disabled={readOnly} />
+                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, color: 'text.primary' }}>
+                            Year
+                          </Typography>
+                        </Stack>
+                        <Stack alignItems="center" spacing={0.5}>
+                          <SegmentedCodeField name="bgTenorMonths" boxes={2} size="small" disabled={readOnly} />
+                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, color: 'text.primary' }}>
+                            Months
+                          </Typography>
+                        </Stack>
+                      </Stack>
                     </Stack>
                   </Grid>
                 </Grid>

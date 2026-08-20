@@ -226,12 +226,20 @@ export default function BgApplicationPrintPage() {
               <Field label="Expiry Date" value={formatDate(app.expiryDate)} />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <Field label="BG Tenor" value={`${app.bgTenorMonths || 0} month(s), ${app.bgTenorDays || 0} day(s)`} />
+              <Field
+                label="BG Tenor"
+                value={`${String(app.bgTenorYears ?? 0).padStart(2, '0')} Year, ${String(app.bgTenorMonths ?? 0).padStart(2, '0')} Months`}
+              />
             </Box>
             <Box sx={{ flex: 1 }}>
               <Field label="Claim Expiry Date" value={formatDate(app.claimExpiryDate)} />
             </Box>
           </Stack>
+          {app.claimExpiryYear != null && Number(app.claimExpiryYear) > 0 && (
+            <Typography sx={{ mt: 0.5, fontSize: '0.95rem', fontWeight: 600 }}>
+              {Number(app.claimExpiryYear)} year
+            </Typography>
+          )}
         </SectionBox>
 
         <SectionBox number={6} title="Beneficiary Details">
