@@ -237,7 +237,11 @@ export default function BgApplicationPrintPage() {
           </Stack>
           {app.claimExpiryYear != null && Number(app.claimExpiryYear) > 0 && (
             <Typography sx={{ mt: 0.5, fontSize: '0.95rem', fontWeight: 600 }}>
-              {Number(app.claimExpiryYear)} year
+              {Number(app.claimExpiryYear)}
+              <Box component="span" sx={{ fontWeight: 400 }}>
+                {' '}
+                year
+              </Box>
             </Typography>
           )}
         </SectionBox>

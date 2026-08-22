@@ -48,6 +48,7 @@ const APPLICANT_PROFILES = [
     branchCode: '0657',
     address: 'C-146,Ground Floor, Block-C,Sector 63 Noida,Gautam Buddha Nagar -201301,Uttar Pradesh',
     pan: 'AAGCN7119L',
+    dateOfIncorporation: '2019-10-11',
     contactPerson: 'Monika Jain',
     mobile: '9821003730',
     email: 'Atlantatelecables@gmail.com',
@@ -361,6 +362,7 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
     set('branchCode', profile.branchCode);
     set('applicantNameAddress', `${profile.name}\n${profile.address}`);
     set('applicantPan', profile.pan);
+    set('applicantDateOfIncorporation', profile.dateOfIncorporation || null);
     set('applicantContactPersonMobile', `${profile.contactPerson} / ${profile.mobile}`);
     set('applicantEmail', profile.email);
     set('applicantRegisteredAddress', profile.registeredAddress);
@@ -522,7 +524,7 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
                       control={methods.control}
                       disabled={readOnly}
                     />
-                    <SegmentedCodeField name="amendmentExistingGuaranteeNumber" boxes={15} disabled={readOnly} />
+                    <SegmentedCodeField name="amendmentExistingGuaranteeNumber" boxes={16} disabled={readOnly} />
                   </Stack>
                 </Stack>
               </BoxedSection>
@@ -618,7 +620,7 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
                             },
                           }}
                         />
-                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.3, color: 'text.primary' }}>
+                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 400, lineHeight: 1.3, color: 'text.primary' }}>
                           year
                         </Typography>
                       </Stack>
@@ -632,13 +634,13 @@ export default function BgApplicationDrawer({ open, mode = 'create', application
                         </Typography>
                         <Stack alignItems="center" spacing={0.5}>
                           <SegmentedCodeField name="bgTenorYears" boxes={2} size="small" disabled={readOnly} />
-                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, color: 'text.primary' }}>
+                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 400, lineHeight: 1.2, color: 'text.primary' }}>
                             Year
                           </Typography>
                         </Stack>
                         <Stack alignItems="center" spacing={0.5}>
                           <SegmentedCodeField name="bgTenorMonths" boxes={2} size="small" disabled={readOnly} />
-                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, color: 'text.primary' }}>
+                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 400, lineHeight: 1.2, color: 'text.primary' }}>
                             Months
                           </Typography>
                         </Stack>

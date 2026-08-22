@@ -427,7 +427,7 @@ function drawBgTenor(doc, x, y, years, months) {
 
   // Labels below boxes (no border) — Year / Months
   const labelY = rowY + 4;
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...VALUE_COLOR);
   doc.text('Year', boxesX + boxSize, labelY, { align: 'center' });
@@ -637,7 +637,7 @@ export function downloadBgApplicationPdf(app) {
       'Amendment (Existing Guarantee Number)',
       app.typeOfApplication === 'Amendment'
     );
-    drawInlineSegmentedBoxes(doc, app.amendmentExistingGuaranteeNumber, 15, afterLabelX + 3, cy, { boxSize: 4.2 });
+    drawInlineSegmentedBoxes(doc, app.amendmentExistingGuaranteeNumber, 16, afterLabelX + 3, cy, { boxSize: 4.2 });
     return cy + 4;
   }, page1);
 
@@ -751,11 +751,15 @@ export function downloadBgApplicationPdf(app) {
     const claimYears = app.claimExpiryYear;
     const metaY = Math.max(leftAfterClaim, tenorY) + 2;
     if (claimYears != null && claimYears !== '' && Number(claimYears) > 0) {
-      doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(...VALUE_COLOR);
-      const yearLabel = `${Number(claimYears)} year`;
-      doc.text(yearLabel, c.left + dateLabelW, metaY);
+      const yearsText = String(Number(claimYears));
+      const yearsX = c.left + dateLabelW;
+      doc.setFont('helvetica', 'bold');
+      doc.text(yearsText, yearsX, metaY);
+      const yearsW = doc.getTextWidth(yearsText);
+      doc.setFont('helvetica', 'normal');
+      doc.text(' year', yearsX + yearsW, metaY);
       return metaY + 4;
     }
     return Math.max(leftAfterClaim, tenorY) + 3;
