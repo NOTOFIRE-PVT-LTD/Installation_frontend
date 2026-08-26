@@ -47,9 +47,15 @@ function optionalNullableNumber() {
 }
 
 const SERIAL_TYPE_OPTIONS = [
-  { value: 'Panel Serial No.', label: 'Panel Serial No.' },
   { value: 'LHS', label: 'LHS' },
   { value: 'AHD', label: 'AHD' },
+  { value: 'Others', label: 'Others' },
+];
+
+const PROJECT_TYPE_OPTIONS = [
+  { value: 'Private', label: 'Private' },
+  { value: 'Contractor', label: 'Contractor' },
+  { value: 'NF Project', label: 'NF Project' },
 ];
 
 const schema = yup.object({
@@ -57,17 +63,14 @@ const schema = yup.object({
   assignedInstaller: yup.string().required('Please select an installer'),
   contractor: yup.string().required('Contractor is required'),
   railwayZone: yup.string().required('Railway zone is required'),
-  serialType: yup.string().oneOf(['Panel Serial No.', 'LHS', 'AHD']).required('Select serial type'),
+  serialType: yup.string().oneOf(['LHS', 'AHD', 'Others']).required('Select serial type'),
+  projectType: yup.string().oneOf(['Private', 'Contractor', 'NF Project']).required('Select project type'),
   panelSerialStart: yup.string().when('serialType', {
-    is: (type) => type === 'Panel Serial No.' || type === 'LHS' || type === 'AHD',
+    is: (type) => type === 'LHS' || type === 'AHD',
     then: (s) => s.trim().required('This field is required'),
     otherwise: (s) => s.notRequired(),
   }),
-  panelSerialEnd: yup.string().when('serialType', {
-    is: 'Panel Serial No.',
-    then: (s) => s.trim().required('End is required'),
-    otherwise: (s) => s.notRequired(),
-  }),
+  panelSerialEnd: yup.string().notRequired(),
   invoiceNoDateSupply: yup.string().notRequired(),
   loaNo: yup.string().notRequired(),
   loaDate: yup.string().nullable().notRequired(),
@@ -134,7 +137,8 @@ const defaultValues = {
   assignedInstaller: '',
   contractor: '',
   railwayZone: '',
-  serialType: 'Panel Serial No.',
+  serialType: 'LHS',
+  projectType: 'NF Project',
   panelSerialStart: '',
   panelSerialEnd: '',
   invoiceNoDateSupply: '',
@@ -170,6 +174,7 @@ const TEXT_FIELDS = [
   'contractor',
   'railwayZone',
   'serialType',
+  'projectType',
   'panelSerialStart',
   'panelSerialEnd',
   'invoiceNoDateSupply',
@@ -200,6 +205,9 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
   const loaItemsArray = useFieldArray({ control: methods.control, name: 'loaItems' });
   const additionalOfficersArray = useFieldArray({ control: methods.control, name: 'additionalOfficers' });
   const serialType = methods.watch('serialType');
+  const projectType = methods.watch('projectType');
+  const showLoaDetails = projectType === 'NF Project';
+  const showSerialValue = serialType === 'LHS' || serialType === 'AHD';
 
   const tenderSelectOptions = useMemo(
     () =>
@@ -269,7 +277,10 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         assignedInstaller: project.assignedInstaller?._id || project.assignedInstaller || '',
         contractor: project.contractor || '',
         railwayZone: project.railwayZone || '',
-        serialType: project.serialType || 'Panel Serial No.',
+        serialType: ['LHS', 'AHD', 'Others'].includes(project.serialType) ? project.serialType : 'LHS',
+        projectType: ['Private', 'Contractor', 'NF Project'].includes(project.projectType)
+          ? project.projectType
+          : 'NF Project',
         panelSerialStart: project.panelSerialStart || '',
         panelSerialEnd: project.panelSerialEnd || '',
         invoiceNoDateSupply: project.invoiceNoDateSupply || '',
@@ -473,6 +484,15 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           </Grid>
           <Grid item xs={6} sm={4}>
             <RHFSelect
+              name="projectType"
+              label="Project Type"
+              options={PROJECT_TYPE_OPTIONS}
+              disabled={readOnly}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <RHFSelect
               name="serialType"
               label="Serial Type"
               options={SERIAL_TYPE_OPTIONS}
@@ -480,25 +500,16 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
               size="small"
             />
           </Grid>
-          {serialType === 'Panel Serial No.' ? (
-            <>
-              <Grid item xs={6} sm={4}>
-                <RHFTextField name="panelSerialStart" label="Panel Serial No. — Start" disabled={readOnly} />
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <RHFTextField name="panelSerialEnd" label="Panel Serial No. — End" disabled={readOnly} />
-              </Grid>
-            </>
-          ) : (
+          {showSerialValue && (
             <Grid item xs={12} sm={4}>
               <RHFTextField
                 name="panelSerialStart"
-                label={serialType === 'LHS' ? 'LHS' : serialType === 'AHD' ? 'AHD' : 'Value'}
+                label={serialType === 'AHD' ? 'AHD' : 'LHS'}
                 disabled={readOnly}
               />
             </Grid>
           )}
-          <Grid item xs={12} sm={8}>
+          <Grid item xs={12} sm={showSerialValue ? 8 : 12}>
             <RHFTextField name="invoiceNoDateSupply" label="Invoice No. / Date & Supply" disabled={readOnly} />
           </Grid>
         </Grid>
@@ -545,6 +556,8 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           </>
         )}
 
+        {showLoaDetails && (
+          <>
         <Divider sx={{ my: 1.75 }} />
         <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           LOA Details
@@ -685,6 +698,8 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
             </Grid>
           ))}
         </Stack>
+          </>
+        )}
 
         <Divider sx={{ my: 1.75 }} />
         <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
