@@ -8,11 +8,13 @@ import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
 import { buildCsvColumns } from '../../components/common/DataTable/DataTable.helpers';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import StockItemDrawer from './StockItemDrawer';
+import StockItemImportDialog from './StockItemImportDialog';
 import StockMovementDrawer from './StockMovementDrawer';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
@@ -21,6 +23,7 @@ import {
   createStockItem,
   updateStockItem,
   deleteStockItem,
+  importStockItems,
 } from '../../features/stockItems/stockItemsThunks';
 import {
   fetchStockMovements,
@@ -178,8 +181,12 @@ function ItemsPanel() {
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
     useTableQueryParams();
   const [drawer, setDrawer] = useState({ open: false, mode: 'create', item: null });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchStockItems(queryParams));
@@ -218,9 +225,36 @@ function ItemsPanel() {
     }
   };
 
+  const handleImport = async (formData) => {
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const result = await dispatch(importStockItems(formData)).unwrap();
+      setImportResult(result);
+      dispatch(
+        showSnackbar({
+          message: `Imported ${result.inserted} item(s)${result.skipped ? `, ${result.skipped} skipped` : ''}`,
+        })
+      );
+      refresh();
+    } catch (err) {
+      setImportError(err || 'Failed to import stock items');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+        <Button startIcon={<UploadFileIcon />} variant="outlined" onClick={() => {
+          setImportOpen(true);
+          setImportResult(null);
+          setImportError('');
+        }}>
+          Import Excel
+        </Button>
         <Button
           startIcon={<AddIcon />}
           variant="contained"
@@ -265,6 +299,14 @@ function ItemsPanel() {
         submitting={submitting}
         onClose={() => setDrawer({ open: false, mode: 'create', item: null })}
         onSubmit={handleSubmit}
+      />
+      <StockItemImportDialog
+        open={importOpen}
+        submitting={importing}
+        result={importResult}
+        error={importError}
+        onClose={() => setImportOpen(false)}
+        onSubmit={handleImport}
       />
       <ConfirmDialog
         open={Boolean(confirmDelete)}

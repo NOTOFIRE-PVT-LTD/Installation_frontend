@@ -37,6 +37,15 @@ export const createStockItem = createAsyncThunk('stockItems/create', async (payl
   }
 });
 
+export const importStockItems = createAsyncThunk('stockItems/import', async (formData, { rejectWithValue }) => {
+  try {
+    const { data } = await stockApi.importItems(formData);
+    return data.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to import stock items');
+  }
+});
+
 export const updateStockItem = createAsyncThunk(
   'stockItems/update',
   async ({ id, payload }, { rejectWithValue }) => {

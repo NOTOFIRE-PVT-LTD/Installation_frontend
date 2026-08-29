@@ -8,6 +8,8 @@ export const stockApi = {
   getItemById: (id) => axiosInstance.get(`/stock/items/${id}`),
   createItem: (formData) =>
     axiosInstance.post('/stock/items', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  importItems: (formData) =>
+    axiosInstance.post('/stock/items/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateItem: (id, formData) =>
     axiosInstance.put(`/stock/items/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   removeItem: (id) => axiosInstance.delete(`/stock/items/${id}`),
