@@ -92,7 +92,10 @@ export const STOCK_OTHER_VALUE = '__other__';
 
 // Each kind is also the MasterItem field it fills (kept in sync with the backend).
 export const ITEM_MASTER_CATALOG_KINDS = {
+  END_USE: 'endUse',
+  PRICE_GUARANTEE: 'priceGuarantee',
   ITEM_CATEGORY: 'itemCategory',
+  ITEM_NAME: 'itemName',
   QTY_TYPE: 'qtyType',
   PAYMENT: 'payment',
 };

@@ -41,7 +41,7 @@ import { exportToCsv } from '../../utils/csvExport';
 import { itemMasterApi } from '../../api/itemMasterApi';
 import { CATALOG_FIELDS } from './itemMasterFields';
 
-const FILTER_FIELDS = ['itemCategory', 'qtyType', 'payment'];
+const FILTER_FIELDS = ['endUse', 'priceGuarantee', 'itemCategory', 'qtyType', 'payment'];
 const VIEW_STORAGE_KEY = 'items-master-view';
 
 const name = (value) => value?.name || '';
@@ -57,7 +57,8 @@ const COLUMNS = [
     headerName: 'End Use (Item/Location)',
     flex: 1.2,
     minWidth: 190,
-    valueGetter: (value) => value || '-',
+    valueGetter: (value) => name(value) || '-',
+    csvValue: (row) => name(row.endUse),
   },
   { field: 'personAsked', headerName: 'Requested By', flex: 1, minWidth: 140, valueGetter: (value) => value || '-' },
   {
@@ -65,7 +66,8 @@ const COLUMNS = [
     headerName: 'Price Guarantee',
     flex: 1,
     minWidth: 140,
-    valueGetter: (value) => value || '-',
+    valueGetter: (value) => name(value) || '-',
+    csvValue: (row) => name(row.priceGuarantee),
   },
   {
     field: 'itemCategory',
@@ -422,7 +424,7 @@ export default function ItemsMasterPage() {
       <ConfirmDialog
         open={Boolean(confirmDelete)}
         title="Delete Master Item"
-        message={`Delete "${confirmDelete?.itemName}"? This cannot be undone.`}
+        message={`Delete "${confirmDelete?.itemName || 'this item'}"? This cannot be undone.`}
         confirmLabel="Delete"
         confirmColor="error"
         onConfirm={handleDelete}

@@ -60,9 +60,15 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
     { label: 'Price', value: formatPrice(item.price) },
     { label: 'Total Amount', value: formatPrice(item.totalAmount), emphasis: true },
     { label: 'Payment', value: catalogName(item.payment) },
-    { label: 'End Use (Item/Location)', value: item.endUse || '' },
+    { label: 'End Use (Item/Location)', value: catalogName(item.endUse) },
     { label: 'Requested By', value: item.personAsked || '' },
-    { label: 'Price Guarantee', value: item.priceGuarantee || '' },
+    { label: 'Price Guarantee', value: catalogName(item.priceGuarantee) },
+    {
+      label: 'Location',
+      value: item.location?.address || (item.location?.latitude != null ? `${item.location.latitude.toFixed(4)}, ${item.location.longitude.toFixed(4)}` : ''),
+    },
+    { label: 'Bill Photo', value: item.billPhoto?.url ? 'Attached' : '' },
+    { label: 'Visiting Card', value: item.visitingCard?.url ? 'Attached' : '' },
   ].filter((row) => row.value !== '');
 
   return (
@@ -125,7 +131,7 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
             <Box
               component="img"
               src={item.image.url}
-              alt={item.itemName}
+              alt={item.itemName || 'Item'}
               loading="lazy"
               sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />

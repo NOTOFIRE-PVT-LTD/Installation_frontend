@@ -6,6 +6,16 @@ export const OTHER = '__other__';
 // payload builder all read from this list so the three never drift apart.
 export const CATALOG_FIELDS = [
   {
+    name: ITEM_MASTER_CATALOG_KINDS.END_USE,
+    label: 'End Use (Item/Location)',
+    placeholder: 'Select end use',
+  },
+  {
+    name: ITEM_MASTER_CATALOG_KINDS.PRICE_GUARANTEE,
+    label: 'Price Guarantee',
+    placeholder: 'Select price guarantee',
+  },
+  {
     name: ITEM_MASTER_CATALOG_KINDS.ITEM_CATEGORY,
     label: 'Item Category',
     placeholder: 'Select category',
