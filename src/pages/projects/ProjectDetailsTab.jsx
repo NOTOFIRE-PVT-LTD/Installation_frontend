@@ -88,6 +88,9 @@ const schema = yup.object({
     telecomExchanges: optionalNumber(),
     buildings: optionalNumber(),
     signal: optionalNumber(),
+    panel: optionalNumber(),
+    lhs: optionalNumber(),
+    asd: optionalNumber(),
   }),
   loaItems: yup.array().of(
     yup.object({
@@ -158,6 +161,9 @@ const defaultValues = {
     telecomExchanges: '',
     buildings: '',
     signal: '',
+    panel: '',
+    lhs: '',
+    asd: '',
   },
   loaItems: [],
   railwayOfficers: { srDste: { name: '', number: '' }, dste: { name: '', number: '' }, sse: { name: '', number: '' } },
@@ -311,6 +317,9 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           telecomExchanges: project.totalUnits?.telecomExchanges ?? '',
           buildings: project.totalUnits?.buildings ?? '',
           signal: project.totalUnits?.signal ?? '',
+          panel: project.totalUnits?.panel ?? '',
+          lhs: project.totalUnits?.lhs ?? '',
+          asd: project.totalUnits?.asd ?? '',
         },
         loaItems: project.loaItems || [],
         railwayOfficers: {
@@ -625,37 +634,6 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         </Grid>
 
         <Divider sx={{ my: 1.75 }} />
-        <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Site Scope (Total No. as per LOA)
-        </Typography>
-        <Grid container spacing={1.25}>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.stations" label="Stations" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.ibh" label="IBH" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.autoHuts" label="Auto Huts" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.lcGates" label="LC Gates" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.telecomExchanges" label="Telecom Ex." type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.buildings" label="Buildings" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={4} sm={2}>
-            <RHFTextField name="totalUnits.signal" label="Signal" type="number" disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <RHFTextField name="supervisorName" label="Name of Project Supervisor" disabled={readOnly} />
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ my: 1.75 }} />
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
@@ -706,6 +684,46 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         </Stack>
           </>
         )}
+
+        <Divider sx={{ my: 1.75 }} />
+        <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Site Scope (Total No. as per LOA)
+        </Typography>
+        <Grid container spacing={1.25}>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.stations" label="Stations" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.ibh" label="IBH" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.autoHuts" label="Auto Huts" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.lcGates" label="LC Gates" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.telecomExchanges" label="Telecom Ex." type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.buildings" label="Buildings" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.signal" label="Signal" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.panel" label="Panel" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.lhs" label="LHS" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={4} sm={2}>
+            <RHFTextField name="totalUnits.asd" label="ASD" type="number" disabled={readOnly} />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <RHFTextField name="supervisorName" label="Name of Project Supervisor" disabled={readOnly} />
+          </Grid>
+        </Grid>
 
         <Divider sx={{ my: 1.75 }} />
         <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
