@@ -47,9 +47,8 @@ function optionalNullableNumber() {
 }
 
 const SERIAL_TYPE_OPTIONS = [
-  { value: 'LHS', label: 'LHS' },
-  { value: 'AHD', label: 'AHD' },
-  { value: 'Others', label: 'Others' },
+  { value: 'LHS/ASD', label: 'LHS/ASD' },
+  { value: 'ALL', label: 'ALL' },
 ];
 
 const PROJECT_TYPE_OPTIONS = [
@@ -63,11 +62,11 @@ const schema = yup.object({
   assignedInstaller: yup.string().required('Please select an installer'),
   contractor: yup.string().required('Contractor is required'),
   railwayZone: yup.string().required('Railway zone is required'),
-  serialType: yup.string().oneOf(['LHS', 'AHD', 'Others']).required('Select serial type'),
+  serialType: yup.string().oneOf(['LHS/ASD', 'ALL']).required('Select serial type'),
   projectType: yup.string().oneOf(['Private', 'Contractor', 'NF Project']).required('Select project type'),
   panelSerialStart: yup.string().when('serialType', {
-    is: (type) => type === 'LHS' || type === 'AHD',
-    then: (s) => s.trim().required('This field is required'),
+    is: 'LHS/ASD',
+    then: (s) => s.trim().required('LHS/ASD is required'),
     otherwise: (s) => s.notRequired(),
   }),
   panelSerialEnd: yup.string().notRequired(),
@@ -137,7 +136,7 @@ const defaultValues = {
   assignedInstaller: '',
   contractor: '',
   railwayZone: '',
-  serialType: 'LHS',
+  serialType: 'LHS/ASD',
   projectType: 'NF Project',
   panelSerialStart: '',
   panelSerialEnd: '',
@@ -207,7 +206,13 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
   const serialType = methods.watch('serialType');
   const projectType = methods.watch('projectType');
   const showLoaDetails = projectType === 'NF Project';
-  const showSerialValue = serialType === 'LHS' || serialType === 'AHD';
+  const showSerialValue = serialType === 'LHS/ASD';
+
+  useEffect(() => {
+    if (serialType === 'ALL') {
+      methods.setValue('panelSerialStart', '');
+    }
+  }, [serialType, methods]);
 
   const tenderSelectOptions = useMemo(
     () =>
@@ -277,7 +282,12 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         assignedInstaller: project.assignedInstaller?._id || project.assignedInstaller || '',
         contractor: project.contractor || '',
         railwayZone: project.railwayZone || '',
-        serialType: ['LHS', 'AHD', 'Others'].includes(project.serialType) ? project.serialType : 'LHS',
+        serialType: (() => {
+          const type = project.serialType;
+          if (type === 'ALL' || type === 'Others') return 'ALL';
+          if (type === 'LHS/ASD' || type === 'LHS' || type === 'AHD') return 'LHS/ASD';
+          return 'LHS/ASD';
+        })(),
         projectType: ['Private', 'Contractor', 'NF Project'].includes(project.projectType)
           ? project.projectType
           : 'NF Project',
@@ -502,11 +512,7 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           </Grid>
           {showSerialValue && (
             <Grid item xs={12} sm={4}>
-              <RHFTextField
-                name="panelSerialStart"
-                label={serialType === 'AHD' ? 'AHD' : 'LHS'}
-                disabled={readOnly}
-              />
+              <RHFTextField name="panelSerialStart" label="LHS/ASD" disabled={readOnly} />
             </Grid>
           )}
           <Grid item xs={12} sm={showSerialValue ? 8 : 12}>
