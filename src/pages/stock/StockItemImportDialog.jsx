@@ -33,13 +33,38 @@ export default function StockItemImportDialog({ open, onClose, onSubmit, submitt
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            Use the template with these columns: <strong>Component Category</strong>,{' '}
-            <strong>Component Name</strong>, <strong>Sub Component Name</strong> (optional), and{' '}
-            <strong>Type</strong> (<em>Single Use</em> or <em>Reusable</em>). Upload .xlsx, .xls, or .csv.
+            Download the Excel template and fill these columns only:
+          </Typography>
+          <Typography
+            component="pre"
+            variant="body2"
+            sx={{
+              m: 0,
+              p: 1.25,
+              borderRadius: 1.5,
+              bgcolor: 'action.hover',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '0.75rem',
+              overflowX: 'auto',
+            }}
+          >
+            {`Component Name | Sub Component Name | Type
+Cable          | 6mm wire           | Single Use
+Bracket        |                    | Reusable`}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Sub Component Name</strong> is optional. <strong>Type</strong> must be{' '}
+            <em>Single Use</em> or <em>Reusable</em>. Upload .xlsx, .xls, or .csv.
           </Typography>
 
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={downloadStockItemsTemplate}>
-            Download Template
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => {
+              downloadStockItemsTemplate().catch(() => {});
+            }}
+          >
+            Download Excel Template
           </Button>
 
           {error && <Alert severity="error">{error}</Alert>}

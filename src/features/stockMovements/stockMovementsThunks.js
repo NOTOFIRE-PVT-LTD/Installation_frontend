@@ -48,3 +48,25 @@ export const deleteStockMovement = createAsyncThunk(
     }
   }
 );
+
+export const deleteStockMovements = createAsyncThunk(
+  'stockMovements/bulkDelete',
+  async (ids, { rejectWithValue }) => {
+    try {
+      const normalized = (Array.isArray(ids) ? ids : [])
+        .map((value) => {
+          if (value == null) return '';
+          if (typeof value === 'object') return String(value._id ?? value.id ?? '').trim();
+          return String(value).trim();
+        })
+        .filter((id) => /^[a-f\d]{24}$/i.test(id));
+      if (!normalized.length) {
+        return rejectWithValue('No valid movements selected');
+      }
+      const { data } = await stockApi.removeMovements(normalized);
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to delete stock movements');
+    }
+  }
+);

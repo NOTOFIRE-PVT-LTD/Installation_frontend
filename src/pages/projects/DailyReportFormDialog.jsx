@@ -6,14 +6,20 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import LinearProgress from '@mui/material/LinearProgress';
+import Typography from '@mui/material/Typography';
 import ImageDropzone from '../../components/common/FileUpload/ImageDropzone';
 import MultiVideoDropzone from '../../components/common/FileUpload/MultiVideoDropzone';
+import { uploadDailyReportMedia } from '../../utils/cloudinaryUpload';
 
 export default function DailyReportFormDialog({ open, onClose, onSubmit, submitting, title = 'Add Daily Report Entry' }) {
   const [photos, setPhotos] = useState([]);
   const [videos, setVideos] = useState([]);
   const [comment, setComment] = useState('');
   const [issue, setIssue] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -21,23 +27,41 @@ export default function DailyReportFormDialog({ open, onClose, onSubmit, submitt
       setVideos([]);
       setComment('');
       setIssue('');
+      setUploading(false);
+      setProgress(0);
+      setUploadError('');
     }
   }, [open]);
 
-  const handleSubmit = () => {
-    const formData = new FormData();
-    photos.filter((p) => p.file).forEach((p) => formData.append('photos', p.file));
-    videos.filter((v) => v.file).forEach((v) => formData.append('videos', v.file));
-    formData.append('comment', comment);
-    formData.append('issue', issue);
-    onSubmit(formData);
+  const handleSubmit = async () => {
+    setUploadError('');
+    setUploading(true);
+    setProgress(0);
+    try {
+      const media = await uploadDailyReportMedia({
+        photos,
+        videos,
+        onProgress: setProgress,
+      });
+      await onSubmit({
+        photos: media.photos,
+        videos: media.videos,
+        comment,
+        issue,
+      });
+    } catch (err) {
+      setUploadError(err?.message || 'Failed to upload media. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const hasMedia = photos.some((p) => p.file) || videos.some((v) => v.file);
   const canSave = hasMedia || Boolean(comment.trim()) || Boolean(issue.trim());
+  const busy = submitting || uploading;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
@@ -50,6 +74,7 @@ export default function DailyReportFormDialog({ open, onClose, onSubmit, submitt
             multiline
             minRows={2}
             fullWidth
+            disabled={busy}
           />
           <TextField
             label="Issue (optional)"
@@ -58,13 +83,29 @@ export default function DailyReportFormDialog({ open, onClose, onSubmit, submitt
             multiline
             minRows={2}
             fullWidth
+            disabled={busy}
           />
+          {uploading && (
+            <Stack spacing={0.75}>
+              <Typography variant="caption" color="text.secondary">
+                Uploading media to cloud… {progress}%
+              </Typography>
+              <LinearProgress variant="determinate" value={progress} />
+            </Stack>
+          )}
+          {uploadError && (
+            <Typography variant="body2" color="error">
+              {uploadError}
+            </Typography>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={submitting || !canSave}>
-          {submitting ? 'Saving…' : 'Save'}
+        <Button onClick={onClose} disabled={busy}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={handleSubmit} disabled={busy || !canSave}>
+          {uploading ? 'Uploading…' : submitting ? 'Saving…' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>

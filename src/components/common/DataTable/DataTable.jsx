@@ -21,8 +21,48 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
 import FilterListIcon from '@mui/icons-material/FilterListOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import StatusBadge from '../StatusBadge';
 import { useDebounce } from '../../../hooks/useDebounce';
+
+const MONGO_ID_RE = /^[a-f\d]{24}$/i;
+
+function getRowKey(row) {
+  const raw = row?._id ?? row?.id;
+  if (raw == null) return '';
+  if (typeof raw === 'object' && raw.toString && raw.toString !== Object.prototype.toString) {
+    return String(raw.toString());
+  }
+  return String(raw);
+}
+
+export function extractSelectedRowIds(model, rows = []) {
+  if (model == null) return [];
+
+  let rawIds = [];
+  if (Array.isArray(model)) {
+    rawIds = model;
+  } else if (model.ids instanceof Set) {
+    if (model.type === 'exclude') {
+      const excluded = model.ids;
+      rawIds = (rows || [])
+        .map(getRowKey)
+        .filter((id) => id && !excluded.has(id) && !excluded.has(Number(id)));
+    } else {
+      rawIds = [...model.ids];
+    }
+  } else if (Array.isArray(model.ids)) {
+    rawIds = model.ids;
+  }
+
+  return [
+    ...new Set(
+      rawIds
+        .map((id) => String(id ?? '').trim())
+        .filter((id) => MONGO_ID_RE.test(id))
+    ),
+  ];
+}
 
 function SkeletonOverlay() {
   return (
@@ -132,6 +172,11 @@ export default function DataTable({
   emptyMessage = 'No records found',
   storageKey,
   onRowClick,
+  checkboxSelection = false,
+  rowSelectionModel,
+  onRowSelectionModelChange,
+  onBulkDelete,
+  bulkDeleteLabel = 'Delete selected',
 }) {
   const [columnsMenuAnchor, setColumnsMenuAnchor] = useState(null);
   const [filtersAnchor, setFiltersAnchor] = useState(null);
@@ -140,6 +185,13 @@ export default function DataTable({
 
   const [localSearch, setLocalSearch] = useState(searchValue || '');
   const debouncedSearch = useDebounce(localSearch, 400);
+
+  const selectedIds = useMemo(
+    () => extractSelectedRowIds(rowSelectionModel, rows),
+    [rowSelectionModel, rows]
+  );
+
+  const selectedCount = selectedIds.length;
 
   useEffect(() => {
     setLocalSearch(searchValue || '');
@@ -231,6 +283,18 @@ export default function DataTable({
           <Box />
         )}
         <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+          {checkboxSelection && selectedCount > 0 && onBulkDelete && (
+            <Button
+              size="small"
+              color="error"
+              variant="outlined"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={() => onBulkDelete(selectedIds)}
+              sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+            >
+              {bulkDeleteLabel} ({selectedCount})
+            </Button>
+          )}
           {filters.length > 0 && (
             <>
               <Tooltip title="Filters">
@@ -456,22 +520,37 @@ export default function DataTable({
           autoHeight
           rows={rows}
           columns={finalColumns}
-          getRowId={(row) => row._id || row.id}
+          getRowId={(row) => {
+            const key = getRowKey(row);
+            if (!key) {
+              throw new Error('DataTable row is missing _id');
+            }
+            return key;
+          }}
           loading={loading}
           rowCount={totalCount}
           paginationMode="server"
           sortingMode="server"
-          paginationModel={{ page: Math.max(page - 1, 0), pageSize }}
+          paginationModel={{
+            page: Math.max(page - 1, 0),
+            // MIT DataGrid rejects pageSize > 100.
+            pageSize: Math.min(Math.max(Number(pageSize) || 10, 1), 100),
+          }}
           onPaginationModelChange={(model) => {
-            if (model.pageSize !== pageSize) onPageSizeChange(model.pageSize);
+            const nextSize = Math.min(Math.max(model.pageSize, 1), 100);
+            if (nextSize !== pageSize) onPageSizeChange(nextSize);
             else onPageChange(model.page + 1);
           }}
-          pageSizeOptions={[10, 25, 50]}
+          pageSizeOptions={[10, 25, 50, 100]}
           sortModel={sortModel ? [sortModel] : []}
           onSortModelChange={(model) => onSortChange(model[0])}
           columnVisibilityModel={columnVisibilityModel}
           onColumnVisibilityModelChange={handleVisibilityChange}
           onRowClick={onRowClick ? (params) => onRowClick(params.row) : undefined}
+          checkboxSelection={checkboxSelection}
+          rowSelectionModel={rowSelectionModel}
+          onRowSelectionModelChange={onRowSelectionModelChange}
+          keepNonExistentRowsSelected
           disableRowSelectionOnClick
           sx={{
             border: 'none',

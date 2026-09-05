@@ -11,6 +11,7 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
+import { extractSelectedRowIds } from '../../components/common/DataTable/DataTable';
 import { buildCsvColumns } from '../../components/common/DataTable/DataTable.helpers';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import StockItemDrawer from './StockItemDrawer';
@@ -23,6 +24,7 @@ import {
   createStockItem,
   updateStockItem,
   deleteStockItem,
+  deleteStockItems,
   importStockItems,
 } from '../../features/stockItems/stockItemsThunks';
 import {
@@ -30,6 +32,7 @@ import {
   createStockMovement,
   updateStockMovement,
   deleteStockMovement,
+  deleteStockMovements,
 } from '../../features/stockMovements/stockMovementsThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
@@ -37,14 +40,22 @@ import { formatDate } from '../../utils/formatters';
 import { STOCK_MOVEMENT_TYPES, STOCK_MOVEMENT_LABELS } from '../../utils/constants';
 import { stockApi } from '../../api/stockApi';
 
+function emptySelectionModel(ids = []) {
+  return { type: 'include', ids: new Set(ids) };
+}
+
+function bulkDeleteMessage(result, singular = 'item', plural = 'items') {
+  const deleted = result?.deleted?.length || 0;
+  const failed = result?.failed?.length || 0;
+  if (deleted && !failed) return `Deleted ${deleted} ${deleted === 1 ? singular : plural}`;
+  if (deleted && failed) {
+    return `Deleted ${deleted}, skipped ${failed} (with linked records or blocked)`;
+  }
+  if (failed) return `Could not delete selected ${plural}. They may have linked stock activity.`;
+  return `No ${plural} deleted`;
+}
+
 const ITEM_COLUMNS = [
-  {
-    field: 'categoryName',
-    headerName: 'Category',
-    flex: 1,
-    minWidth: 130,
-    valueGetter: (value) => value || '-',
-  },
   {
     field: 'componentName',
     headerName: 'Component',
@@ -74,7 +85,7 @@ const WAREHOUSE_COLUMNS = [
     flex: 1.2,
     minWidth: 180,
     valueGetter: (_value, row) =>
-      [row.categoryName, row.componentName, row.subComponentName || row.name].filter(Boolean).join(' / ') ||
+      [row.componentName, row.subComponentName || row.name].filter(Boolean).join(' / ') ||
       row.name ||
       '-',
   },
@@ -185,8 +196,15 @@ function ItemsPanel() {
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [selectionModel, setSelectionModel] = useState(() => emptySelectionModel());
+
+  const handleSelectionChange = (model) => {
+    setSelectionModel(emptySelectionModel(extractSelectedRowIds(model, items)));
+  };
 
   useEffect(() => {
     dispatch(fetchStockItems(queryParams));
@@ -216,12 +234,38 @@ function ItemsPanel() {
 
   const handleDelete = async () => {
     try {
+      setDeleting(true);
       await dispatch(deleteStockItem(confirmDelete._id)).unwrap();
       dispatch(showSnackbar({ message: 'Stock item deleted' }));
       setConfirmDelete(null);
+      setSelectionModel(emptySelectionModel());
       refresh();
     } catch (err) {
       dispatch(showSnackbar({ message: err || 'Failed to delete item', severity: 'error' }));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = confirmBulkDelete || [];
+    if (!ids.length) return;
+    try {
+      setDeleting(true);
+      const result = await dispatch(deleteStockItems(ids)).unwrap();
+      dispatch(
+        showSnackbar({
+          message: bulkDeleteMessage(result, 'item', 'items'),
+          severity: result.failed?.length && !result.deleted?.length ? 'error' : 'success',
+        })
+      );
+      setConfirmBulkDelete(null);
+      setSelectionModel(emptySelectionModel());
+      refresh();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete items', severity: 'error' }));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -287,9 +331,19 @@ function ItemsPanel() {
             onClick: setConfirmDelete,
           },
         ]}
+        checkboxSelection
+        rowSelectionModel={selectionModel}
+        onRowSelectionModelChange={handleSelectionChange}
+        onBulkDelete={(ids) => {
+          if (!ids?.length) {
+            dispatch(showSnackbar({ message: 'No valid items selected', severity: 'warning' }));
+            return;
+          }
+          setConfirmBulkDelete(ids);
+        }}
         onExportCsv={() => exportToCsv('stock-items', items, buildCsvColumns(ITEM_COLUMNS))}
         loading={status === 'loading'}
-        emptyMessage="No stock items yet. Add a category, component, and sub component to start."
+        emptyMessage="No stock items yet. Add a component and optional sub component to start."
         storageKey="stock-items-catalog"
       />
       <StockItemDrawer
@@ -314,25 +368,50 @@ function ItemsPanel() {
         message={`Delete "${confirmDelete?.name}"? Items with movements cannot be deleted.`}
         confirmLabel="Delete"
         confirmColor="error"
+        loading={deleting}
         onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(null)}
+        onClose={() => {
+          if (!deleting) setConfirmDelete(null);
+        }}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmBulkDelete)}
+        title="Delete Selected Items"
+        message={`Delete ${confirmBulkDelete?.length || 0} selected item(s)? Items with stock movements will be skipped.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleBulkDelete}
+        onClose={() => {
+          if (!deleting) setConfirmBulkDelete(null);
+        }}
       />
     </>
   );
 }
 
 function WarehousePanel() {
+  const dispatch = useAppDispatch();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [selectionModel, setSelectionModel] = useState(() => emptySelectionModel());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  const loadRows = () => {
     setLoading(true);
     stockApi
       .summary()
       .then((res) => setRows(res.data?.data || []))
       .catch(() => setRows([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadRows();
   }, []);
 
   const filtered = rows.filter((row) => {
@@ -342,6 +421,37 @@ function WarehousePanel() {
     return [row.name, row.sku, peopleText].join(' ').toLowerCase().includes(q);
   });
 
+  const safePageSize = Math.min(Math.max(pageSize, 1), 100);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / safePageSize) || 1);
+  const currentPage = Math.min(page, totalPages);
+  const pagedRows = filtered.slice((currentPage - 1) * safePageSize, currentPage * safePageSize);
+
+  const handleSelectionChange = (model) => {
+    setSelectionModel(emptySelectionModel(extractSelectedRowIds(model, pagedRows)));
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = confirmBulkDelete || [];
+    if (!ids.length) return;
+    try {
+      setDeleting(true);
+      const result = await dispatch(deleteStockItems(ids)).unwrap();
+      dispatch(
+        showSnackbar({
+          message: bulkDeleteMessage(result, 'item', 'items'),
+          severity: result.failed?.length && !result.deleted?.length ? 'error' : 'success',
+        })
+      );
+      setConfirmBulkDelete(null);
+      setSelectionModel(emptySelectionModel());
+      loadRows();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete items', severity: 'error' }));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -349,18 +459,46 @@ function WarehousePanel() {
       </Typography>
       <DataTable
         columns={WAREHOUSE_COLUMNS}
-        rows={filtered}
+        rows={pagedRows}
         totalCount={filtered.length}
-        page={1}
-        pageSize={Math.max(filtered.length, 10)}
-        onPageChange={() => {}}
-        onPageSizeChange={() => {}}
+        page={currentPage}
+        pageSize={safePageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(next) => {
+          setPageSize(Math.min(Math.max(next, 1), 100));
+          setPage(1);
+        }}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        checkboxSelection
+        rowSelectionModel={selectionModel}
+        onRowSelectionModelChange={handleSelectionChange}
+        onBulkDelete={(ids) => {
+          if (!ids?.length) {
+            dispatch(showSnackbar({ message: 'No valid items selected', severity: 'warning' }));
+            return;
+          }
+          setConfirmBulkDelete(ids);
+        }}
         onExportCsv={() => exportToCsv('warehouse-stock', filtered, buildCsvColumns(WAREHOUSE_COLUMNS))}
         loading={loading}
         emptyMessage="Warehouse is empty. Receive stock from a supplier first."
         storageKey="stock-warehouse"
+      />
+      <ConfirmDialog
+        open={Boolean(confirmBulkDelete)}
+        title="Delete Selected Items"
+        message={`Delete ${confirmBulkDelete?.length || 0} selected warehouse item(s)? Items with stock movements will be skipped.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleBulkDelete}
+        onClose={() => {
+          if (!deleting) setConfirmBulkDelete(null);
+        }}
       />
     </>
   );
@@ -373,7 +511,10 @@ function MovementsPanel({ type, actionLabel }) {
     useTableQueryParams();
   const [drawer, setDrawer] = useState({ open: false, movement: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [selectionModel, setSelectionModel] = useState(() => emptySelectionModel());
   const columns = movementColumns(type);
 
   const listParams = { ...queryParams, type };
@@ -386,6 +527,10 @@ function MovementsPanel({ type, actionLabel }) {
   const refresh = () => dispatch(fetchStockMovements(listParams));
 
   const closeDrawer = () => setDrawer({ open: false, movement: null });
+
+  const handleSelectionChange = (model) => {
+    setSelectionModel(emptySelectionModel(extractSelectedRowIds(model, items)));
+  };
 
   const handleSubmit = async (payload) => {
     setSubmitting(true);
@@ -408,12 +553,38 @@ function MovementsPanel({ type, actionLabel }) {
 
   const handleDelete = async () => {
     try {
+      setDeleting(true);
       await dispatch(deleteStockMovement(confirmDelete._id)).unwrap();
       dispatch(showSnackbar({ message: 'Movement deleted' }));
       setConfirmDelete(null);
+      setSelectionModel(emptySelectionModel());
       refresh();
     } catch (err) {
       dispatch(showSnackbar({ message: err || 'Failed to delete movement', severity: 'error' }));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = confirmBulkDelete || [];
+    if (!ids.length) return;
+    try {
+      setDeleting(true);
+      const result = await dispatch(deleteStockMovements(ids)).unwrap();
+      dispatch(
+        showSnackbar({
+          message: bulkDeleteMessage(result, 'movement', 'movements'),
+          severity: result.failed?.length && !result.deleted?.length ? 'error' : 'success',
+        })
+      );
+      setConfirmBulkDelete(null);
+      setSelectionModel(emptySelectionModel());
+      refresh();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete movements', severity: 'error' }));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -448,6 +619,16 @@ function MovementsPanel({ type, actionLabel }) {
             onClick: setConfirmDelete,
           },
         ]}
+        checkboxSelection
+        rowSelectionModel={selectionModel}
+        onRowSelectionModelChange={handleSelectionChange}
+        onBulkDelete={(ids) => {
+          if (!ids?.length) {
+            dispatch(showSnackbar({ message: 'No valid movements selected', severity: 'warning' }));
+            return;
+          }
+          setConfirmBulkDelete(ids);
+        }}
         onExportCsv={() => exportToCsv(`stock-${type}`, items, buildCsvColumns(columns))}
         loading={status === 'loading'}
         emptyMessage={`No ${STOCK_MOVEMENT_LABELS[type].toLowerCase()} records yet.`}
@@ -467,8 +648,23 @@ function MovementsPanel({ type, actionLabel }) {
         message="Delete this stock movement? Warehouse and person balances will be recalculated."
         confirmLabel="Delete"
         confirmColor="error"
+        loading={deleting}
         onConfirm={handleDelete}
-        onClose={() => setConfirmDelete(null)}
+        onClose={() => {
+          if (!deleting) setConfirmDelete(null);
+        }}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmBulkDelete)}
+        title="Delete Selected Movements"
+        message={`Delete ${confirmBulkDelete?.length || 0} selected movement(s)? Balances will be recalculated. Blocked records will be skipped.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleBulkDelete}
+        onClose={() => {
+          if (!deleting) setConfirmBulkDelete(null);
+        }}
       />
     </>
   );

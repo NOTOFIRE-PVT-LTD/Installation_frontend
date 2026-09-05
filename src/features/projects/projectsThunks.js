@@ -147,9 +147,9 @@ export const markStationPaid = createAsyncThunk(
 
 export const addDailyReport = createAsyncThunk(
   'projects/addDailyReport',
-  async ({ id, formData }, { rejectWithValue }) => {
+  async ({ id, payload }, { rejectWithValue }) => {
     try {
-      const { data } = await projectApi.addDailyReport(id, formData);
+      const { data } = await projectApi.addDailyReport(id, payload);
       return data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add daily report');
@@ -171,9 +171,9 @@ export const removeDailyReport = createAsyncThunk(
 
 export const addStationDailyReport = createAsyncThunk(
   'projects/addStationDailyReport',
-  async ({ id, stationId, formData }, { rejectWithValue }) => {
+  async ({ id, stationId, payload }, { rejectWithValue }) => {
     try {
-      const { data } = await projectApi.addStationDailyReport(id, stationId, formData);
+      const { data } = await projectApi.addStationDailyReport(id, stationId, payload);
       return data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to add station daily report');

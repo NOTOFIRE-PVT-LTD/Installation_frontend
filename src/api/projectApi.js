@@ -21,15 +21,10 @@ export const projectApi = {
   rejectStationClaim: (id, stationId, reason) =>
     axiosInstance.post(`/projects/${id}/stations/${stationId}/claim/reject`, { reason }),
   markStationPaid: (id, stationId) => axiosInstance.post(`/projects/${id}/stations/${stationId}/claim/mark-paid`),
-  addDailyReport: (id, formData) =>
-    axiosInstance.post(`/projects/${id}/daily-reports`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  addDailyReport: (id, payload) => axiosInstance.post(`/projects/${id}/daily-reports`, payload),
   removeDailyReport: (id, reportId) => axiosInstance.delete(`/projects/${id}/daily-reports/${reportId}`),
-  addStationDailyReport: (id, stationId, formData) =>
-    axiosInstance.post(`/projects/${id}/stations/${stationId}/daily-reports`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  addStationDailyReport: (id, stationId, payload) =>
+    axiosInstance.post(`/projects/${id}/stations/${stationId}/daily-reports`, payload),
   removeStationDailyReport: (id, stationId, reportId) =>
     axiosInstance.delete(`/projects/${id}/stations/${stationId}/daily-reports/${reportId}`),
 };

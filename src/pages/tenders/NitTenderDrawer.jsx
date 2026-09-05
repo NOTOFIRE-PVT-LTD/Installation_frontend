@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,12 +10,16 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
+import { parseTenderItemsPdf } from '../../utils/tenderItemsPdfImport';
 import { LOA_TYPES } from '../../utils/constants';
 
 const emptyItem = () => ({
@@ -148,11 +152,63 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
   const itemsArray = useFieldArray({ control: methods.control, name: 'items' });
   const loaItemsArray = useFieldArray({ control: methods.control, name: 'loaItems' });
 
+  const pdfInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importInfo, setImportInfo] = useState('');
+
   useEffect(() => {
     if (!open) return;
     methods.reset(mapTenderToForm(tender));
+    setImportError('');
+    setImportInfo('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tender]);
+
+  // Reads Item Description / Item Qty / Advt. Value out of an uploaded tender PDF and
+  // fills the Items rows with them.
+  const handleItemsPdf = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    setImportError('');
+    setImportInfo('');
+    try {
+      const { items, amountUnit, columns } = await parseTenderItemsPdf(file);
+      const rows = items.map((item) => ({
+        itemName: item.itemName,
+        amount: item.amount ?? '',
+        quantity: item.quantity ?? '',
+      }));
+
+      const existing = methods.getValues('items') || [];
+      const hasContent = existing.some((item) =>
+        ['itemName', 'amount', 'quantity'].some((key) => String(item?.[key] ?? '').trim())
+      );
+      if (hasContent) itemsArray.append(rows);
+      else itemsArray.replace(rows);
+
+      const missing = [
+        !columns.quantity && 'Item Qty',
+        !columns.amount && 'Advt. Value',
+      ].filter(Boolean);
+      setImportInfo(
+        [
+          `Added ${rows.length} item${rows.length === 1 ? '' : 's'} from ${file.name}.`,
+          amountUnit && `Amounts converted from ${amountUnit}s.`,
+          missing.length && `No ${missing.join(' or ')} column found — enter those manually.`,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      );
+    } catch (error) {
+      setImportError(error?.message || 'Could not read that PDF.');
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const titleMap = { create: 'Add Tender', edit: 'Edit Tender', view: 'Tender Details' };
 
@@ -202,11 +258,40 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
                   Items
                 </Typography>
                 {!readOnly && (
-                  <Button size="small" startIcon={<AddIcon />} onClick={() => itemsArray.append(emptyItem())}>
-                    Add Item
-                  </Button>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Button
+                      size="small"
+                      startIcon={importing ? <CircularProgress size={14} /> : <UploadFileIcon />}
+                      onClick={() => pdfInputRef.current?.click()}
+                      disabled={importing}
+                    >
+                      {importing ? 'Reading PDF…' : 'Upload PDF'}
+                    </Button>
+                    <Button size="small" startIcon={<AddIcon />} onClick={() => itemsArray.append(emptyItem())}>
+                      Add Item
+                    </Button>
+                  </Stack>
                 )}
               </Stack>
+              {!readOnly && (
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  hidden
+                  onChange={handleItemsPdf}
+                />
+              )}
+              {importError && (
+                <Alert severity="error" onClose={() => setImportError('')}>
+                  {importError}
+                </Alert>
+              )}
+              {importInfo && (
+                <Alert severity="success" onClose={() => setImportInfo('')}>
+                  {importInfo}
+                </Alert>
+              )}
               <Stack spacing={1.5}>
                 {itemsArray.fields.length === 0 && (
                   <Typography variant="body2" color="text.secondary">

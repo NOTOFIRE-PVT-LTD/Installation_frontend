@@ -22,11 +22,11 @@ export default function StationDailyReportingSection({ projectId, station, canMa
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
       const updated = await dispatch(
-        addStationDailyReport({ id: projectId, stationId: station._id, formData })
+        addStationDailyReport({ id: projectId, stationId: station._id, payload })
       ).unwrap();
       dispatch(showSnackbar({ message: 'Daily station report added' }));
       onUpdated?.(updated);

@@ -136,7 +136,7 @@ export default function StockMovementDrawer({ open, type, movement, onClose, onS
                     searchable
                     searchPlaceholder="Search stock item"
                     options={(itemOptions || []).map((item) => {
-                      const path = [item.categoryName, item.componentName, item.subComponentName]
+                      const path = [item.componentName, item.subComponentName]
                         .filter(Boolean)
                         .join(' / ');
                       return {

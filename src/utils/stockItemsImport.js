@@ -1,27 +1,16 @@
-import { exportToCsv } from './csvExport';
+import { stockApi } from '../api/stockApi';
 
-const TEMPLATE_COLUMNS = [
-  { headerName: 'Component Category', field: 'category' },
-  { headerName: 'Component Name', field: 'component' },
-  { headerName: 'Sub Component Name', field: 'subComponent' },
-  { headerName: 'Type', field: 'type' },
-];
-
-const TEMPLATE_ROWS = [
-  {
-    category: 'Electrical',
-    component: 'Cable',
-    subComponent: '6mm wire',
-    type: 'Single Use',
-  },
-  {
-    category: 'Hardware',
-    component: 'Bracket',
-    subComponent: '',
-    type: 'Reusable',
-  },
-];
-
-export function downloadStockItemsTemplate() {
-  exportToCsv('stock-items-import-template', TEMPLATE_ROWS, TEMPLATE_COLUMNS);
+export async function downloadStockItemsTemplate() {
+  const { data } = await stockApi.downloadImportTemplate();
+  const blob = data instanceof Blob ? data : new Blob([data], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'stock-items-import-template.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }

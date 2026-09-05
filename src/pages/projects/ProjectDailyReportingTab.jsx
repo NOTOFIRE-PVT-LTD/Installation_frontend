@@ -21,10 +21,10 @@ export default function ProjectDailyReportingTab({ project, canManage, onProject
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
-      const updated = await dispatch(addDailyReport({ id: project._id, formData })).unwrap();
+      const updated = await dispatch(addDailyReport({ id: project._id, payload })).unwrap();
       dispatch(showSnackbar({ message: 'Daily report added successfully' }));
       onProjectUpdated?.(updated);
       setDialogOpen(false);

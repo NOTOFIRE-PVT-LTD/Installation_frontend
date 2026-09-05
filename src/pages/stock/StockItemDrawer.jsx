@@ -19,12 +19,6 @@ import { STOCK_CATALOG_KINDS, STOCK_ITEM_TYPES, STOCK_OTHER_VALUE } from '../../
 const OTHER = STOCK_OTHER_VALUE;
 
 const schema = yup.object({
-  category: yup.string().required('Component category is required'),
-  newCategory: yup.string().when('category', {
-    is: OTHER,
-    then: (s) => s.trim().required('Enter a new category'),
-    otherwise: (s) => s.nullable(),
-  }),
   component: yup.string().required('Component name is required'),
   newComponent: yup.string().when('component', {
     is: OTHER,
@@ -39,8 +33,6 @@ const schema = yup.object({
 function mapItemToForm(item) {
   if (!item) {
     return {
-      category: '',
-      newCategory: '',
       component: '',
       newComponent: '',
       subComponent: '',
@@ -49,8 +41,6 @@ function mapItemToForm(item) {
     };
   }
   return {
-    category: item.category?._id || item.category || '',
-    newCategory: '',
     component: item.component?._id || item.component || '',
     newComponent: '',
     subComponent: item.subComponent?._id || item.subComponent || '',
@@ -131,7 +121,6 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
     defaultValues: mapItemToForm(null),
   });
 
-  const [categories, setCategories] = useState([]);
   const [components, setComponents] = useState([]);
   const [subComponents, setSubComponents] = useState([]);
   const [adding, setAdding] = useState('');
@@ -144,10 +133,6 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
     const form = mapItemToForm(item);
     prevComponent.current = form.component;
     methods.reset(form);
-    stockApi
-      .listCatalog({ kind: STOCK_CATALOG_KINDS.CATEGORY })
-      .then((res) => setCategories(res.data?.data || []))
-      .catch(() => setCategories([]));
     stockApi
       .listCatalog({ kind: STOCK_CATALOG_KINDS.COMPONENT })
       .then((res) => setComponents(res.data?.data || []))
@@ -218,10 +203,8 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
               spacing={2.25}
               onSubmit={methods.handleSubmit((values) => {
                 const formData = new FormData();
-                formData.append('category', values.category);
                 formData.append('component', values.component);
                 formData.append('subComponent', values.subComponent || '');
-                if (values.category === OTHER) formData.append('newCategory', String(values.newCategory || '').trim());
                 if (values.component === OTHER) formData.append('newComponent', String(values.newComponent || '').trim());
                 if (values.subComponent === OTHER) {
                   formData.append('newSubComponent', String(values.newSubComponent || '').trim());
@@ -231,66 +214,47 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
               })}
             >
               <CatalogField
-                name="category"
-                otherName="newCategory"
-                label="Component Category"
-                placeholder="Select category"
-                options={categories}
+                name="component"
+                otherName="newComponent"
+                label="Component Name"
+                placeholder="Select component"
+                options={components}
+                searchable
                 readOnly={readOnly}
-                adding={adding === STOCK_CATALOG_KINDS.CATEGORY}
+                adding={adding === STOCK_CATALOG_KINDS.COMPONENT}
                 onAdd={() =>
-                  addCatalog(STOCK_CATALOG_KINDS.CATEGORY, 'newCategory', 'category', null, (created) => {
-                    setCategories((prev) => upsertOption(prev, created));
+                  addCatalog(STOCK_CATALOG_KINDS.COMPONENT, 'newComponent', 'component', null, (created) => {
+                    setComponents((prev) => upsertOption(prev, created));
                   })
                 }
               />
-
-              <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                <Stack spacing={2}>
-                  <CatalogField
-                    name="component"
-                    otherName="newComponent"
-                    label="Component Name"
-                    placeholder="Select component"
-                    options={components}
-                    searchable
-                    readOnly={readOnly}
-                    adding={adding === STOCK_CATALOG_KINDS.COMPONENT}
-                    onAdd={() =>
-                      addCatalog(STOCK_CATALOG_KINDS.COMPONENT, 'newComponent', 'component', null, (created) => {
-                        setComponents((prev) => upsertOption(prev, created));
-                      })
+              <CatalogField
+                name="subComponent"
+                otherName="newSubComponent"
+                label="Sub Component Name"
+                optional
+                placeholder={
+                  component && component !== OTHER
+                    ? 'Select sub component (optional)'
+                    : 'Select a component first'
+                }
+                options={subComponents}
+                searchable
+                disabled={!component || component === OTHER}
+                readOnly={readOnly}
+                adding={adding === STOCK_CATALOG_KINDS.SUB_COMPONENT}
+                onAdd={() =>
+                  addCatalog(
+                    STOCK_CATALOG_KINDS.SUB_COMPONENT,
+                    'newSubComponent',
+                    'subComponent',
+                    component,
+                    (created) => {
+                      setSubComponents((prev) => upsertOption(prev, created));
                     }
-                  />
-                  <CatalogField
-                    name="subComponent"
-                    otherName="newSubComponent"
-                    label="Sub Component Name"
-                    optional
-                    placeholder={
-                      component && component !== OTHER
-                        ? 'Select sub component (optional)'
-                        : 'Select a component first'
-                    }
-                    options={subComponents}
-                    searchable
-                    disabled={!component || component === OTHER}
-                    readOnly={readOnly}
-                    adding={adding === STOCK_CATALOG_KINDS.SUB_COMPONENT}
-                    onAdd={() =>
-                      addCatalog(
-                        STOCK_CATALOG_KINDS.SUB_COMPONENT,
-                        'newSubComponent',
-                        'subComponent',
-                        component,
-                        (created) => {
-                          setSubComponents((prev) => upsertOption(prev, created));
-                        }
-                      )
-                    }
-                  />
-                </Stack>
-              </Box>
+                  )
+                }
+              />
 
               <Grid container spacing={1.5}>
                 <Grid item xs={12}>
