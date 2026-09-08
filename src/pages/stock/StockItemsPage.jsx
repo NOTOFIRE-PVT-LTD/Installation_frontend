@@ -16,6 +16,7 @@ import { buildCsvColumns } from '../../components/common/DataTable/DataTable.hel
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import StockItemDrawer from './StockItemDrawer';
 import StockItemImportDialog from './StockItemImportDialog';
+import StockReceiveImportDialog from './StockReceiveImportDialog';
 import StockMovementDrawer from './StockMovementDrawer';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
@@ -33,6 +34,7 @@ import {
   updateStockMovement,
   deleteStockMovement,
   deleteStockMovements,
+  importStockReceives,
 } from '../../features/stockMovements/stockMovementsThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
@@ -515,7 +517,12 @@ function MovementsPanel({ type, actionLabel }) {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectionModel, setSelectionModel] = useState(() => emptySelectionModel());
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState('');
   const columns = movementColumns(type);
+  const canImportReceive = type === STOCK_MOVEMENT_TYPES.SUPPLIER_IN;
 
   const listParams = { ...queryParams, type };
 
@@ -548,6 +555,27 @@ function MovementsPanel({ type, actionLabel }) {
       dispatch(showSnackbar({ message: err || 'Failed to save movement', severity: 'error' }));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleImport = async (formData) => {
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const result = await dispatch(importStockReceives(formData)).unwrap();
+      setImportResult(result);
+      dispatch(
+        showSnackbar({
+          message: `Imported ${result.inserted} of ${result.total} receive rows`,
+          severity: result.inserted ? 'success' : 'warning',
+        })
+      );
+      refresh();
+    } catch (err) {
+      setImportError(err || 'Failed to import receive records');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -590,7 +618,20 @@ function MovementsPanel({ type, actionLabel }) {
 
   return (
     <>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+        {canImportReceive && (
+          <Button
+            startIcon={<UploadFileIcon />}
+            variant="outlined"
+            onClick={() => {
+              setImportResult(null);
+              setImportError('');
+              setImportOpen(true);
+            }}
+          >
+            Import Excel
+          </Button>
+        )}
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setDrawer({ open: true, movement: null })}>
           {actionLabel}
         </Button>
@@ -642,6 +683,16 @@ function MovementsPanel({ type, actionLabel }) {
         onClose={closeDrawer}
         onSubmit={handleSubmit}
       />
+      {canImportReceive && (
+        <StockReceiveImportDialog
+          open={importOpen}
+          submitting={importing}
+          result={importResult}
+          error={importError}
+          onClose={() => setImportOpen(false)}
+          onSubmit={handleImport}
+        />
+      )}
       <ConfirmDialog
         open={Boolean(confirmDelete)}
         title="Delete Movement"

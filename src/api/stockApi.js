@@ -12,6 +12,12 @@ export const stockApi = {
     axiosInstance.post('/stock/items/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   downloadImportTemplate: () =>
     axiosInstance.get('/stock/items/import-template', { responseType: 'blob' }),
+  downloadReceiveImportTemplate: () =>
+    axiosInstance.get('/stock/movements/receive/import-template', { responseType: 'blob' }),
+  importReceives: (formData) =>
+    axiosInstance.post('/stock/movements/receive/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   updateItem: (id, formData) =>
     axiosInstance.put(`/stock/items/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   removeItem: (id) => axiosInstance.delete(`/stock/items/${id}`),

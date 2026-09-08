@@ -70,3 +70,15 @@ export const deleteStockMovements = createAsyncThunk(
     }
   }
 );
+
+export const importStockReceives = createAsyncThunk(
+  'stockMovements/importReceives',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const { data } = await stockApi.importReceives(formData);
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to import receive records');
+    }
+  }
+);

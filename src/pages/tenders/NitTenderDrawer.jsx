@@ -165,8 +165,7 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tender]);
 
-  // Reads Item Description / Item Qty / Advt. Value out of an uploaded tender PDF and
-  // fills the Items rows with them.
+  // Extracts Item Name / Quantity / Amount from an uploaded tender PDF via AI.
   const handleItemsPdf = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -176,7 +175,7 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
     setImportError('');
     setImportInfo('');
     try {
-      const { items, amountUnit, columns } = await parseTenderItemsPdf(file);
+      const { items, amountUnit, columns, provider } = await parseTenderItemsPdf(file);
       const rows = items.map((item) => ({
         itemName: item.itemName,
         amount: item.amount ?? '',
@@ -191,14 +190,15 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
       else itemsArray.replace(rows);
 
       const missing = [
-        !columns.quantity && 'Item Qty',
-        !columns.amount && 'Advt. Value',
+        !columns.quantity && 'Quantity',
+        !columns.amount && 'Amount',
       ].filter(Boolean);
       setImportInfo(
         [
-          `Added ${rows.length} item${rows.length === 1 ? '' : 's'} from ${file.name}.`,
+          `AI extracted ${rows.length} item${rows.length === 1 ? '' : 's'} from ${file.name}.`,
+          provider && `(${provider})`,
           amountUnit && `Amounts converted from ${amountUnit}s.`,
-          missing.length && `No ${missing.join(' or ')} column found — enter those manually.`,
+          missing.length && `No ${missing.join(' or ')} found on some rows — fill those manually.`,
         ]
           .filter(Boolean)
           .join(' ')
@@ -265,7 +265,7 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
                       onClick={() => pdfInputRef.current?.click()}
                       disabled={importing}
                     >
-                      {importing ? 'Reading PDF…' : 'Upload PDF'}
+                      {importing ? 'AI reading PDF…' : 'Upload PDF'}
                     </Button>
                     <Button size="small" startIcon={<AddIcon />} onClick={() => itemsArray.append(emptyItem())}>
                       Add Item
