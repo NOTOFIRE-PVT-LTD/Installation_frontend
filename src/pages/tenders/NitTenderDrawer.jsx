@@ -17,10 +17,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
-import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import { parseTenderItemsPdf } from '../../utils/tenderItemsPdfImport';
-import { LOA_TYPES } from '../../utils/constants';
 
 const emptyItem = () => ({
   itemName: '',
@@ -28,17 +26,8 @@ const emptyItem = () => ({
   quantity: '',
 });
 
-const emptyLoaItem = () => ({
-  itemName: '',
-  amount: '',
-  loaType: LOA_TYPES.NOTOFIRE,
-});
-
-const LOA_TYPE_OPTIONS = Object.values(LOA_TYPES).map((v) => ({ value: v, label: v }));
-
 const schema = yup.object({
   tenderName: yup.string().trim().required('Tender Name is required'),
-  nitNumber: yup.string().trim().required('NIT Number is required'),
   nitDate: yup.string().nullable(),
   items: yup.array().of(
     yup.object({
@@ -53,13 +42,6 @@ const schema = yup.object({
   loaWorkCompletion: yup.string().nullable(),
   loaDivisionName: yup.string().trim().nullable(),
   contractorName: yup.string().trim().nullable(),
-  loaItems: yup.array().of(
-    yup.object({
-      itemName: yup.string().trim(),
-      amount: yup.number().typeError('Must be a number').min(0).nullable(),
-      loaType: yup.string().oneOf(Object.values(LOA_TYPES)),
-    })
-  ),
 });
 
 function toDateInput(value) {
@@ -71,7 +53,6 @@ function mapTenderToForm(tender) {
   if (!tender) {
     return {
       tenderName: '',
-      nitNumber: '',
       nitDate: null,
       items: [emptyItem()],
       loaNumber: '',
@@ -80,13 +61,11 @@ function mapTenderToForm(tender) {
       loaWorkCompletion: null,
       loaDivisionName: '',
       contractorName: '',
-      loaItems: [emptyLoaItem()],
     };
   }
 
   return {
     tenderName: tender.tenderName || '',
-    nitNumber: tender.nitNumber || '',
     nitDate: toDateInput(tender.nitDate),
     items:
       tender.items?.length > 0
@@ -102,21 +81,13 @@ function mapTenderToForm(tender) {
     loaWorkCompletion: toDateInput(tender.loaWorkCompletion),
     loaDivisionName: tender.loaDivisionName || '',
     contractorName: tender.contractorName || '',
-    loaItems:
-      tender.loaItems?.length > 0
-        ? tender.loaItems.map((item) => ({
-            itemName: item.itemName || '',
-            amount: item.amount ?? '',
-            loaType: item.loaType || LOA_TYPES.NOTOFIRE,
-          }))
-        : [emptyLoaItem()],
   };
 }
 
 function buildPayload(values) {
   return {
     tenderName: values.tenderName.trim(),
-    nitNumber: values.nitNumber.trim(),
+    nitNumber: '',
     nitDate: values.nitDate || null,
     items: (values.items || [])
       .filter((item) => String(item.itemName || '').trim())
@@ -131,13 +102,7 @@ function buildPayload(values) {
     loaWorkCompletion: values.loaWorkCompletion || null,
     loaDivisionName: String(values.loaDivisionName || '').trim(),
     contractorName: String(values.contractorName || '').trim(),
-    loaItems: (values.loaItems || [])
-      .filter((item) => String(item.itemName || '').trim())
-      .map((item) => ({
-        itemName: String(item.itemName).trim(),
-        amount: Number(item.amount) || 0,
-        loaType: item.loaType || LOA_TYPES.NOTOFIRE,
-      })),
+    loaItems: [],
   };
 }
 
@@ -150,7 +115,6 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
   });
 
   const itemsArray = useFieldArray({ control: methods.control, name: 'items' });
-  const loaItemsArray = useFieldArray({ control: methods.control, name: 'loaItems' });
 
   const pdfInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
@@ -165,7 +129,7 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tender]);
 
-  // Extracts Item Name / Quantity / Amount from an uploaded tender PDF via AI.
+  // Extracts short Item Name / Quantity / Amount from an uploaded tender/LOA PDF via AI.
   const handleItemsPdf = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -235,9 +199,6 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
               <Grid container spacing={1.5}>
                 <Grid item xs={12}>
                   <RHFTextField name="tenderName" label="Tender Name" disabled={readOnly} required />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <RHFTextField name="nitNumber" label="NIT Number" disabled={readOnly} required />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <RHFDatePicker name="nitDate" label="NIT Date" disabled={readOnly} />
@@ -354,60 +315,6 @@ export default function NitTenderDrawer({ open, mode = 'create', tender, onClose
                   <RHFDatePicker name="loaWorkCompletion" label="LOA Work Completion" disabled={readOnly} />
                 </Grid>
               </Grid>
-
-              <Divider />
-              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  LOA Items
-                </Typography>
-                {!readOnly && (
-                  <Button size="small" startIcon={<AddIcon />} onClick={() => loaItemsArray.append(emptyLoaItem())}>
-                    Add LOA Item
-                  </Button>
-                )}
-              </Stack>
-              <Stack spacing={1.5}>
-                {loaItemsArray.fields.length === 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    No LOA items added.
-                  </Typography>
-                )}
-                {loaItemsArray.fields.map((field, index) => (
-                  <Box key={field.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                    <Grid container spacing={1.25} alignItems="flex-start">
-                      <Grid item xs={12} sm={5}>
-                        <RHFTextField name={`loaItems.${index}.itemName`} label="Item Name" disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <RHFTextField name={`loaItems.${index}.amount`} label="Amount" type="number" disabled={readOnly} />
-                      </Grid>
-                      <Grid item xs={10} sm={3}>
-                        <RHFSelect
-                          name={`loaItems.${index}.loaType`}
-                          label="LOA Type"
-                          options={LOA_TYPE_OPTIONS}
-                          disabled={readOnly}
-                        />
-                      </Grid>
-                      {!readOnly && (
-                        <Grid item xs={2} sm={1} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                          <IconButton size="small" onClick={() => loaItemsArray.remove(index)} aria-label="Remove LOA item">
-                            <DeleteIcon fontSize="small" color="error" />
-                          </IconButton>
-                        </Grid>
-                      )}
-                    </Grid>
-                  </Box>
-                ))}
-              </Stack>
             </Stack>
           </FormProvider>
         </Box>

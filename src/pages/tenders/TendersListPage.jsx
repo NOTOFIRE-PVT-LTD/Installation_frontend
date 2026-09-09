@@ -30,12 +30,6 @@ const COLUMNS = [
     valueGetter: (value) => value || '-',
   },
   {
-    field: 'nitNumber',
-    headerName: 'NIT Number',
-    flex: 1,
-    minWidth: 140,
-  },
-  {
     field: 'nitDate',
     headerName: 'NIT Date',
     width: 130,
@@ -54,8 +48,7 @@ const COLUMNS = [
     flex: 1,
     minWidth: 140,
     valueGetter: (value) => value || '-',
-  },
-  {
+  },  {
     field: 'loaDate',
     headerName: 'LOA Date',
     width: 130,
@@ -86,13 +79,6 @@ const COLUMNS = [
     headerName: 'LOA Work Completion',
     width: 160,
     valueFormatter: (value) => formatDate(value),
-  },
-  {
-    field: 'loaItemsCount',
-    headerName: 'LOA Items',
-    width: 110,
-    valueGetter: (_value, row) => row.loaItems?.length || 0,
-    csvValue: (row) => row.loaItems?.length || 0,
   },
 ];
 
