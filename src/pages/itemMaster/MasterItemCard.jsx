@@ -45,8 +45,21 @@ function DetailRow({ label, value, emphasis }) {
   );
 }
 
+function firstPreviewImage(attachments) {
+  const list = Array.isArray(attachments) ? attachments : attachments?.url ? [attachments] : [];
+  return list.find((entry) => entry?.url && entry.resourceType !== 'raw' && !String(entry.url).toLowerCase().endsWith('.pdf'));
+}
+
+function attachmentCountLabel(attachments, singular) {
+  const list = Array.isArray(attachments) ? attachments : attachments?.url ? [attachments] : [];
+  const count = list.filter((entry) => entry?.url).length;
+  if (!count) return '';
+  return count === 1 ? singular : `${count} files`;
+}
+
 export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
   const [anchorEl, setAnchorEl] = useState(null);
+  const preview = firstPreviewImage(item.image);
 
   const actions = [
     { label: 'View', onClick: onView },
@@ -67,8 +80,8 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
       label: 'Location',
       value: item.location?.address || (item.location?.latitude != null ? `${item.location.latitude.toFixed(4)}, ${item.location.longitude.toFixed(4)}` : ''),
     },
-    { label: 'Bill Photo', value: item.billPhoto?.url ? 'Attached' : '' },
-    { label: 'Visiting Card', value: item.visitingCard?.url ? 'Attached' : '' },
+    { label: 'Bill Photo', value: attachmentCountLabel(item.billPhoto, 'Attached') },
+    { label: 'Visiting Card', value: attachmentCountLabel(item.visitingCard, 'Attached') },
   ].filter((row) => row.value !== '');
 
   return (
@@ -127,10 +140,10 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
             color: 'text.disabled',
           }}
         >
-          {item.image?.url ? (
+          {preview?.url ? (
             <Box
               component="img"
-              src={item.image.url}
+              src={preview.url}
               alt={item.itemName || 'Item'}
               loading="lazy"
               sx={{ width: '100%', height: '100%', objectFit: 'cover' }}

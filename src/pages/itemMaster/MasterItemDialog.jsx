@@ -17,6 +17,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCameraOutlined';
+import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
@@ -176,55 +178,149 @@ function TotalAmountField() {
   );
 }
 
-function ImagePicker({ label, value, onChange, readOnly }) {
-  const cameraRef = useRef(null);
+function isPdfAttachment(entry) {
+  if (!entry) return false;
+  if (entry.resourceType === 'raw') return true;
+  if (entry.file?.type === 'application/pdf') return true;
+  const name = String(entry.originalName || entry.name || entry.url || '').toLowerCase();
+  return name.endsWith('.pdf') || name.includes('/raw/upload/');
+}
 
-  const pick = (event) => {
-    const file = event.target.files?.[0];
-    if (file) onChange({ file, url: URL.createObjectURL(file), name: file.name });
-    event.target.value = '';
+function normalizeAttachments(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry) => entry?.url || entry?.file)
+      .map((entry) => ({
+        url: entry.url || '',
+        publicId: entry.publicId || '',
+        resourceType: entry.resourceType || (isPdfAttachment(entry) ? 'raw' : 'image'),
+        originalName: entry.originalName || entry.name || '',
+        file: entry.file || null,
+        key: entry.key || entry.publicId || entry.url || `${Date.now()}-${Math.random()}`,
+      }));
+  }
+  if (typeof value === 'object' && value.url) {
+    return normalizeAttachments([value]);
+  }
+  return [];
+}
+
+function MultiFilePicker({ label, value = [], onChange, readOnly }) {
+  const cameraRef = useRef(null);
+  const fileRef = useRef(null);
+  const files = Array.isArray(value) ? value : [];
+
+  const addFiles = (fileList) => {
+    const next = Array.from(fileList || [])
+      .filter((file) => file.type.startsWith('image/') || file.type === 'application/pdf')
+      .map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+        name: file.name,
+        originalName: file.name,
+        resourceType: file.type === 'application/pdf' ? 'raw' : 'image',
+        key: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+      }));
+    if (!next.length) return;
+    onChange([...files, ...next].slice(0, 10));
+  };
+
+  const removeAt = (index) => {
+    onChange(files.filter((_, i) => i !== index));
   };
 
   return (
     <Box>
       <FieldLabel>{label}</FieldLabel>
-      {value?.url ? (
-        <Box
-          sx={{
-            position: 'relative',
-            width: 120,
-            height: 120,
-            borderRadius: 2,
-            overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Box
-            component="img"
-            src={value.url}
-            alt={value.name || label}
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          {!readOnly && (
-            <IconButton
-              size="small"
-              onClick={() => onChange(null)}
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: files.length ? 1 : 0 }}>
+        {files.map((entry, index) => {
+          const pdf = isPdfAttachment(entry);
+          return (
+            <Box
+              key={entry.key || entry.publicId || entry.url || index}
               sx={{
-                position: 'absolute',
-                top: 2,
-                right: 2,
-                bgcolor: 'rgba(0,0,0,0.5)',
-                color: '#fff',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                position: 'relative',
+                width: 88,
+                height: 88,
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'action.hover',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          )}
-        </Box>
-      ) : (
-        !readOnly && (
+              {pdf ? (
+                <Stack alignItems="center" spacing={0.5} sx={{ px: 0.5, textAlign: 'center' }}>
+                  <PictureAsPdfIcon color="error" fontSize="small" />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: '0.625rem',
+                      lineHeight: 1.2,
+                      px: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {entry.originalName || entry.name || 'PDF'}
+                  </Typography>
+                </Stack>
+              ) : (
+                <Box
+                  component="img"
+                  src={entry.url}
+                  alt={entry.originalName || entry.name || label}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+              {!readOnly && (
+                <IconButton
+                  size="small"
+                  onClick={() => removeAt(index)}
+                  sx={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    zIndex: 1,
+                    bgcolor: 'rgba(0,0,0,0.5)',
+                    color: '#fff',
+                    width: 22,
+                    height: 22,
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              )}
+              {entry.url && !entry.file && (
+                <Box
+                  component="a"
+                  href={entry.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 0,
+                  }}
+                  aria-label={`Open ${entry.originalName || label}`}
+                />
+              )}
+            </Box>
+          );
+        })}
+      </Stack>
+      {!readOnly && files.length < 10 && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           <Button
             variant="outlined"
             size="small"
@@ -233,9 +329,43 @@ function ImagePicker({ label, value, onChange, readOnly }) {
           >
             Take Photo
           </Button>
-        )
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<UploadFileIcon />}
+            onClick={() => fileRef.current?.click()}
+          >
+            Add Image / PDF
+          </Button>
+        </Stack>
       )}
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(event) => {
+          addFiles(event.target.files);
+          event.target.value = '';
+        }}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf,.pdf"
+        multiple
+        hidden
+        onChange={(event) => {
+          addFiles(event.target.files);
+          event.target.value = '';
+        }}
+      />
+      {!readOnly && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+          Up to 10 files · images or PDF
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -359,9 +489,9 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
 
   const [catalog, setCatalog] = useState({});
   const [adding, setAdding] = useState('');
-  const [image, setImage] = useState(null);
-  const [billPhoto, setBillPhoto] = useState(null);
-  const [visitingCard, setVisitingCard] = useState(null);
+  const [images, setImages] = useState([]);
+  const [billPhotos, setBillPhotos] = useState([]);
+  const [visitingCards, setVisitingCards] = useState([]);
   const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null, address: '', accuracy: null });
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState('');
@@ -370,6 +500,7 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
   const [existingItems, setExistingItems] = useState([]);
   const [nameOptions, setNameOptions] = useState([]);
   const prevItemNameRef = useRef('');
+  const initialAttachmentsRef = useRef({ image: [], billPhoto: [], visitingCard: [] });
 
   const itemNameSelect = useWatch({ control: methods.control, name: 'itemNameSelect' });
 
@@ -422,16 +553,19 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
         itemName: selectedName,
       });
       const displayName = itemNameText(template);
-      setImage(template.image?.url ? { url: template.image.url, name: displayName } : null);
+      setImages(
+        normalizeAttachments(template.image).map((entry) => ({
+          ...entry,
+          name: entry.originalName || displayName || 'Item Image',
+        }))
+      );
       if (mode === 'create') {
-        setBillPhoto(null);
-        setVisitingCard(null);
+        setBillPhotos([]);
+        setVisitingCards([]);
         fetchCurrentLocation();
       } else {
-        setBillPhoto(template.billPhoto?.url ? { url: template.billPhoto.url, name: 'Bill Photo' } : null);
-        setVisitingCard(
-          template.visitingCard?.url ? { url: template.visitingCard.url, name: 'Visiting Card' } : null
-        );
+        setBillPhotos(normalizeAttachments(template.billPhoto));
+        setVisitingCards(normalizeAttachments(template.visitingCard));
         if (template.location?.latitude != null) {
           setCurrentLocation({
             latitude: template.location.latitude,
@@ -461,9 +595,17 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
     if (!open) return;
     prevItemNameRef.current = '';
     methods.reset(mapItemToForm(item));
-    setImage(item?.image?.url ? { url: item.image.url, name: itemNameText(item) } : null);
-    setBillPhoto(item?.billPhoto?.url ? { url: item.billPhoto.url, name: 'Bill Photo' } : null);
-    setVisitingCard(item?.visitingCard?.url ? { url: item.visitingCard.url, name: 'Visiting Card' } : null);
+    const nextImages = normalizeAttachments(item?.image);
+    const nextBills = normalizeAttachments(item?.billPhoto);
+    const nextCards = normalizeAttachments(item?.visitingCard);
+    setImages(nextImages);
+    setBillPhotos(nextBills);
+    setVisitingCards(nextCards);
+    initialAttachmentsRef.current = {
+      image: nextImages.map((entry) => entry.publicId).filter(Boolean),
+      billPhoto: nextBills.map((entry) => entry.publicId).filter(Boolean),
+      visitingCard: nextCards.map((entry) => entry.publicId).filter(Boolean),
+    };
     if (item?.location?.latitude != null) {
       setCurrentLocation({
         latitude: item.location.latitude,
@@ -596,15 +738,25 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
         formData.append(newNameField(field.name), String(values[newNameField(field.name)] || '').trim());
       }
     });
-    if (image?.file) formData.append('itemImage', image.file);
-    if (billPhoto?.file) formData.append('billPhoto', billPhoto.file);
-    if (visitingCard?.file) formData.append('visitingCard', visitingCard.file);
+    images.filter((entry) => entry.file).forEach((entry) => formData.append('itemImage', entry.file));
+    billPhotos.filter((entry) => entry.file).forEach((entry) => formData.append('billPhoto', entry.file));
+    visitingCards.filter((entry) => entry.file).forEach((entry) => formData.append('visitingCard', entry.file));
     if (currentLocation.latitude != null) {
       formData.append('location', JSON.stringify(currentLocation));
     }
-    if (mode === 'edit' && item?.image?.url && !image) formData.append('removeImage', 'true');
-    if (mode === 'edit' && item?.billPhoto?.url && !billPhoto) formData.append('removeBillPhoto', 'true');
-    if (mode === 'edit' && item?.visitingCard?.url && !visitingCard) formData.append('removeVisitingCard', 'true');
+    if (mode === 'edit') {
+      const keptImageIds = new Set(images.map((entry) => entry.publicId).filter(Boolean));
+      const keptBillIds = new Set(billPhotos.map((entry) => entry.publicId).filter(Boolean));
+      const keptCardIds = new Set(visitingCards.map((entry) => entry.publicId).filter(Boolean));
+      const removeItemImageIds = initialAttachmentsRef.current.image.filter((id) => !keptImageIds.has(id));
+      const removeBillPhotoIds = initialAttachmentsRef.current.billPhoto.filter((id) => !keptBillIds.has(id));
+      const removeVisitingCardIds = initialAttachmentsRef.current.visitingCard.filter((id) => !keptCardIds.has(id));
+      if (removeItemImageIds.length) formData.append('removeItemImageIds', JSON.stringify(removeItemImageIds));
+      if (removeBillPhotoIds.length) formData.append('removeBillPhotoIds', JSON.stringify(removeBillPhotoIds));
+      if (removeVisitingCardIds.length) {
+        formData.append('removeVisitingCardIds', JSON.stringify(removeVisitingCardIds));
+      }
+    }
     onSubmit(formData);
   };
 
@@ -693,14 +845,19 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
               </Grid>
 
               <Grid item xs={12}>
-                <ImagePicker label="Item Image" value={image} onChange={setImage} readOnly={readOnly} />
+                <MultiFilePicker label="Item Image" value={images} onChange={setImages} readOnly={readOnly} />
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <ImagePicker label="Bill Photo" value={billPhoto} onChange={setBillPhoto} readOnly={readOnly} />
+                <MultiFilePicker label="Bill Photo" value={billPhotos} onChange={setBillPhotos} readOnly={readOnly} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <ImagePicker label="Visiting Card" value={visitingCard} onChange={setVisitingCard} readOnly={readOnly} />
+                <MultiFilePicker
+                  label="Visiting Card"
+                  value={visitingCards}
+                  onChange={setVisitingCards}
+                  readOnly={readOnly}
+                />
               </Grid>
 
               <Grid item xs={12} sm={6}>
