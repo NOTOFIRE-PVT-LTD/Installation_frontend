@@ -28,6 +28,7 @@ const LABELS = {
   stockItems: 'Stock Items',
   bom: 'BOM',
   itemsMaster: 'Items Master',
+  billing: 'Billing',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

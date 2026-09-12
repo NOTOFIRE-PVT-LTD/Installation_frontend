@@ -65,6 +65,7 @@ export const PERMISSION_KEYS = [
   'stockItems',
   'bom',
   'itemsMaster',
+  'billing',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

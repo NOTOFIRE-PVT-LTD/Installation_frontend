@@ -26,6 +26,7 @@ import BgApplicationPrintPage from '../pages/accounts/BgApplicationPrintPage';
 import StockItemsPage from '../pages/stock/StockItemsPage';
 import BomPage from '../pages/bom/BomPage';
 import ItemsMasterPage from '../pages/itemMaster/ItemsMasterPage';
+import BillingPage from '../pages/billing/BillingPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -223,6 +224,15 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="itemsMaster" roles={[]}>
                 <ItemsMasterPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/billing"
+            element={
+              <PermissionGate permission="billing" roles={[]}>
+                <BillingPage />
               </PermissionGate>
             }
           />

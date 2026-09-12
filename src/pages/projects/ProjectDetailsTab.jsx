@@ -59,7 +59,11 @@ const PROJECT_TYPE_OPTIONS = [
 
 const schema = yup.object({
   projectName: yup.string().required('Project name is required'),
-  assignedInstaller: yup.string().required('Please select an installer'),
+  assignedInstallers: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, 'Please select at least one installer')
+    .required('Please select at least one installer'),
   contractor: yup.string().required('Contractor is required'),
   railwayZone: yup.string().required('Railway zone is required'),
   serialType: yup.string().oneOf(['LHS/ASD', 'ALL']).required('Select serial type'),
@@ -136,7 +140,7 @@ const RATING_OPTIONS = [
 
 const defaultValues = {
   projectName: '',
-  assignedInstaller: '',
+  assignedInstallers: [],
   contractor: '',
   railwayZone: '',
   serialType: 'LHS/ASD',
@@ -200,7 +204,7 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
   const [supplyInvoiceDoc, setSupplyInvoiceDoc] = useState(null);
   const [installationPoDoc, setInstallationPoDoc] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [userOptions, setUserOptions] = useState([{ value: '', label: 'Select installer' }]);
+  const [userOptions, setUserOptions] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [tenderOptions, setTenderOptions] = useState([]);
   const [selectedTenderId, setSelectedTenderId] = useState('');
@@ -240,13 +244,12 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
       .then(({ data }) => {
         if (cancelled) return;
         const users = data.data || [];
-        setUserOptions([
-          { value: '', label: 'Select installer' },
-          ...users.map((u) => ({
+        setUserOptions(
+          users.map((u) => ({
             value: u._id,
             label: [u.name, u.email].filter(Boolean).join(' · '),
-          })),
-        ]);
+          }))
+        );
       })
       .catch(() => {
         if (!cancelled) {
@@ -285,7 +288,11 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
     if (project) {
       methods.reset({
         projectName: project.projectName || '',
-        assignedInstaller: project.assignedInstaller?._id || project.assignedInstaller || '',
+        assignedInstallers: Array.isArray(project.assignedInstallers)
+          ? project.assignedInstallers.map((entry) => entry?._id || entry).filter(Boolean)
+          : project.assignedInstaller
+            ? [project.assignedInstaller?._id || project.assignedInstaller]
+            : [],
         contractor: project.contractor || '',
         railwayZone: project.railwayZone || '',
         serialType: (() => {
@@ -414,7 +421,7 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
     const formData = new FormData();
 
     TEXT_FIELDS.forEach((field) => formData.append(field, values[field] || ''));
-    formData.append('assignedInstaller', values.assignedInstaller || '');
+    formData.append('assignedInstallers', JSON.stringify(values.assignedInstallers || []));
     NUMBER_FIELDS.forEach((field) => formData.append(field, values[field]));
     DATE_FIELDS.forEach((field) => {
       if (values[field]) formData.append(field, values[field]);
@@ -478,12 +485,19 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           <Grid item xs={12} sm={6}>
             {canManage ? (
               <RHFSelect
-                name="assignedInstaller"
+                name="assignedInstallers"
                 label="Assign Installer"
                 options={userOptions}
                 disabled={readOnly || loadingUsers}
                 size="small"
-                helperText={loadingUsers ? 'Loading users…' : 'Project will be visible only to the selected user'}
+                searchable={userOptions.length > 8}
+                searchPlaceholder="Search installers"
+                helperText={
+                  loadingUsers
+                    ? 'Loading users…'
+                    : 'Select one or more installers — project is visible to all selected users'
+                }
+                SelectProps={{ multiple: true }}
               />
             ) : (
               <TextField
