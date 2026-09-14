@@ -3,8 +3,10 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import Chip from '@mui/material/Chip';
+import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { formatDate } from '../../utils/formatters';
@@ -34,7 +36,7 @@ function statusChip(statusLabel, pct) {
   return { label: 'Not Started', color: '#6b7280', bg: '#f3f4f6' };
 }
 
-export default function ProjectProgressCard({ project, onOpen }) {
+export default function ProjectProgressCard({ project, onOpen, onDelete }) {
   const { pct, commissioned, total } = resolveProgress(project);
   const name = project.projectName || 'Untitled project';
   const loaNo = project.loaNo || project.panelSerialNo || '';
@@ -84,19 +86,34 @@ export default function ProjectProgressCard({ project, onOpen }) {
         >
           <FontAwesomeIcon icon={faFolderOpen} />
         </Box>
-        <Chip
-          size="small"
-          label={chip.label}
-          sx={{
-            bgcolor: chip.bg,
-            color: chip.color,
-            border: 'none',
-            fontWeight: 600,
-            height: 20,
-            flexShrink: 0,
-            '& .MuiChip-label': { px: 0.75 },
-          }}
-        />
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Chip
+            size="small"
+            label={chip.label}
+            sx={{
+              bgcolor: chip.bg,
+              color: chip.color,
+              border: 'none',
+              fontWeight: 600,
+              height: 20,
+              flexShrink: 0,
+              '& .MuiChip-label': { px: 0.75 },
+            }}
+          />
+          {onDelete && (
+            <IconButton
+              size="small"
+              aria-label="Delete project"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(project);
+              }}
+              sx={{ color: 'error.main', width: 28, height: 28 }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Stack>
       </Stack>
 
       <Typography

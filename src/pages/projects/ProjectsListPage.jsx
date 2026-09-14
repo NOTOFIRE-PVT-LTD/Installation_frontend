@@ -14,13 +14,14 @@ import SearchIcon from '@mui/icons-material/Search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import PageHeader from '../../components/common/PageHeader';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import ProjectProgressCard from '../../components/projects/ProjectProgressCard';
 import ProjectDrawer from './ProjectDrawer';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import { usePermission } from '../../hooks/usePermission';
 import { useDebounce } from '../../hooks/useDebounce';
-import { fetchProjects, fetchProjectById } from '../../features/projects/projectsThunks';
+import { fetchProjects, fetchProjectById, deleteProject } from '../../features/projects/projectsThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 
 const PAGE_SIZE_OPTIONS = [6, 9, 12, 24];
@@ -38,6 +39,8 @@ export default function ProjectsListPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerProject, setDrawerProject] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setLocalSearch(search || '');
@@ -84,6 +87,22 @@ export default function ProjectsListPage() {
     setDrawerOpen(false);
     setDrawerProject(null);
     setDetailLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete?._id) return;
+    setDeleting(true);
+    try {
+      await dispatch(deleteProject(confirmDelete._id)).unwrap();
+      dispatch(showSnackbar({ message: 'Project deleted' }));
+      setConfirmDelete(null);
+      if (drawerProject?._id === confirmDelete._id) handleCloseDrawer();
+      refresh();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete project', severity: 'error' }));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -189,7 +208,11 @@ export default function ProjectsListPage() {
         <Grid container spacing={1.5}>
           {items.map((project) => (
             <Grid item xs={12} sm={6} md={4} key={project._id}>
-              <ProjectProgressCard project={project} onOpen={handleOpen} />
+              <ProjectProgressCard
+                project={project}
+                onOpen={handleOpen}
+                onDelete={canManage ? setConfirmDelete : undefined}
+              />
             </Grid>
           ))}
         </Grid>
@@ -263,6 +286,19 @@ export default function ProjectsListPage() {
           refresh();
           setDrawerProject(saved);
           setDetailLoading(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Delete Project"
+        message={`Delete "${confirmDelete?.projectName || 'this project'}"? Stations, reports, and related files will be removed. This cannot be undone.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onClose={() => {
+          if (!deleting) setConfirmDelete(null);
         }}
       />
     </Box>

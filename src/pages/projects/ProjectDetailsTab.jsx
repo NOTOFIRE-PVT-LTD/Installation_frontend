@@ -369,6 +369,11 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
 
+  const toDateInput = (value) => {
+    if (!value) return null;
+    return String(value).slice(0, 10);
+  };
+
   const applyTenderLoa = (tenderId) => {
     setSelectedTenderId(tenderId);
     if (!tenderId) return;
@@ -376,45 +381,53 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
     const tender = tenderOptions.find((t) => t._id === tenderId);
     if (!tender) return;
 
+    const completionDate = toDateInput(tender.loaWorkCompletion);
+
+    // Copy every LOA field from the selected tender — no manual entry needed.
     methods.setValue('loaNo', tender.loaNumber || '', { shouldDirty: true });
-    methods.setValue('workName', tender.loaDivisionName || '', { shouldDirty: true });
+    methods.setValue('loaDate', toDateInput(tender.loaDate), { shouldDirty: true });
     methods.setValue(
-      'dateOfCompletionLOA',
-      tender.loaWorkCompletion ? String(tender.loaWorkCompletion).slice(0, 10) : null,
+      'workName',
+      tender.tenderName || tender.loaDivisionName || '',
       { shouldDirty: true }
     );
-    if (tender.contractorName) {
-      methods.setValue('contractor', tender.contractorName, { shouldDirty: true });
-    }
+    methods.setValue('dateOfCompletionLOA', completionDate, { shouldDirty: true });
+    methods.setValue('targetDate', completionDate, { shouldDirty: true });
+    methods.setValue('contractor', tender.contractorName || '', { shouldDirty: true });
 
-    const mappedItems =
-      (tender.loaItems || [])
-        .filter((item) => String(item.itemName || '').trim())
-        .map((item) => ({
+    // Tender items (with qty) are the source of truth; LOA-only rows are a fallback.
+    const nitItems = (tender.items || [])
+      .filter((item) => String(item.itemName || '').trim())
+      .map((item) => ({
+        item: item.itemName,
+        qty: item.quantity ?? 0,
+        unit: 'Nos',
+      }));
+
+    const loaOnlyItems = (tender.loaItems || [])
+      .filter((item) => String(item.itemName || '').trim())
+      .map((item) => {
+        const nitMatch = (tender.items || []).find(
+          (n) => String(n.itemName || '').trim().toLowerCase() === String(item.itemName || '').trim().toLowerCase()
+        );
+        return {
           item: item.loaType ? `${item.itemName} (${item.loaType})` : item.itemName,
-          qty: 0,
+          qty: nitMatch?.quantity ?? 0,
           unit: 'Nos',
-        })) || [];
+        };
+      });
 
-    // Prefer LOA items; fall back to NIT items (which have quantity) if LOA items are empty.
-    const fallbackItems =
-      mappedItems.length > 0
-        ? mappedItems
-        : (tender.items || [])
-            .filter((item) => String(item.itemName || '').trim())
-            .map((item) => ({
-              item: item.itemName,
-              qty: item.quantity ?? 0,
-              unit: 'Nos',
-            }));
+    loaItemsArray.replace(nitItems.length > 0 ? nitItems : loaOnlyItems);
 
-    methods.setValue('loaItems', fallbackItems, { shouldDirty: true });
     dispatch(
       showSnackbar({
-        message: `LOA details filled from tender ${tender.loaNumber || tender.nitNumber}`,
+        message: `LOA details filled from tender ${tender.loaNumber || tender.tenderName || tender.nitNumber}`,
       })
     );
   };
+
+  const loaFromTender = Boolean(selectedTenderId);
+  const loaFieldsLocked = readOnly || loaFromTender;
 
   const onSubmit = async (values) => {
     setSubmitting(true);
@@ -607,7 +620,9 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
                     ? 'Loading tender LOAs…'
                     : tenderSelectOptions.length === 0
                       ? 'No tenders with LOA Number found. Add one under Tender first.'
-                      : 'Selecting a tender fills LOA No., Division/Name, Work Completion, Contractor, and LOA items.'
+                      : loaFromTender
+                        ? 'LOA fields are filled from this tender. Clear the selection to edit manually.'
+                        : 'Select a tender to auto-fill all LOA details and items — no manual entry needed.'
                 }
                 sx={{
                   '& .MuiInputBase-root': { fontSize: '0.8125rem' },
@@ -628,19 +643,19 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         )}
         <Grid container spacing={1.25}>
           <Grid item xs={12} sm={6}>
-            <RHFTextField name="loaNo" label="LOA No." disabled={readOnly} />
+            <RHFTextField name="loaNo" label="LOA No." disabled={loaFieldsLocked} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <RHFDatePicker name="loaDate" label="LOA Date" disabled={readOnly} />
+            <RHFDatePicker name="loaDate" label="LOA Date" disabled={loaFieldsLocked} />
           </Grid>
           <Grid item xs={12}>
-            <RHFTextField name="workName" label="Name of Work" disabled={readOnly} />
+            <RHFTextField name="workName" label="Name of Work" disabled={loaFieldsLocked} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <RHFDatePicker name="dateOfCompletionLOA" label="Date of Completion (as per LOA)" disabled={readOnly} />
+            <RHFDatePicker name="dateOfCompletionLOA" label="Date of Completion (as per LOA)" disabled={loaFieldsLocked} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <RHFDatePicker name="targetDate" label="Target Date to Complete" disabled={readOnly} />
+            <RHFDatePicker name="targetDate" label="Target Date to Complete" disabled={loaFieldsLocked} />
           </Grid>
           <Grid item xs={12}>
             <RHFTextField name="reasonForDelay" label="Reason for Delay" disabled={readOnly} placeholder="Leave blank if on track" />
@@ -659,7 +674,7 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
           <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Items as per LOA
           </Typography>
-          {!readOnly && (
+          {!loaFieldsLocked && (
             <Button
               size="small"
               startIcon={<AddIcon />}
@@ -672,21 +687,21 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
         <Stack spacing={1}>
           {loaItemsArray.fields.length === 0 && (
             <Typography sx={{ fontSize: '0.75rem' }} color="text.secondary">
-              No items added.
+              {loaFromTender ? 'No items on this tender.' : 'No items added.'}
             </Typography>
           )}
           {loaItemsArray.fields.map((field, index) => (
             <Grid container spacing={1} key={field.id} alignItems="center">
               <Grid item xs={12} sm={5}>
-                <RHFTextField name={`loaItems.${index}.item`} label="Item" disabled={readOnly} />
+                <RHFTextField name={`loaItems.${index}.item`} label="Item" disabled={loaFieldsLocked} />
               </Grid>
               <Grid item xs={5} sm={3}>
-                <RHFTextField name={`loaItems.${index}.qty`} label="Qty" type="number" disabled={readOnly} />
+                <RHFTextField name={`loaItems.${index}.qty`} label="Qty" type="number" disabled={loaFieldsLocked} />
               </Grid>
               <Grid item xs={5} sm={3}>
-                <RHFTextField name={`loaItems.${index}.unit`} label="Unit" disabled={readOnly} />
+                <RHFTextField name={`loaItems.${index}.unit`} label="Unit" disabled={loaFieldsLocked} />
               </Grid>
-              {!readOnly && (
+              {!loaFieldsLocked && (
                 <Grid item xs={2} sm={1}>
                   <IconButton size="small" onClick={() => loaItemsArray.remove(index)}>
                     <DeleteIcon fontSize="small" color="error" />
