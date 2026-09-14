@@ -6,6 +6,12 @@ export const bomApi = {
   create: (payload) => axiosInstance.post('/bom', payload),
   update: (id, payload) => axiosInstance.put(`/bom/${id}`, payload),
   remove: (id) => axiosInstance.delete(`/bom/${id}`),
+  downloadComponentsImportTemplate: () =>
+    axiosInstance.get('/bom/components/import-template', { responseType: 'blob' }),
+  importComponents: (formData) =>
+    axiosInstance.post('/bom/components/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   listProductions: (params) => axiosInstance.get('/bom/productions', { params }),
   getProductionById: (id) => axiosInstance.get(`/bom/productions/${id}`),
   previewProduction: (payload) => axiosInstance.post('/bom/productions/preview', payload),

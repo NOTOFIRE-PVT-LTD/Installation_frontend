@@ -216,6 +216,14 @@ export default function StationDetailPage() {
 
   useEffect(() => {
     if (!station) return;
+    const loaMaterials = (project?.loaItems || [])
+      .filter((row) => String(row?.item || '').trim())
+      .map((row) => ({
+        item: String(row.item).trim(),
+        qty: Number(row.qty) || 0,
+        unit: row.unit || 'Nos',
+      }));
+    const stationMaterials = Array.isArray(station.materials) ? station.materials : [];
     methods.reset({
       name: station.name || '',
       type: station.type || SITE_TYPES[0],
@@ -226,7 +234,7 @@ export default function StationDetailPage() {
       completionDate: station.completionDate?.slice(0, 10) || null,
       commissioningDate: station.commissioningDate?.slice(0, 10) || null,
       reasonForDelay: station.reasonForDelay || '',
-      materials: station.materials || [],
+      materials: stationMaterials.length > 0 ? stationMaterials : loaMaterials,
       installationAmount: station.installationAmount ?? '',
       claimRequests: buildClaimRequestsFromStation(station),
       remarks: station.remarks || '',
@@ -244,7 +252,7 @@ export default function StationDetailPage() {
     setCadDrawingFiles(cadFiles);
     setInitialCadDrawingFiles(cadFiles.filter((f) => f.publicId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [station?._id, station?.updatedAt]);
+  }, [station?._id, station?.updatedAt, project?.loaItems]);
 
   if (currentStatus === 'loading' || !project) {
     return (
@@ -607,6 +615,9 @@ export default function StationDetailPage() {
                 </Button>
               )}
             </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Prefills from project LOA items for every station in this project.
+            </Typography>
             <Stack spacing={1.5}>
               {materialsArray.fields.length === 0 && (
                 <Typography variant="body2" color="text.secondary">

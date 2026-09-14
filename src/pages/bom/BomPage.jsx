@@ -11,6 +11,7 @@ import EditIcon from '@mui/icons-material/EditOutlined';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
+import ContentCopyIcon from '@mui/icons-material/ContentCopyOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
@@ -167,6 +168,26 @@ function BomListPanel() {
     }
   };
 
+  const openCopy = async (row) => {
+    try {
+      const { data } = await bomApi.getById(row._id);
+      const source = data.data;
+      setDrawer({
+        open: true,
+        mode: 'copy',
+        bom: {
+          ...source,
+          name: `${source.name || 'BOM'} (Copy)`,
+          version: source.version || '1.0',
+          effectiveDate: new Date().toISOString().slice(0, 10),
+          isActive: true,
+        },
+      });
+    } catch (err) {
+      dispatch(showSnackbar({ message: err.response?.data?.message || 'Failed to load BOM', severity: 'error' }));
+    }
+  };
+
   // The list rows are not populated deeply enough for component labels.
   const handleDownload = async (row, format) => {
     try {
@@ -183,9 +204,9 @@ function BomListPanel() {
   const handleSubmit = async (payload) => {
     setSubmitting(true);
     try {
-      if (drawer.mode === 'create') {
+      if (drawer.mode === 'create' || drawer.mode === 'copy') {
         await dispatch(createBom(payload)).unwrap();
-        dispatch(showSnackbar({ message: 'BOM created' }));
+        dispatch(showSnackbar({ message: drawer.mode === 'copy' ? 'BOM copied' : 'BOM created' }));
       } else {
         await dispatch(updateBom({ id: drawer.bom._id, payload })).unwrap();
         dispatch(showSnackbar({ message: 'BOM updated' }));
@@ -243,6 +264,11 @@ function BomListPanel() {
             label: 'Edit',
             icon: <EditIcon fontSize="small" />,
             onClick: (row) => openViewOrEdit(row, 'edit'),
+          },
+          {
+            label: 'Copy',
+            icon: <ContentCopyIcon fontSize="small" />,
+            onClick: openCopy,
           },
           {
             label: 'Download CSV',

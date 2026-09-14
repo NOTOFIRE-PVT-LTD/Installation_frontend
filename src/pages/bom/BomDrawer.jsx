@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldArray, useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -14,11 +14,15 @@ import Paper from '@mui/material/Paper';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { fetchStockItemOptions } from '../../features/stockItems/stockItemsThunks';
+import { showSnackbar } from '../../features/ui/uiSlice';
+import { bomApi } from '../../api/bomApi';
+import BomComponentsImportDialog from './BomComponentsImportDialog';
 
 const componentSchema = yup.object({
   stockItem: yup.string().required('Item is required'),
@@ -87,12 +91,17 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
   const dispatch = useAppDispatch();
   const { options: itemOptions } = useAppSelector((state) => state.stockItems);
 
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState('');
+
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: mapBomToForm(null),
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: methods.control,
     name: 'components',
   });
@@ -101,154 +110,216 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
     if (!open) return;
     dispatch(fetchStockItemOptions());
     methods.reset(mapBomToForm(bom));
+    setImportOpen(false);
+    setImportResult(null);
+    setImportError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, bom, mode]);
 
-  const titleMap = { create: 'Create BOM', edit: 'Edit BOM', view: 'View BOM' };
+  const titleMap = { create: 'Create BOM', edit: 'Edit BOM', view: 'View BOM', copy: 'Copy BOM' };
   const itemOpts = (itemOptions || []).map((item) => ({
     value: item._id,
     label: itemLabel(item),
   }));
 
+  const handleImportComponents = async (formData) => {
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const { data } = await bomApi.importComponents(formData);
+      const result = data.data;
+      setImportResult(result);
+      if (result.components?.length > 0) {
+        replace(
+          result.components.map((row) => ({
+            stockItem: String(row.stockItem),
+            qtyPerPcs: row.qtyPerPcs,
+          }))
+        );
+        dispatch(
+          showSnackbar({
+            message: `Imported ${result.inserted} component(s)${
+              result.skipped ? `, ${result.skipped} failed` : ''
+            }`,
+          })
+        );
+      }
+    } catch (err) {
+      setImportError(err.response?.data?.message || err.message || 'Failed to import components');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
-    <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: { xs: '100vw', sm: 720 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
-          <Typography variant="h6" fontWeight={700}>
-            {titleMap[mode]}
-          </Typography>
-          <IconButton onClick={onClose} aria-label="Close">
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-        <Divider />
-        <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, sm: 3 } }}>
-          <FormProvider {...methods}>
-            <Stack
-              component="form"
-              id="bom-form"
-              spacing={2.25}
-              onSubmit={methods.handleSubmit((values) =>
-                onSubmit({
-                  name: String(values.name || '').trim(),
-                  finishedItem: values.finishedItem || null,
-                  version: String(values.version || '1.0').trim(),
-                  effectiveDate: values.effectiveDate || null,
-                  remarks: String(values.remarks || '').trim(),
-                  isActive: values.isActive === true || values.isActive === 'true',
-                  components: (values.components || [])
-                    .filter((c) => c.stockItem)
-                    .map((c) => ({
-                      stockItem: c.stockItem,
-                      qtyPerPcs: Number(c.qtyPerPcs),
-                    })),
-                })
-              )}
-            >
-              <Grid container spacing={1.5}>
-                <Grid item xs={12} sm={6}>
-                  <RHFTextField name="name" label="BOM Name" disabled={readOnly} required />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <RHFSelect
-                    name="finishedItem"
-                    label="Finished Item"
-                    disabled={readOnly}
-                    searchable
-                    searchPlaceholder="Search item"
-                    options={[{ value: '', label: 'Select finished item' }, ...itemOpts]}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <RHFTextField name="version" label="Version" disabled={readOnly} required />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <RHFDatePicker name="effectiveDate" label="Effective Date" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <RHFSelect
-                    name="isActive"
-                    label="Status"
-                    disabled={readOnly}
-                    options={[
-                      { value: 'true', label: 'Active' },
-                      { value: 'false', label: 'Inactive' },
-                    ]}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8}>
-                  <RHFTextField name="remarks" label="Remarks" disabled={readOnly} multiline minRows={2} />
-                </Grid>
-              </Grid>
-
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    Components (Qty for 1 PCS)
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    BOM recipe only — does not change warehouse stock.
-                  </Typography>
-                </Box>
-                {!readOnly && (
-                  <Button startIcon={<AddIcon />} onClick={() => append(emptyComponent())}>
-                    Add Component
-                  </Button>
+    <>
+      <Drawer anchor="right" open={open} onClose={onClose}>
+        <Box sx={{ width: { xs: '100vw', sm: 720 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
+            <Typography variant="h6" fontWeight={700}>
+              {titleMap[mode]}
+            </Typography>
+            <IconButton onClick={onClose} aria-label="Close">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+          <Divider />
+          <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, sm: 3 } }}>
+            <FormProvider {...methods}>
+              <Stack
+                component="form"
+                id="bom-form"
+                spacing={2.25}
+                onSubmit={methods.handleSubmit((values) =>
+                  onSubmit({
+                    name: String(values.name || '').trim(),
+                    finishedItem: values.finishedItem || null,
+                    version: String(values.version || '1.0').trim(),
+                    effectiveDate: values.effectiveDate || null,
+                    remarks: String(values.remarks || '').trim(),
+                    isActive: values.isActive === true || values.isActive === 'true',
+                    components: (values.components || [])
+                      .filter((c) => c.stockItem)
+                      .map((c) => ({
+                        stockItem: c.stockItem,
+                        qtyPerPcs: Number(c.qtyPerPcs),
+                      })),
+                  })
                 )}
-              </Stack>
+              >
+                <Grid container spacing={1.5}>
+                  <Grid item xs={12} sm={6}>
+                    <RHFTextField name="name" label="BOM Name" disabled={readOnly} required />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <RHFSelect
+                      name="finishedItem"
+                      label="Finished Item"
+                      disabled={readOnly}
+                      searchable
+                      searchPlaceholder="Search item"
+                      options={[{ value: '', label: 'Select finished item' }, ...itemOpts]}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <RHFTextField name="version" label="Version" disabled={readOnly} required />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <RHFDatePicker name="effectiveDate" label="Effective Date" disabled={readOnly} />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <RHFSelect
+                      name="isActive"
+                      label="Status"
+                      disabled={readOnly}
+                      options={[
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' },
+                      ]}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={8}>
+                    <RHFTextField name="remarks" label="Remarks" disabled={readOnly} multiline minRows={2} />
+                  </Grid>
+                </Grid>
 
-              <Stack spacing={1.5}>
-                {fields.map((field, index) => (
-                  <Paper key={field.id} variant="outlined" sx={{ p: 1.5 }}>
-                    <Grid container spacing={1.25} alignItems="flex-start">
-                      <Grid item xs={12} sm={readOnly ? 7 : 6}>
-                        <RHFSelect
-                          name={`components.${index}.stockItem`}
-                          label="Item"
-                          disabled={readOnly}
-                          searchable
-                          searchPlaceholder="Search item"
-                          options={[{ value: '', label: 'Select item' }, ...itemOpts]}
-                        />
-                      </Grid>
-                      <Grid item xs={readOnly ? 12 : 10} sm={5}>
-                        <RHFTextField
-                          name={`components.${index}.qtyPerPcs`}
-                          label="Qty Required for 1 PCS"
-                          type="number"
-                          disabled={readOnly}
-                          required
-                        />
-                      </Grid>
-                      {!readOnly && (
-                        <Grid item xs={2} sm={1}>
-                          <IconButton
-                            color="error"
-                            disabled={fields.length <= 1}
-                            onClick={() => remove(index)}
-                            sx={{ mt: 1 }}
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'stretch', sm: 'center' }}
+                  gap={1}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      Components (Qty for 1 PCS)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      BOM recipe only — does not change warehouse stock.
+                    </Typography>
+                  </Box>
+                  {!readOnly && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      <Button
+                        startIcon={<UploadFileIcon />}
+                        variant="outlined"
+                        onClick={() => {
+                          setImportOpen(true);
+                          setImportResult(null);
+                          setImportError('');
+                        }}
+                      >
+                        Import Excel
+                      </Button>
+                      <Button startIcon={<AddIcon />} onClick={() => append(emptyComponent())}>
+                        Add Component
+                      </Button>
+                    </Stack>
+                  )}
+                </Stack>
+
+                <Stack spacing={1.5}>
+                  {fields.map((field, index) => (
+                    <Paper key={field.id} variant="outlined" sx={{ p: 1.5 }}>
+                      <Grid container spacing={1.25} alignItems="flex-start">
+                        <Grid item xs={12} sm={readOnly ? 7 : 6}>
+                          <RHFSelect
+                            name={`components.${index}.stockItem`}
+                            label="Item"
+                            disabled={readOnly}
+                            searchable
+                            searchPlaceholder="Search item"
+                            options={[{ value: '', label: 'Select item' }, ...itemOpts]}
+                          />
                         </Grid>
-                      )}
-                    </Grid>
-                  </Paper>
-                ))}
+                        <Grid item xs={readOnly ? 12 : 10} sm={5}>
+                          <RHFTextField
+                            name={`components.${index}.qtyPerPcs`}
+                            label="Qty Required for 1 PCS"
+                            type="number"
+                            disabled={readOnly}
+                            required
+                          />
+                        </Grid>
+                        {!readOnly && (
+                          <Grid item xs={2} sm={1}>
+                            <IconButton
+                              color="error"
+                              disabled={fields.length <= 1}
+                              onClick={() => remove(index)}
+                              sx={{ mt: 1 }}
+                            >
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Paper>
+                  ))}
+                </Stack>
               </Stack>
-            </Stack>
-          </FormProvider>
+            </FormProvider>
+          </Box>
+          <Divider />
+          <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: { xs: 2, sm: 2.5 } }}>
+            <Button onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</Button>
+            {!readOnly && (
+              <Button type="submit" form="bom-form" variant="contained" disabled={submitting}>
+                {submitting ? 'Saving…' : mode === 'copy' ? 'Save Copy' : 'Save BOM'}
+              </Button>
+            )}
+          </Stack>
         </Box>
-        <Divider />
-        <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: { xs: 2, sm: 2.5 } }}>
-          <Button onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</Button>
-          {!readOnly && (
-            <Button type="submit" form="bom-form" variant="contained" disabled={submitting}>
-              {submitting ? 'Saving…' : 'Save BOM'}
-            </Button>
-          )}
-        </Stack>
-      </Box>
-    </Drawer>
+      </Drawer>
+
+      <BomComponentsImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSubmit={handleImportComponents}
+        submitting={importing}
+        result={importResult}
+        error={importError}
+      />
+    </>
   );
 }
