@@ -14,6 +14,7 @@ export const bomApi = {
     }),
   listProductions: (params) => axiosInstance.get('/bom/productions', { params }),
   getProductionById: (id) => axiosInstance.get(`/bom/productions/${id}`),
+  removeProduction: (id) => axiosInstance.delete(`/bom/productions/${id}`),
   previewProduction: (payload) => axiosInstance.post('/bom/productions/preview', payload),
   confirmProduction: (payload) => axiosInstance.post('/bom/productions/confirm', payload),
 };

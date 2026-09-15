@@ -28,6 +28,7 @@ import {
   updateBom,
   deleteBom,
   fetchBomProductions,
+  deleteBomProduction,
 } from '../../features/bom/bomThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
@@ -320,6 +321,8 @@ function ProductionPanel() {
   const [useOpen, setUseOpen] = useState(false);
   const [activeBoms, setActiveBoms] = useState([]);
   const [detail, setDetail] = useState({ open: false, production: null, loading: false });
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchBomProductions(queryParams));
@@ -351,6 +354,26 @@ function ProductionPanel() {
     }
   };
 
+  const handleDeleteProduction = async () => {
+    if (!confirmDelete?._id) return;
+    setDeleting(true);
+    try {
+      await dispatch(deleteBomProduction(confirmDelete._id)).unwrap();
+      dispatch(showSnackbar({ message: 'BOM production deleted — warehouse stock restored' }));
+      setConfirmDelete(null);
+      refresh();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete production', severity: 'error' }));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const productionLabel = (row) =>
+    row?.bomName
+      ? `${row.bomName}${row.bomVersion ? ` v${row.bomVersion}` : ''}`
+      : row?.bom?.name || 'this production';
+
   return (
     <>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -381,6 +404,11 @@ function ProductionPanel() {
             icon: <VisibilityIcon fontSize="small" />,
             onClick: openDetail,
           },
+          {
+            label: 'Delete',
+            icon: <DeleteIcon fontSize="small" color="error" />,
+            onClick: setConfirmDelete,
+          },
         ]}
         onExportCsv={() => exportToCsv('bom-productions', items, buildCsvColumns(PRODUCTION_COLUMNS))}
         loading={status === 'loading'}
@@ -398,6 +426,16 @@ function ProductionPanel() {
         production={detail.production}
         loading={detail.loading}
         onClose={() => setDetail({ open: false, production: null, loading: false })}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Delete BOM Production"
+        message={`Delete "${productionLabel(confirmDelete)}"? Linked utilize records will be removed and warehouse stock restored.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDeleteProduction}
+        onClose={() => !deleting && setConfirmDelete(null)}
       />
     </>
   );

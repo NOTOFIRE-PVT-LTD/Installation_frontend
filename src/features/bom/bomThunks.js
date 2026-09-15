@@ -81,3 +81,15 @@ export const confirmBomProduction = createAsyncThunk(
     }
   }
 );
+
+export const deleteBomProduction = createAsyncThunk(
+  'bomProductions/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      await bomApi.removeProduction(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to delete production');
+    }
+  }
+);
