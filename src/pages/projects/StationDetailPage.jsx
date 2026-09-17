@@ -43,6 +43,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { downloadSingleStationReport } from '../../utils/stationReportExport';
 import { SITE_TYPES, CLAIM_STATUS, STATION_STAGE_LABELS, DEFAULT_BONUS_PERCENT, CLAIM_TDS_PERCENT } from '../../utils/constants';
 import { stationStage } from '../../utils/projectFlow';
+import { projectApi } from '../../api/projectApi';
 import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
@@ -150,6 +151,8 @@ export default function StationDetailPage() {
   const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null, address: '', accuracy: null });
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState('');
+  const [installerOptions, setInstallerOptions] = useState([]);
+  const [loadingInstallers, setLoadingInstallers] = useState(false);
 
   const fetchCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -212,7 +215,51 @@ export default function StationDetailPage() {
     return () => dispatch(clearCurrent());
   }, [dispatch, id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingInstallers(true);
+    projectApi
+      .installerOptions()
+      .then(({ data }) => {
+        if (!cancelled) setInstallerOptions(data.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setInstallerOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInstallers(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const station = useMemo(() => project?.stations?.find((s) => s._id === stationId) || null, [project, stationId]);
+
+  const installerSelectOptions = useMemo(() => {
+    const options = (installerOptions || []).map((user) => ({
+      value: user.name,
+      label: [user.name, user.mobileNumber].filter(Boolean).join(' · '),
+      mobileNumber: user.mobileNumber || '',
+    }));
+    const currentName = String(station?.installer?.name || '').trim();
+    if (currentName && !options.some((opt) => opt.value === currentName)) {
+      options.unshift({
+        value: currentName,
+        label: `${currentName} (current)`,
+        mobileNumber: station?.installer?.number || '',
+      });
+    }
+    return options;
+  }, [installerOptions, station?.installer?.name, station?.installer?.number]);
+
+  const handleInstallerSelect = (name) => {
+    const selected = installerSelectOptions.find((opt) => opt.value === name);
+    methods.setValue('installer.name', name || '', { shouldDirty: true });
+    if (selected?.mobileNumber) {
+      methods.setValue('installer.number', selected.mobileNumber, { shouldDirty: true });
+    }
+  };
 
   useEffect(() => {
     if (!station) return;
@@ -391,6 +438,30 @@ export default function StationDetailPage() {
     );
   });
 
+  // Save claim amounts first — submit uses saved station.amountClaimed on the server.
+  const handleSubmitClaim = methods.handleSubmit(async (values) => {
+    const requestedSum = (values.claimRequests || []).reduce(
+      (sum, row) => sum + (row.amountRequested === '' || row.amountRequested == null ? 0 : Number(row.amountRequested) || 0),
+      0
+    );
+    if (!(requestedSum > 0)) {
+      dispatch(
+        showSnackbar({
+          message: 'Enter at least one amount requested, then save and submit',
+          severity: 'error',
+        })
+      );
+      return;
+    }
+    const saved = await onSubmit(values);
+    if (!saved) return;
+    await runAction(
+      submitStationClaim,
+      { id: project._id, stationId: station._id },
+      'Claim submitted for approval'
+    );
+  });
+
   const handleRemoveCadDrawingInstaller = async () => {
     const previous = cadDrawingFile;
     const previousInitial = initialCadDrawingFile;
@@ -505,7 +576,19 @@ export default function StationDetailPage() {
                     <Typography variant="body2" color="text.secondary">
                       Installer Name & Number
                     </Typography>
-                    <RHFTextField name="installer.name" label="Name" disabled={!canManage} />
+                    <RHFSelect
+                      name="installer.name"
+                      label="Name"
+                      options={[
+                        { value: '', label: loadingInstallers ? 'Loading installers…' : 'Select installer' },
+                        ...installerSelectOptions,
+                      ]}
+                      disabled={!canManage || loadingInstallers}
+                      searchable={installerSelectOptions.length > 8}
+                      searchPlaceholder="Search installers"
+                      helperText="Select from all installers — number fills automatically when available"
+                      onChange={(e) => handleInstallerSelect(e.target.value)}
+                    />
                     <RHFTextField name="installer.number" label="Number" disabled={!canManage} />
                   </Stack>
                   <Stack spacing={1}>
@@ -918,12 +1001,13 @@ export default function StationDetailPage() {
             </Typography>
             {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && !(totalRequested > 0) && (
               <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1 }}>
-                Add at least one payment subpart and click &quot;Save Changes&quot; before submitting for approval.
+                Add at least one payment subpart with Amount Requested before submitting for approval.
               </Typography>
             )}
             {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && totalRequested > 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                On submit, selected admins receive a WhatsApp alert with the signed checklist PDF attached.
+                Submit saves your amounts first, then sends for approval. Selected admins receive a WhatsApp alert with the
+                signed checklist PDF attached.
               </Typography>
             )}
             {reRequestMode && remainingAllocated > 0 && !hasNewRequest && (
@@ -942,8 +1026,8 @@ export default function StationDetailPage() {
               {[CLAIM_STATUS.NOT_SUBMITTED, CLAIM_STATUS.REJECTED].includes(station.claimStatus) && (
                 <Button
                   variant="contained"
-                  disabled={!mandatoryOk || !canManage || actionSubmitting || !(station.amountClaimed > 0 || totalRequested > 0)}
-                  onClick={() => runAction(submitStationClaim, { id: project._id, stationId: station._id }, 'Claim submitted for approval')}
+                  disabled={!mandatoryOk || !canManage || actionSubmitting || submitting || !(totalRequested > 0)}
+                  onClick={handleSubmitClaim}
                 >
                   Submit for Approval
                 </Button>

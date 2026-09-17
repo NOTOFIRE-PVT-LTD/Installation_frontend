@@ -3,6 +3,7 @@ import axiosInstance from './axiosInstance';
 export const projectApi = {
   list: (params) => axiosInstance.get('/projects', { params }),
   options: () => axiosInstance.get('/projects/options'),
+  installerOptions: () => axiosInstance.get('/projects/installer-options'),
   approvalsQueue: () => axiosInstance.get('/projects/approvals/queue'),
   getById: (id) => axiosInstance.get(`/projects/${id}`),
   create: (formData) => axiosInstance.post('/projects', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
