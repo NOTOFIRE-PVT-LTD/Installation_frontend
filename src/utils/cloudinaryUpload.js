@@ -45,6 +45,23 @@ export async function uploadFileToCloudinary(file, resourceType = 'image', onPro
   return result;
 }
 
+export async function uploadFilesToCloudinary(files, resourceType = 'image', onProgress) {
+  const queue = Array.from(files || []).filter(Boolean);
+  const uploaded = [];
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const file = queue[index];
+    uploaded.push(
+      await uploadFileToCloudinary(file, resourceType, (fileProgress) => {
+        onProgress?.(Math.round(((index + fileProgress / 100) / Math.max(queue.length, 1)) * 100));
+      })
+    );
+    onProgress?.(Math.round(((index + 1) / Math.max(queue.length, 1)) * 100));
+  }
+
+  return uploaded;
+}
+
 export async function uploadDailyReportMedia({ photos = [], videos = [], onProgress } = {}) {
   const photoFiles = photos.map((item) => item.file).filter(Boolean);
   const videoFiles = videos.map((item) => item.file).filter(Boolean);

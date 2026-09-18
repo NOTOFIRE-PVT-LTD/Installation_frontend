@@ -13,6 +13,7 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import LinearProgress from '@mui/material/LinearProgress';
 import Alert from '@mui/material/Alert';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
@@ -44,6 +45,7 @@ import { downloadSingleStationReport } from '../../utils/stationReportExport';
 import { SITE_TYPES, CLAIM_STATUS, STATION_STAGE_LABELS, DEFAULT_BONUS_PERCENT, CLAIM_TDS_PERCENT } from '../../utils/constants';
 import { stationStage } from '../../utils/projectFlow';
 import { projectApi } from '../../api/projectApi';
+import { uploadFileToCloudinary } from '../../utils/cloudinaryUpload';
 import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
@@ -146,6 +148,8 @@ export default function StationDetailPage() {
   const [cadDrawingFiles, setCadDrawingFiles] = useState([]);
   const [initialCadDrawingFiles, setInitialCadDrawingFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [removingCadInstaller, setRemovingCadInstaller] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null, address: '', accuracy: null });
@@ -367,7 +371,48 @@ export default function StationDetailPage() {
     }
 
     setSubmitting(true);
-    const formData = new FormData();
+    try {
+      const mediaToUpload = [
+      checklistFile?.file,
+      checklistSignedFile?.file,
+      cadDrawingFile?.file,
+      ...cadDrawingFiles.filter((file) => file.file).map((file) => file.file),
+      ...workPhotos.filter((photo) => photo.file).map((photo) => photo.file),
+      ].filter(Boolean);
+      let uploadedCount = 0;
+      setUploadingMedia(mediaToUpload.length > 0);
+      setUploadProgress(0);
+      const uploadMedia = async (file, resourceType) => {
+      const uploaded = await uploadFileToCloudinary(file, resourceType, (fileProgress) => {
+        setUploadProgress(Math.round(((uploadedCount + fileProgress / 100) / Math.max(mediaToUpload.length, 1)) * 100));
+      });
+      uploadedCount += 1;
+      setUploadProgress(Math.round((uploadedCount / Math.max(mediaToUpload.length, 1)) * 100));
+      return uploaded;
+      };
+
+      const directChecklistFile = checklistFile?.file ? await uploadMedia(checklistFile.file, 'document') : null;
+      const directChecklistSignedFile = checklistSignedFile?.file
+      ? await uploadMedia(checklistSignedFile.file, 'document')
+      : null;
+      const directCadDrawingFile = cadDrawingFile?.file
+      ? await uploadMedia(cadDrawingFile.file, cadDrawingFile.file.type === 'application/pdf' ? 'cadDocument' : 'cadImage')
+      : null;
+      const directCadDrawingFiles = [];
+      for (const item of cadDrawingFiles.filter((file) => file.file)) {
+      const uploaded = await uploadMedia(item.file, item.file.type === 'application/pdf' ? 'cadDocument' : 'cadImage');
+      directCadDrawingFiles.push({
+        ...uploaded,
+        resourceType: item.file.type === 'application/pdf' ? 'raw' : 'image',
+        originalName: item.file.name,
+      });
+      }
+      const directWorkPhotos = [];
+      for (const item of workPhotos.filter((photo) => photo.file)) {
+      directWorkPhotos.push(await uploadMedia(item.file, 'image'));
+      }
+
+      const formData = new FormData();
     formData.append('name', values.name);
     formData.append('type', values.type || '');
     formData.append('reasonForDelay', values.reasonForDelay || '');
@@ -396,14 +441,14 @@ export default function StationDetailPage() {
       )
     );
 
-    if (checklistFile?.file) formData.append('checklistFile', checklistFile.file);
-    if (checklistSignedFile?.file) formData.append('checklistSignedFile', checklistSignedFile.file);
-    if (cadDrawingFile?.file) formData.append('cadDrawingFile', cadDrawingFile.file);
+    if (directChecklistFile) formData.append('directChecklistFile', JSON.stringify([directChecklistFile]));
+    if (directChecklistSignedFile) formData.append('directChecklistSignedFile', JSON.stringify([directChecklistSignedFile]));
+    if (directCadDrawingFile) formData.append('directCadDrawingFile', JSON.stringify([directCadDrawingFile]));
     if (initialCadDrawingFile?.publicId && !cadDrawingFile) {
       formData.append('removeCadDrawingFile', 'true');
     }
-    cadDrawingFiles.filter((f) => f.file).forEach((f) => formData.append('cadDrawingFiles', f.file));
-    workPhotos.filter((p) => p.file).forEach((p) => formData.append('workPhotos', p.file));
+    if (directCadDrawingFiles.length) formData.append('directCadDrawingFiles', JSON.stringify(directCadDrawingFiles));
+    if (directWorkPhotos.length) formData.append('directWorkPhotos', JSON.stringify(directWorkPhotos));
 
     const remainingPhotoIds = workPhotos.filter((p) => !p.file).map((p) => p.publicId);
     const removedIds = initialWorkPhotos.filter((p) => !remainingPhotoIds.includes(p.publicId)).map((p) => p.publicId);
@@ -415,7 +460,6 @@ export default function StationDetailPage() {
       .map((f) => f.publicId);
     if (removedCadIds.length > 0) formData.append('removeCadFileIds', JSON.stringify(removedCadIds));
 
-    try {
       await dispatch(updateStation({ id: project._id, stationId: station._id, formData })).unwrap();
       dispatch(showSnackbar({ message: 'Station updated successfully' }));
       return true;
@@ -424,6 +468,7 @@ export default function StationDetailPage() {
       return false;
     } finally {
       setSubmitting(false);
+      setUploadingMedia(false);
     }
   };
 
@@ -790,10 +835,11 @@ export default function StationDetailPage() {
           />
 
           {canManage && (
-            <Stack direction="row" sx={{ mb: 2.5 }}>
+            <Stack spacing={0.75} sx={{ mb: 2.5 }}>
               <Button type="submit" variant="contained" size="large" disabled={submitting}>
-                {submitting ? 'Saving…' : 'Save Changes'}
+                {uploadingMedia ? `Uploading files… ${uploadProgress}%` : submitting ? 'Saving…' : 'Save Changes'}
               </Button>
+              {uploadingMedia && <LinearProgress variant="determinate" value={uploadProgress} />}
             </Stack>
           )}
         </Box>
