@@ -149,12 +149,21 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
                     </Tooltip>
                     {canManage && (
                       <>
-                        <IconButton size="small" onClick={() => setDialogState({ open: true, mode: 'edit', station })}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => setConfirmDelete(station)}>
-                          <DeleteIcon fontSize="small" color="error" />
-                        </IconButton>
+                        <Button
+                          size="small"
+                          startIcon={<EditIcon fontSize="small" />}
+                          onClick={() => setDialogState({ open: true, mode: 'edit', station })}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          startIcon={<DeleteIcon fontSize="small" />}
+                          onClick={() => setConfirmDelete(station)}
+                        >
+                          Delete
+                        </Button>
                       </>
                     )}
                   </Stack>

@@ -699,7 +699,16 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
                 <RHFTextField name={`loaItems.${index}.qty`} label="Qty" type="number" disabled={loaFieldsLocked} />
               </Grid>
               <Grid item xs={5} sm={3}>
-                <RHFTextField name={`loaItems.${index}.unit`} label="Unit" disabled={loaFieldsLocked} />
+                <RHFSelect
+                  name={`loaItems.${index}.unit`}
+                  label="Unit"
+                  options={[
+                    { value: 'Nos', label: 'Nos' },
+                    { value: 'mtr', label: 'mtr' },
+                  ]}
+                  disabled={loaFieldsLocked}
+                  size="small"
+                />
               </Grid>
               {!loaFieldsLocked && (
                 <Grid item xs={2} sm={1}>

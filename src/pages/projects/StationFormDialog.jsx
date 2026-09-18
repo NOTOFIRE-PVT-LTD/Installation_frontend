@@ -14,6 +14,7 @@ import { uploadFilesToCloudinary } from '../../utils/cloudinaryUpload';
 export default function StationFormDialog({ open, mode = 'create', station, onClose, onSubmit, submitting }) {
   const isEdit = mode === 'edit';
   const [name, setName] = useState('');
+  const [installationAmount, setInstallationAmount] = useState('');
   const [completePhotos, setCompletePhotos] = useState([]);
   const [remainingPhotos, setRemainingPhotos] = useState([]);
   const [initialPhotos, setInitialPhotos] = useState([]);
@@ -24,6 +25,7 @@ export default function StationFormDialog({ open, mode = 'create', station, onCl
   useEffect(() => {
     if (open) {
       setName(station?.name || '');
+      setInstallationAmount(station?.installationAmount ?? '');
       setCompletePhotos(station?.completePhotos || []);
       setRemainingPhotos(station?.remainingPhotos || []);
       setInitialPhotos([...(station?.completePhotos || []), ...(station?.remainingPhotos || [])]);
@@ -59,6 +61,7 @@ export default function StationFormDialog({ open, mode = 'create', station, onCl
       const uploadedRemainingPhotos = await uploadGroup(remainingFiles);
       const formData = new FormData();
       formData.append('name', name.trim());
+      formData.append('installationAmount', installationAmount === '' ? 0 : installationAmount);
       if (uploadedCompletePhotos.length) formData.append('directCompletePhotos', JSON.stringify(uploadedCompletePhotos));
       if (uploadedRemainingPhotos.length) formData.append('directRemainingPhotos', JSON.stringify(uploadedRemainingPhotos));
 
@@ -92,6 +95,14 @@ export default function StationFormDialog({ open, mode = 'create', station, onCl
             error={Boolean(error)}
             helperText={error}
             autoFocus
+            fullWidth
+          />
+          <TextField
+            label="Installation Amount Allocated (₹)"
+            type="number"
+            value={installationAmount}
+            onChange={(e) => setInstallationAmount(e.target.value)}
+            inputProps={{ min: 0, step: 'any' }}
             fullWidth
           />
           <ImageDropzone label="Complete Photos" value={completePhotos} onChange={setCompletePhotos} />

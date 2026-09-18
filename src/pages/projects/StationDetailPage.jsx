@@ -761,7 +761,15 @@ export default function StationDetailPage() {
                     <RHFTextField name={`materials.${index}.qty`} label="Qty" type="number" disabled={!canManage} />
                   </Grid>
                   <Grid item xs={5} sm={3}>
-                    <RHFTextField name={`materials.${index}.unit`} label="Unit" disabled={!canManage} />
+                    <RHFSelect
+                      name={`materials.${index}.unit`}
+                      label="Unit"
+                      options={[
+                        { value: 'Nos', label: 'Nos' },
+                        { value: 'mtr', label: 'mtr' },
+                      ]}
+                      disabled={!canManage}
+                    />
                   </Grid>
                   {canManage && (
                     <Grid item xs={2} sm={1}>

@@ -15,12 +15,14 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
+import EditIcon from '@mui/icons-material/EditOutlined';
+import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import StageStepper from '../../components/common/StageStepper';
 import StatusBadge from '../../components/common/StatusBadge';
 import StationReportDownloadMenu from '../../components/projects/StationReportDownloadMenu';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchProjectById, addStation } from '../../features/projects/projectsThunks';
+import { fetchProjectById, addStation, updateStation, removeStation } from '../../features/projects/projectsThunks';
 import { clearCurrent } from '../../features/projects/projectsSlice';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { formatDate, formatCurrency } from '../../utils/formatters';
@@ -31,6 +33,8 @@ import ProjectDetailsTab from './ProjectDetailsTab';
 import ProjectCadDrawingTab from './ProjectCadDrawingTab';
 import ProjectDailyReportingTab from './ProjectDailyReportingTab';
 import AddStationDialog from './AddStationDialog';
+import StationFormDialog from './StationFormDialog';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const PROJECT_STAGES = ['LOA Issued', 'Installation Started', 'Installation Completed', 'Commissioning', 'Claims & Payment'];
 
@@ -71,6 +75,8 @@ export default function ProjectDetailPage() {
   const currentStatus = useAppSelector((state) => state.projects.currentStatus);
   const [activeTab, setActiveTab] = useState(0);
   const [addStationOpen, setAddStationOpen] = useState(false);
+  const [editStation, setEditStation] = useState(null);
+  const [stationToDelete, setStationToDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const canManageProjectDetails = isAdmin ? Boolean(permissions?.projects) : false;
@@ -103,6 +109,34 @@ export default function ProjectDetailPage() {
       setAddStationOpen(false);
     } catch (err) {
       dispatch(showSnackbar({ message: err || 'Failed to add station', severity: 'error' }));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditStation = async (formData) => {
+    if (!editStation) return;
+    setSubmitting(true);
+    try {
+      await dispatch(updateStation({ id: project._id, stationId: editStation._id, formData })).unwrap();
+      dispatch(showSnackbar({ message: 'Station updated successfully' }));
+      setEditStation(null);
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to update station', severity: 'error' }));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteStation = async () => {
+    if (!stationToDelete) return;
+    setSubmitting(true);
+    try {
+      await dispatch(removeStation({ id: project._id, stationId: stationToDelete._id })).unwrap();
+      dispatch(showSnackbar({ message: 'Station deleted' }));
+      setStationToDelete(null);
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to delete station', severity: 'error' }));
     } finally {
       setSubmitting(false);
     }
@@ -336,6 +370,25 @@ export default function ProjectDetailPage() {
                           <StatusBadge status="Delayed" />
                         </Box>
                       )}
+                      {canContributeToProject && (
+                        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} onClick={(event) => event.stopPropagation()}>
+                          <Button
+                            size="small"
+                            startIcon={<EditIcon fontSize="small" />}
+                            onClick={() => setEditStation(station)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteIcon fontSize="small" />}
+                            onClick={() => setStationToDelete(station)}
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      )}
                     </Paper>
                   </Grid>
                 );
@@ -353,6 +406,23 @@ export default function ProjectDetailPage() {
       )}
 
       <AddStationDialog open={addStationOpen} submitting={submitting} onClose={() => setAddStationOpen(false)} onSubmit={handleAddStation} />
+      <StationFormDialog
+        open={Boolean(editStation)}
+        mode="edit"
+        station={editStation}
+        submitting={submitting}
+        onClose={() => setEditStation(null)}
+        onSubmit={handleEditStation}
+      />
+      <ConfirmDialog
+        open={Boolean(stationToDelete)}
+        title="Delete Station"
+        message={`Are you sure you want to delete \"${stationToDelete?.name}\"? This cannot be undone.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={handleDeleteStation}
+        onClose={() => setStationToDelete(null)}
+      />
     </Box>
   );
 }
