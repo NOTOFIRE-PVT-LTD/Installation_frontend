@@ -67,6 +67,15 @@ export const resetUserPassword = createAsyncThunk('users/resetPassword', async (
   }
 });
 
+export const setUserPassword = createAsyncThunk('users/setPassword', async ({ id, password }, { rejectWithValue }) => {
+  try {
+    const { data } = await userApi.setPassword(id, password);
+    return data.message;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to set password');
+  }
+});
+
 export const updateUserPermissions = createAsyncThunk(
   'users/updatePermissions',
   async ({ id, permissions }, { rejectWithValue }) => {

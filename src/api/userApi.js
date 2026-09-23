@@ -11,6 +11,7 @@ export const userApi = {
   remove: (id) => axiosInstance.delete(`/users/${id}`),
   updateStatus: (id, status) => axiosInstance.patch(`/users/${id}/status`, { status }),
   resetPassword: (id) => axiosInstance.post(`/users/${id}/reset-password`),
+  setPassword: (id, password) => axiosInstance.patch(`/users/${id}/set-password`, { password }),
   updatePermissions: (id, permissions) => axiosInstance.put(`/users/${id}/permissions`, permissions),
   impersonate: (id) => axiosInstance.post(`/users/${id}/impersonate`),
 };

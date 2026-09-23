@@ -285,7 +285,9 @@ export default function StationDetailPage() {
       completionDate: station.completionDate?.slice(0, 10) || null,
       commissioningDate: station.commissioningDate?.slice(0, 10) || null,
       reasonForDelay: station.reasonForDelay || '',
-      materials: stationMaterials.length > 0 ? stationMaterials : loaMaterials,
+      // Use station's own saved materials if they exist (even if empty after user deleted all).
+      // Only fall back to LOA when the station has never had materials saved (null/undefined).
+      materials: station.materials != null ? stationMaterials : loaMaterials,
       installationAmount: station.installationAmount ?? '',
       claimRequests: buildClaimRequestsFromStation(station),
       remarks: station.remarks || '',
@@ -303,7 +305,9 @@ export default function StationDetailPage() {
     setCadDrawingFiles(cadFiles);
     setInitialCadDrawingFiles(cadFiles.filter((f) => f.publicId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [station?._id, station?.updatedAt, project?.loaItems]);
+    // NOTE: project?.loaItems intentionally excluded — including it caused the form to re-init
+    // from LOA quantities every time project data re-fetched, wiping saved station materials.
+  }, [station?._id, station?.updatedAt]);
 
   if (currentStatus === 'loading' || !project) {
     return (
@@ -788,15 +792,7 @@ export default function StationDetailPage() {
               Site Documentation
             </Typography>
             <Grid container spacing={2.5}>
-              <Grid item xs={12} sm={6}>
-                <DocumentDropzone
-                  value={checklistFile}
-                  onChange={canManage ? setChecklistFile : () => {}}
-                  label="Checklist Uploaded"
-                  disabled={!canManage}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <DocumentDropzone
                   value={checklistSignedFile}
                   onChange={canManage ? setChecklistSignedFile : () => {}}

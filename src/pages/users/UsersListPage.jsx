@@ -22,6 +22,7 @@ import { buildCsvColumns } from '../../components/common/DataTable/DataTable.hel
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import UserFormDrawer from './UserFormDrawer';
 import PermissionsDialog from './PermissionsDialog';
+import SetPasswordDialog from './SetPasswordDialog';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import {
@@ -30,7 +31,7 @@ import {
   updateUser,
   deleteUser,
   toggleUserStatus,
-  resetUserPassword,
+  setUserPassword,
   updateUserPermissions,
   impersonateUser,
 } from '../../features/users/usersThunks';
@@ -166,6 +167,7 @@ export default function UsersListPage() {
   const [dialogState, setDialogState] = useState({ open: false, mode: 'create', user: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [permissionsUser, setPermissionsUser] = useState(null);
+  const [setPasswordUser, setSetPasswordUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -220,12 +222,16 @@ export default function UsersListPage() {
     }
   };
 
-  const handleResetPassword = async (user) => {
+  const handleSetPasswordSubmit = async (password) => {
+    setSubmitting(true);
     try {
-      await dispatch(resetUserPassword(user._id)).unwrap();
-      dispatch(showSnackbar({ message: `Password reset email sent to ${user.email}` }));
+      await dispatch(setUserPassword({ id: setPasswordUser._id, password })).unwrap();
+      dispatch(showSnackbar({ message: `Password updated for ${setPasswordUser.name}` }));
+      setSetPasswordUser(null);
     } catch (err) {
-      dispatch(showSnackbar({ message: err || 'Failed to send reset email', severity: 'error' }));
+      dispatch(showSnackbar({ message: err || 'Failed to set password', severity: 'error' }));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -284,7 +290,7 @@ export default function UsersListPage() {
   const actions = [
     { label: 'View', icon: <VisibilityIcon fontSize="small" />, onClick: handleView },
     { label: 'Edit', icon: <EditIcon fontSize="small" />, onClick: handleEdit },
-    { label: 'Reset Password', icon: <LockResetIcon fontSize="small" />, onClick: handleResetPassword },
+    { label: 'Set Password', icon: <LockResetIcon fontSize="small" />, onClick: setSetPasswordUser },
     {
       label: 'Permissions',
       icon: <AdminPanelSettingsIcon fontSize="small" />,
@@ -379,6 +385,14 @@ export default function UsersListPage() {
         submitting={submitting}
         onClose={() => setPermissionsUser(null)}
         onSubmit={handlePermissionsSubmit}
+      />
+
+      <SetPasswordDialog
+        open={Boolean(setPasswordUser)}
+        user={setPasswordUser}
+        submitting={submitting}
+        onClose={() => setSetPasswordUser(null)}
+        onSubmit={handleSetPasswordSubmit}
       />
 
       <ConfirmDialog
