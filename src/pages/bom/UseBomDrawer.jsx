@@ -61,6 +61,8 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
     defaultValues: defaultValues(),
   });
 
+  const pendingLineCount = (preview?.lines || []).filter((line) => line.shortage > 0).length;
+
   useEffect(() => {
     if (!open) return;
     methods.reset(defaultValues());
@@ -81,7 +83,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
       if (result.hasShortage) {
         dispatch(
           showSnackbar({
-            message: 'Shortage detected — confirmation is blocked until stock is available',
+            message: 'Shortage detected — shortage qty will be kept pending until stock is received',
             severity: 'warning',
           })
         );
@@ -108,7 +110,13 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
           remarks: String(values.remarks || '').trim(),
         })
       ).unwrap();
-      dispatch(showSnackbar({ message: 'BOM production confirmed — utilize records created' }));
+      dispatch(
+        showSnackbar({
+          message: preview.hasShortage
+            ? 'Production saved as pending — available stock issued, shortage qty is pending'
+            : 'BOM production confirmed — utilize records created',
+        })
+      );
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -127,7 +135,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
               Use BOM / Create Production
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Calculates required qty and creates utilize movements on confirm.
+              Calculates required qty and creates utilize movements on confirm. Shortage qty is kept pending.
             </Typography>
           </Box>
           <IconButton onClick={onClose} aria-label="Close">
@@ -178,8 +186,10 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
               {preview && (
                 <>
                   {preview.hasShortage ? (
-                    <Alert severity="error">
-                      Insufficient warehouse stock for one or more items. Confirmation is disabled.
+                    <Alert severity="warning">
+                      Insufficient warehouse stock for {pendingLineCount} item{pendingLineCount === 1 ? '' : 's'}. You
+                      can still confirm: available stock is issued now and the shortage stays as pending qty. Use
+                      &quot;Issue Pending&quot; on the production once the stock is received.
                     </Alert>
                   ) : (
                     <Alert severity="success">Stock is sufficient. You can confirm production.</Alert>
@@ -194,7 +204,8 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
                           <TableCell align="right">Production Qty</TableCell>
                           <TableCell align="right">Required</TableCell>
                           <TableCell align="right">Available</TableCell>
-                          <TableCell align="right">Shortage</TableCell>
+                          <TableCell align="right">Issue Now</TableCell>
+                          <TableCell align="right">Pending</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -210,8 +221,12 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
                               {line.requiredQty} {line.unit}
                             </TableCell>
                             <TableCell align="right">{line.availableQty}</TableCell>
-                            <TableCell align="right" sx={{ color: line.shortage > 0 ? 'error.main' : 'inherit' }}>
-                              {line.shortage}
+                            <TableCell align="right">{line.issueNowQty ?? line.requiredQty - line.shortage}</TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ color: line.shortage > 0 ? 'error.main' : 'inherit', fontWeight: line.shortage > 0 ? 700 : 400 }}
+                            >
+                              {line.pendingQty ?? line.shortage}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -231,7 +246,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
             onClick={handleConfirm}
             disabled={!preview?.canConfirm || confirming}
           >
-            {confirming ? 'Confirming…' : 'Confirm Production'}
+            {confirming ? 'Confirming…' : preview?.hasShortage ? 'Confirm with Pending' : 'Confirm Production'}
           </Button>
         </Stack>
       </Box>

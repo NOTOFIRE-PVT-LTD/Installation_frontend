@@ -13,6 +13,7 @@ import DownloadIcon from '@mui/icons-material/DownloadOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
 import { buildCsvColumns } from '../../components/common/DataTable/DataTable.helpers';
@@ -29,6 +30,7 @@ import {
   deleteBom,
   fetchBomProductions,
   deleteBomProduction,
+  issuePendingBomProduction,
 } from '../../features/bom/bomThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
@@ -142,7 +144,37 @@ const PRODUCTION_COLUMNS = [
     width: 90,
     valueGetter: (_value, row) => row.lines?.length || 0,
   },
+  {
+    field: 'status',
+    headerName: 'Status',
+    width: 120,
+    renderCell: (params) => {
+      const pending = params.row.status === 'pending';
+      return (
+        <Chip
+          size="small"
+          label={pending ? 'Pending' : 'Completed'}
+          color={pending ? 'warning' : 'success'}
+          variant="outlined"
+        />
+      );
+    },
+    csvValue: (row) => (row.status === 'pending' ? 'Pending' : 'Completed'),
+  },
+  {
+    field: 'pendingQty',
+    headerName: 'Pending Qty',
+    flex: 1,
+    minWidth: 180,
+    valueGetter: (_value, row) => pendingSummary(row),
+  },
 ];
+
+function pendingSummary(row) {
+  const pendingLines = (row.lines || []).filter((line) => Number(line.pendingQty) > 0);
+  if (pendingLines.length === 0) return '-';
+  return pendingLines.map((line) => `${line.itemName || 'Item'}: ${line.pendingQty}`).join(', ');
+}
 
 function BomListPanel() {
   const dispatch = useAppDispatch();
@@ -323,6 +355,7 @@ function ProductionPanel() {
   const [detail, setDetail] = useState({ open: false, production: null, loading: false });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [issuingId, setIssuingId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchBomProductions(queryParams));
@@ -369,6 +402,30 @@ function ProductionPanel() {
     }
   };
 
+  const handleIssuePending = async (row) => {
+    if (!row?._id || issuingId) return;
+    setIssuingId(row._id);
+    try {
+      const updated = await dispatch(issuePendingBomProduction(row._id)).unwrap();
+      dispatch(
+        showSnackbar({
+          message:
+            updated?.status === 'pending'
+              ? 'Received stock issued — some qty is still pending'
+              : 'Pending qty issued — production completed',
+        })
+      );
+      if (detail.open && detail.production?._id === row._id) {
+        setDetail({ open: true, production: updated, loading: false });
+      }
+      refresh();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err || 'Failed to issue pending quantity', severity: 'error' }));
+    } finally {
+      setIssuingId(null);
+    }
+  };
+
   const productionLabel = (row) =>
     row?.bomName
       ? `${row.bomName}${row.bomVersion ? ` v${row.bomVersion}` : ''}`
@@ -378,7 +435,8 @@ function ProductionPanel() {
     <>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Select a BOM and production qty. Required = Qty/1 PCS × Production Qty. Confirm creates utilize
-        records for the person and updates warehouse.
+        records for the person and updates warehouse. If stock is short, the shortage is kept as pending — use
+        &quot;Issue Pending&quot; once the stock is received.
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setUseOpen(true)}>
@@ -405,6 +463,12 @@ function ProductionPanel() {
             onClick: openDetail,
           },
           {
+            label: 'Issue Pending',
+            icon: <PlaylistAddCheckIcon fontSize="small" color="warning" />,
+            onClick: handleIssuePending,
+            show: (row) => row.status === 'pending',
+          },
+          {
             label: 'Delete',
             icon: <DeleteIcon fontSize="small" color="error" />,
             onClick: setConfirmDelete,
@@ -426,6 +490,8 @@ function ProductionPanel() {
         production={detail.production}
         loading={detail.loading}
         onClose={() => setDetail({ open: false, production: null, loading: false })}
+        onIssuePending={handleIssuePending}
+        issuing={Boolean(issuingId)}
       />
       <ConfirmDialog
         open={Boolean(confirmDelete)}

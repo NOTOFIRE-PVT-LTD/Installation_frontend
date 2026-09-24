@@ -17,6 +17,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import CircularProgress from '@mui/material/CircularProgress';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
@@ -36,8 +38,14 @@ function Field({ label, value }) {
   );
 }
 
-export default function ProductionDetailDialog({ open, production, loading, onClose }) {
+function issuedQty(line) {
+  if (line.issuedQty != null) return line.issuedQty;
+  return Math.max(0, (Number(line.requiredQty) || 0) - (Number(line.pendingQty) || 0));
+}
+
+export default function ProductionDetailDialog({ open, production, loading, onClose, onIssuePending, issuing }) {
   const lines = production?.lines || [];
+  const isPending = production?.status === 'pending';
   const bomLabel = production
     ? `${production.bomName || production.bom?.name || '-'}${
         production.bomVersion || production.bom?.version
@@ -83,7 +91,27 @@ export default function ProductionDetailDialog({ open, production, loading, onCl
               <Grid item xs={12} sm={4}>
                 <Field label="Remarks" value={production.remarks} />
               </Grid>
+              <Grid item xs={12} sm={4}>
+                <Stack spacing={0.25} alignItems="flex-start">
+                  <Typography variant="caption" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={isPending ? 'Pending' : 'Completed'}
+                    color={isPending ? 'warning' : 'success'}
+                    variant="outlined"
+                  />
+                </Stack>
+              </Grid>
             </Grid>
+
+            {isPending && (
+              <Alert severity="warning">
+                Some items were short when this production was confirmed. Once stock is received, click &quot;Issue
+                Pending&quot; to take the pending qty from the warehouse.
+              </Alert>
+            )}
 
             <Box>
               <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
@@ -97,22 +125,37 @@ export default function ProductionDetailDialog({ open, production, loading, onCl
                       <TableCell align="right">Qty / 1 PCS</TableCell>
                       <TableCell align="right">Required</TableCell>
                       <TableCell align="right">Available Then</TableCell>
+                      <TableCell align="right">Issued</TableCell>
+                      <TableCell align="right">Pending</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {lines.map((line, index) => (
-                      <TableRow key={`${String(line.stockItem)}-${index}`}>
-                        <TableCell>{line.itemName || '-'}</TableCell>
-                        <TableCell align="right">{line.qtyPerPcs}</TableCell>
-                        <TableCell align="right">
-                          {line.requiredQty} {line.unit}
-                        </TableCell>
-                        <TableCell align="right">{line.availableQty}</TableCell>
-                      </TableRow>
-                    ))}
+                    {lines.map((line, index) => {
+                      const pending = Number(line.pendingQty) || 0;
+                      return (
+                        <TableRow
+                          key={`${String(line.stockItem)}-${index}`}
+                          sx={pending > 0 ? { backgroundColor: '#fef2f2' } : undefined}
+                        >
+                          <TableCell>{line.itemName || '-'}</TableCell>
+                          <TableCell align="right">{line.qtyPerPcs}</TableCell>
+                          <TableCell align="right">
+                            {line.requiredQty} {line.unit}
+                          </TableCell>
+                          <TableCell align="right">{line.availableQty}</TableCell>
+                          <TableCell align="right">{issuedQty(line)}</TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{ color: pending > 0 ? 'error.main' : 'inherit', fontWeight: pending > 0 ? 700 : 400 }}
+                          >
+                            {pending}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {lines.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">
+                        <TableCell colSpan={6} align="center">
                           <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                             No consumed items recorded.
                           </Typography>
@@ -143,6 +186,16 @@ export default function ProductionDetailDialog({ open, production, loading, onCl
           Download PDF
         </Button>
         <Box sx={{ flex: 1 }} />
+        {isPending && onIssuePending && (
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => onIssuePending(production)}
+            disabled={loading || issuing}
+          >
+            {issuing ? 'Issuing…' : 'Issue Pending'}
+          </Button>
+        )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>

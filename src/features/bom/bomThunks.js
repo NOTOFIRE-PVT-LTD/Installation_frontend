@@ -82,6 +82,18 @@ export const confirmBomProduction = createAsyncThunk(
   }
 );
 
+export const issuePendingBomProduction = createAsyncThunk(
+  'bomProductions/issuePending',
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await bomApi.issuePendingProduction(id);
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to issue pending quantity');
+    }
+  }
+);
+
 export const deleteBomProduction = createAsyncThunk(
   'bomProductions/delete',
   async (id, { rejectWithValue }) => {
