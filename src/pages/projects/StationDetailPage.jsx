@@ -25,6 +25,7 @@ import StageStepper from '../../components/common/StageStepper';
 import StatusBadge from '../../components/common/StatusBadge';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
+import RHFUnitSelect from '../../components/common/FormFields/RHFUnitSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import DocumentDropzone from '../../components/common/FileUpload/DocumentDropzone';
 import ImageDropzone from '../../components/common/FileUpload/ImageDropzone';
@@ -765,15 +766,7 @@ export default function StationDetailPage() {
                     <RHFTextField name={`materials.${index}.qty`} label="Qty" type="number" disabled={!canManage} />
                   </Grid>
                   <Grid item xs={5} sm={3}>
-                    <RHFSelect
-                      name={`materials.${index}.unit`}
-                      label="Unit"
-                      options={[
-                        { value: 'Nos', label: 'Nos' },
-                        { value: 'mtr', label: 'mtr' },
-                      ]}
-                      disabled={!canManage}
-                    />
+                    <RHFUnitSelect name={`materials.${index}.unit`} disabled={!canManage} />
                   </Grid>
                   {canManage && (
                     <Grid item xs={2} sm={1}>

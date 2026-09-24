@@ -14,6 +14,7 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import AddIcon from '@mui/icons-material/Add';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
+import RHFUnitSelect from '../../components/common/FormFields/RHFUnitSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import DocumentDropzone from '../../components/common/FileUpload/DocumentDropzone';
 import MultiVideoDropzone from '../../components/common/FileUpload/MultiVideoDropzone';
@@ -699,16 +700,7 @@ export default function ProjectDetailsTab({ project, canManage, isAdmin, onSaved
                 <RHFTextField name={`loaItems.${index}.qty`} label="Qty" type="number" disabled={loaFieldsLocked} />
               </Grid>
               <Grid item xs={5} sm={3}>
-                <RHFSelect
-                  name={`loaItems.${index}.unit`}
-                  label="Unit"
-                  options={[
-                    { value: 'Nos', label: 'Nos' },
-                    { value: 'mtr', label: 'mtr' },
-                  ]}
-                  disabled={loaFieldsLocked}
-                  size="small"
-                />
+                <RHFUnitSelect name={`loaItems.${index}.unit`} disabled={loaFieldsLocked} />
               </Grid>
               {!loaFieldsLocked && (
                 <Grid item xs={2} sm={1}>
