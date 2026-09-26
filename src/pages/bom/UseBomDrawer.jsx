@@ -22,6 +22,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
+import { UnitAutocomplete } from '../../components/common/FormFields/RHFUnitSelect';
 import { useAppDispatch } from '../../app/hooks';
 import { previewBomProduction, confirmBomProduction } from '../../features/bom/bomThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
@@ -55,6 +56,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
   const [preview, setPreview] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [lineUnits, setLineUnits] = useState({});
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -67,6 +69,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
     if (!open) return;
     methods.reset(defaultValues());
     setPreview(null);
+    setLineUnits({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -80,6 +83,11 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
         })
       ).unwrap();
       setPreview(result);
+      setLineUnits((prev) =>
+        Object.fromEntries(
+          (result.lines || []).map((line) => [String(line.stockItem), prev[String(line.stockItem)] || line.unit || 'Nos'])
+        )
+      );
       if (result.hasShortage) {
         dispatch(
           showSnackbar({
@@ -108,6 +116,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
           productionDate: values.productionDate || null,
           referenceNo: String(values.referenceNo || '').trim(),
           remarks: String(values.remarks || '').trim(),
+          lineUnits,
         })
       ).unwrap();
       dispatch(
@@ -128,7 +137,7 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: { xs: '100vw', sm: 760 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ width: { xs: '100vw', sm: 880 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
           <Box>
             <Typography variant="h6" fontWeight={700}>
@@ -218,7 +227,19 @@ export default function UseBomDrawer({ open, bomOptions, onClose, onSuccess }) {
                             <TableCell align="right">{line.qtyPerPcs}</TableCell>
                             <TableCell align="right">{line.productionQty}</TableCell>
                             <TableCell align="right">
-                              {line.requiredQty} {line.unit}
+                              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                                <span>{line.requiredQty}</span>
+                                <UnitAutocomplete
+                                  value={lineUnits[String(line.stockItem)] || line.unit || 'Nos'}
+                                  onChange={(unit) =>
+                                    setLineUnits((prev) => ({ ...prev, [String(line.stockItem)]: unit }))
+                                  }
+                                  label=""
+                                  placeholder="Unit"
+                                  disabled={confirming}
+                                  sx={{ width: 110 }}
+                                />
+                              </Stack>
                             </TableCell>
                             <TableCell align="right">{line.availableQty}</TableCell>
                             <TableCell align="right">{line.issueNowQty ?? line.requiredQty - line.shortage}</TableCell>

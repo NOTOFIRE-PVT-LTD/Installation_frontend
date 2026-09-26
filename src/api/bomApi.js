@@ -18,4 +18,5 @@ export const bomApi = {
   previewProduction: (payload) => axiosInstance.post('/bom/productions/preview', payload),
   confirmProduction: (payload) => axiosInstance.post('/bom/productions/confirm', payload),
   issuePendingProduction: (id) => axiosInstance.post(`/bom/productions/${id}/issue-pending`),
+  updateProductionUnits: (id, lines) => axiosInstance.patch(`/bom/productions/${id}/units`, { lines }),
 };

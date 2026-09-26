@@ -356,6 +356,7 @@ function ProductionPanel() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [issuingId, setIssuingId] = useState(null);
+  const [savingUnit, setSavingUnit] = useState(false);
 
   useEffect(() => {
     dispatch(fetchBomProductions(queryParams));
@@ -426,6 +427,23 @@ function ProductionPanel() {
     }
   };
 
+  const handleUnitChange = async (production, index, unit) => {
+    if (!production?._id) return;
+    setSavingUnit(true);
+    try {
+      const { data } = await bomApi.updateProductionUnits(production._id, [{ index, unit }]);
+      setDetail({ open: true, production: data.data, loading: false });
+      dispatch(showSnackbar({ message: `Unit updated to ${unit}` }));
+      refresh();
+    } catch (err) {
+      dispatch(
+        showSnackbar({ message: err.response?.data?.message || 'Failed to update unit', severity: 'error' })
+      );
+    } finally {
+      setSavingUnit(false);
+    }
+  };
+
   const productionLabel = (row) =>
     row?.bomName
       ? `${row.bomName}${row.bomVersion ? ` v${row.bomVersion}` : ''}`
@@ -492,6 +510,8 @@ function ProductionPanel() {
         onClose={() => setDetail({ open: false, production: null, loading: false })}
         onIssuePending={handleIssuePending}
         issuing={Boolean(issuingId)}
+        onUnitChange={handleUnitChange}
+        savingUnit={savingUnit}
       />
       <ConfirmDialog
         open={Boolean(confirmDelete)}

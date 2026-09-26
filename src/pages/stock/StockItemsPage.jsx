@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -416,11 +417,30 @@ function WarehousePanel() {
     loadRows();
   }, []);
 
+  const terms = search
+    .trim()
+    .toLowerCase()
+    .split(/[\s/,]+/)
+    .filter((term) => term && term !== '-');
   const filtered = rows.filter((row) => {
-    if (!search.trim()) return true;
-    const q = search.trim().toLowerCase();
-    const peopleText = (row.people || []).map((p) => p.name).join(' ');
-    return [row.name, row.sku, peopleText].join(' ').toLowerCase().includes(q);
+    if (!terms.length) return true;
+    const haystack = [
+      row.name,
+      row.sku,
+      row.categoryName,
+      row.componentName,
+      row.subComponentName,
+      row.unit,
+      row.inbound,
+      row.utilized,
+      row.returned,
+      row.warehouseQty,
+      ...(row.people || []).map((p) => p.name),
+    ]
+      .filter((value) => value !== undefined && value !== null)
+      .join(' ')
+      .toLowerCase();
+    return terms.every((term) => haystack.includes(term));
   });
 
   const safePageSize = Math.min(Math.max(pageSize, 1), 100);
@@ -723,6 +743,19 @@ function MovementsPanel({ type, actionLabel }) {
 
 export default function StockItemsPage() {
   const [tab, setTab] = useState(0);
+  const [, setSearchParams] = useSearchParams();
+
+  const handleTabChange = (_event, next) => {
+    setTab(next);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        ['search', 'page', 'sortField', 'sortOrder'].forEach((key) => params.delete(key));
+        return params;
+      },
+      { replace: true }
+    );
+  };
 
   return (
     <>
@@ -752,7 +785,7 @@ WAREHOUSE
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={tab} onChange={(_e, next) => setTab(next)} variant="scrollable" allowScrollButtonsMobile>
+        <Tabs value={tab} onChange={handleTabChange} variant="scrollable" allowScrollButtonsMobile>
           <Tab label="1. Items" />
           <Tab label="2. Receive" />
           <Tab label="3. Warehouse" />

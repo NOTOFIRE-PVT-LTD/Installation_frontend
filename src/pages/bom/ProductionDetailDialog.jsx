@@ -22,6 +22,7 @@ import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
+import { UnitAutocomplete } from '../../components/common/FormFields/RHFUnitSelect';
 import { formatDate } from '../../utils/formatters';
 import { downloadProductionCsv, downloadProductionPdf } from './bomExport';
 
@@ -43,7 +44,16 @@ function issuedQty(line) {
   return Math.max(0, (Number(line.requiredQty) || 0) - (Number(line.pendingQty) || 0));
 }
 
-export default function ProductionDetailDialog({ open, production, loading, onClose, onIssuePending, issuing }) {
+export default function ProductionDetailDialog({
+  open,
+  production,
+  loading,
+  onClose,
+  onIssuePending,
+  issuing,
+  onUnitChange,
+  savingUnit,
+}) {
   const lines = production?.lines || [];
   const isPending = production?.status === 'pending';
   const bomLabel = production
@@ -55,7 +65,7 @@ export default function ProductionDetailDialog({ open, production, loading, onCl
     : '-';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle sx={{ pr: 6 }}>
         Production Details
         <IconButton onClick={onClose} aria-label="Close" sx={{ position: 'absolute', right: 12, top: 12 }}>
@@ -140,7 +150,21 @@ export default function ProductionDetailDialog({ open, production, loading, onCl
                           <TableCell>{line.itemName || '-'}</TableCell>
                           <TableCell align="right">{line.qtyPerPcs}</TableCell>
                           <TableCell align="right">
-                            {line.requiredQty} {line.unit}
+                            {onUnitChange ? (
+                              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                                <span>{line.requiredQty}</span>
+                                <UnitAutocomplete
+                                  value={line.unit || 'Nos'}
+                                  onChange={(unit) => onUnitChange(production, index, unit)}
+                                  label=""
+                                  placeholder="Unit"
+                                  disabled={loading || savingUnit}
+                                  sx={{ width: 120 }}
+                                />
+                              </Stack>
+                            ) : (
+                              `${line.requiredQty} ${line.unit}`
+                            )}
                           </TableCell>
                           <TableCell align="right">{line.availableQty}</TableCell>
                           <TableCell align="right">{issuedQty(line)}</TableCell>
