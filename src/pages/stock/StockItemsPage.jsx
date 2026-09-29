@@ -43,6 +43,10 @@ import { formatDate } from '../../utils/formatters';
 import { STOCK_MOVEMENT_TYPES, STOCK_MOVEMENT_LABELS } from '../../utils/constants';
 import { stockApi } from '../../api/stockApi';
 
+const STOCK_PAGE_SIZE_OPTIONS = [100, 250, 500, 1000];
+const STOCK_DEFAULT_PAGE_SIZE = STOCK_PAGE_SIZE_OPTIONS[0];
+const STOCK_MAX_PAGE_SIZE = STOCK_PAGE_SIZE_OPTIONS[STOCK_PAGE_SIZE_OPTIONS.length - 1];
+
 function emptySelectionModel(ids = []) {
   return { type: 'include', ids: new Set(ids) };
 }
@@ -193,7 +197,7 @@ function ItemsPanel() {
   const dispatch = useAppDispatch();
   const { items, total, status } = useAppSelector((state) => state.stockItems);
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
-    useTableQueryParams();
+    useTableQueryParams({ defaultPageSize: STOCK_DEFAULT_PAGE_SIZE });
   const [drawer, setDrawer] = useState({ open: false, mode: 'create', item: null });
   const [importOpen, setImportOpen] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -320,6 +324,7 @@ function ItemsPanel() {
         onPageSizeChange={setPageSize}
         sortModel={sortField ? { field: sortField, sort: sortOrder } : null}
         onSortChange={(model) => model && setSort(model.field, model.sort)}
+        pageSizeOptions={STOCK_PAGE_SIZE_OPTIONS}
         searchValue={search}
         onSearchChange={setSearch}
         actions={[
@@ -399,7 +404,7 @@ function WarehousePanel() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(STOCK_DEFAULT_PAGE_SIZE);
   const [selectionModel, setSelectionModel] = useState(() => emptySelectionModel());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -443,7 +448,7 @@ function WarehousePanel() {
     return terms.every((term) => haystack.includes(term));
   });
 
-  const safePageSize = Math.min(Math.max(pageSize, 1), 100);
+  const safePageSize = Math.min(Math.max(pageSize, 1), STOCK_MAX_PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filtered.length / safePageSize) || 1);
   const currentPage = Math.min(page, totalPages);
   const pagedRows = filtered.slice((currentPage - 1) * safePageSize, currentPage * safePageSize);
@@ -487,9 +492,10 @@ function WarehousePanel() {
         pageSize={safePageSize}
         onPageChange={setPage}
         onPageSizeChange={(next) => {
-          setPageSize(Math.min(Math.max(next, 1), 100));
+          setPageSize(Math.min(Math.max(next, 1), STOCK_MAX_PAGE_SIZE));
           setPage(1);
         }}
+        pageSizeOptions={STOCK_PAGE_SIZE_OPTIONS}
         searchValue={search}
         onSearchChange={(value) => {
           setSearch(value);
@@ -530,7 +536,7 @@ function MovementsPanel({ type, actionLabel }) {
   const dispatch = useAppDispatch();
   const { items, total, status } = useAppSelector((state) => state.stockMovements);
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
-    useTableQueryParams();
+    useTableQueryParams({ defaultPageSize: STOCK_DEFAULT_PAGE_SIZE });
   const [drawer, setDrawer] = useState({ open: false, movement: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(null);
@@ -666,6 +672,7 @@ function MovementsPanel({ type, actionLabel }) {
         onPageSizeChange={setPageSize}
         sortModel={sortField ? { field: sortField, sort: sortOrder } : null}
         onSortChange={(model) => model && setSort(model.field, model.sort)}
+        pageSizeOptions={STOCK_PAGE_SIZE_OPTIONS}
         searchValue={search}
         onSearchChange={setSearch}
         actions={[

@@ -16,6 +16,7 @@ import Button from '@mui/material/Button';
 import Badge from '@mui/material/Badge';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
+import TablePagination from '@mui/material/TablePagination';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
 import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
@@ -26,6 +27,8 @@ import StatusBadge from '../StatusBadge';
 import { useDebounce } from '../../../hooks/useDebounce';
 
 const MONGO_ID_RE = /^[a-f\d]{24}$/i;
+const GRID_MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 function getRowKey(row) {
   const raw = row?._id ?? row?.id;
@@ -177,7 +180,9 @@ export default function DataTable({
   onRowSelectionModelChange,
   onBulkDelete,
   bulkDeleteLabel = 'Delete selected',
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
 }) {
+  const largePages = pageSizeOptions.some((size) => size > GRID_MAX_PAGE_SIZE);
   const [columnsMenuAnchor, setColumnsMenuAnchor] = useState(null);
   const [filtersAnchor, setFiltersAnchor] = useState(null);
   const activeFilterCount = Object.values(filterValues).filter(Boolean).length;
@@ -528,20 +533,31 @@ export default function DataTable({
             return key;
           }}
           loading={loading}
-          rowCount={totalCount}
           paginationMode="server"
           sortingMode="server"
-          paginationModel={{
-            page: Math.max(page - 1, 0),
-            // MIT DataGrid rejects pageSize > 100.
-            pageSize: Math.min(Math.max(Number(pageSize) || 10, 1), 100),
-          }}
-          onPaginationModelChange={(model) => {
-            const nextSize = Math.min(Math.max(model.pageSize, 1), 100);
-            if (nextSize !== pageSize) onPageSizeChange(nextSize);
-            else onPageChange(model.page + 1);
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
+          {...(largePages
+            ? {
+                // MIT DataGrid rejects pageSize > 100, so paging is rendered by TablePagination below
+                // and the grid just shows every row it receives (server mode never slices rows).
+                rowCount: rows.length,
+                paginationModel: { page: 0, pageSize: GRID_MAX_PAGE_SIZE },
+                onPaginationModelChange: () => {},
+                pageSizeOptions: [GRID_MAX_PAGE_SIZE],
+                hideFooterPagination: true,
+              }
+            : {
+                rowCount: totalCount,
+                paginationModel: {
+                  page: Math.max(page - 1, 0),
+                  pageSize: Math.min(Math.max(Number(pageSize) || 10, 1), GRID_MAX_PAGE_SIZE),
+                },
+                onPaginationModelChange: (model) => {
+                  const nextSize = Math.min(Math.max(model.pageSize, 1), GRID_MAX_PAGE_SIZE);
+                  if (nextSize !== pageSize) onPageSizeChange(nextSize);
+                  else onPageChange(model.page + 1);
+                },
+                pageSizeOptions,
+              })}
           sortModel={sortModel ? [sortModel] : []}
           onSortModelChange={(model) => onSortChange(model[0])}
           columnVisibilityModel={columnVisibilityModel}
@@ -579,6 +595,22 @@ export default function DataTable({
             loadingOverlay: SkeletonOverlay,
           }}
         />
+        {largePages && (
+          <TablePagination
+            component="div"
+            count={totalCount || 0}
+            page={Math.max(page - 1, 0)}
+            rowsPerPage={Number(pageSize) || pageSizeOptions[0]}
+            rowsPerPageOptions={
+              pageSizeOptions.includes(Number(pageSize))
+                ? pageSizeOptions
+                : [...pageSizeOptions, Number(pageSize)].filter(Boolean).sort((a, b) => a - b)
+            }
+            onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
+            onRowsPerPageChange={(event) => onPageSizeChange(Number(event.target.value))}
+            sx={{ borderTop: '1px solid', borderColor: 'divider' }}
+          />
+        )}
       </Box>
     </Box>
   );

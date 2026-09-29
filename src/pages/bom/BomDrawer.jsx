@@ -11,6 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
+import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -95,6 +96,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
+  const missingItemCount = (bom?.components || []).filter((c) => !c.stockItem).length;
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -257,6 +259,13 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                     </Stack>
                   )}
                 </Stack>
+
+                {missingItemCount > 0 && (
+                  <Alert severity="warning">
+                    {missingItemCount} component(s) use a stock item that was deleted. They are shown with an empty
+                    Item box — select the correct item (or remove the row) and save the BOM.
+                  </Alert>
+                )}
 
                 <Stack spacing={1.5}>
                   {fields.map((field, index) => (
