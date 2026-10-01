@@ -29,6 +29,7 @@ const LABELS = {
   bom: 'BOM',
   itemsMaster: 'Items Master',
   billing: 'Billing',
+  quotations: 'Quotations',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

@@ -27,6 +27,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { itemMasterApi } from '../../api/itemMasterApi';
 import { CATALOG_FIELDS, OTHER, newNameField } from './itemMasterFields';
 import { ITEM_MASTER_CATALOG_KINDS } from '../../utils/constants';
+import { formatDateTime } from '../../utils/formatters';
 
 const numeric = (message) =>
   yup
@@ -787,6 +788,14 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
             <Typography variant="body2" color="text.secondary">
               New items require approval from the Item Master admin.
             </Typography>
+            {mode !== 'create' && item?.createdAt && (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                Added on {formatDateTime(item.createdAt)}
+                {item.updatedAt && item.updatedAt !== item.createdAt
+                  ? ` · Last updated ${formatDateTime(item.updatedAt)}`
+                  : ''}
+              </Typography>
+            )}
           </Box>
           <IconButton onClick={onClose} aria-label="Close" size="small">
             <CloseIcon />

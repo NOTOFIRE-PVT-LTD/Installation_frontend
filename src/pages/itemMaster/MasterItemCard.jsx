@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ImageIcon from '@mui/icons-material/ImageOutlined';
+import { formatDate } from '../../utils/formatters';
 
 const catalogName = (value) => value?.name || '';
 
@@ -82,6 +83,7 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
     },
     { label: 'Bill Photo', value: attachmentCountLabel(item.billPhoto, 'Attached') },
     { label: 'Visiting Card', value: attachmentCountLabel(item.visitingCard, 'Attached') },
+    { label: 'Added On', value: item.createdAt ? formatDate(item.createdAt) : '' },
   ].filter((row) => row.value !== '');
 
   return (

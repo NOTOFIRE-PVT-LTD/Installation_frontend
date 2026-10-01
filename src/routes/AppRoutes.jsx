@@ -27,6 +27,8 @@ import StockItemsPage from '../pages/stock/StockItemsPage';
 import BomPage from '../pages/bom/BomPage';
 import ItemsMasterPage from '../pages/itemMaster/ItemsMasterPage';
 import BillingPage from '../pages/billing/BillingPage';
+import QuotationsPage from '../pages/quotations/QuotationsPage';
+import QuotationFormPage from '../pages/quotations/QuotationFormPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -233,6 +235,39 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="billing" roles={[]}>
                 <BillingPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/quotations"
+            element={
+              <PermissionGate permission="quotations" roles={[]}>
+                <QuotationsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/quotations/new"
+            element={
+              <PermissionGate permission="quotations" roles={[]}>
+                <QuotationFormPage mode="create" />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/quotations/:id/edit"
+            element={
+              <PermissionGate permission="quotations" roles={[]}>
+                <QuotationFormPage mode="edit" />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/quotations/:id"
+            element={
+              <PermissionGate permission="quotations" roles={[]}>
+                <QuotationFormPage mode="view" />
               </PermissionGate>
             }
           />

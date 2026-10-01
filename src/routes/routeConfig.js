@@ -13,6 +13,7 @@ import {
   faLayerGroup,
   faUsers,
   faReceipt,
+  faFileInvoice,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -73,6 +74,14 @@ export const NAV_ITEMS = [
     permission: 'billing',
     roles: [ROLES.ADMIN],
     accent: { color: '#c2410c', bg: '#fff7ed' },
+  },
+  {
+    label: 'Quotations',
+    path: '/quotations',
+    icon: faFileInvoice,
+    permission: 'quotations',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#4f46e5', bg: '#eef2ff' },
   },
   {
     label: 'Items Master',

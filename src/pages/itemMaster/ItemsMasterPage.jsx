@@ -38,6 +38,7 @@ import {
 } from '../../features/itemMaster/itemMasterThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
+import { formatDate, formatDateTime } from '../../utils/formatters';
 import { itemMasterApi } from '../../api/itemMasterApi';
 import { CATALOG_FIELDS } from './itemMasterFields';
 
@@ -108,6 +109,21 @@ const COLUMNS = [
     minWidth: 130,
     valueGetter: (value) => name(value) || '-',
     csvValue: (row) => name(row.payment),
+  },
+  {
+    field: 'createdAt',
+    headerName: 'Added On',
+    width: 120,
+    valueGetter: (value) => (value ? formatDate(value) : '-'),
+    csvValue: (row) => (row.createdAt ? formatDate(row.createdAt) : ''),
+  },
+  {
+    field: 'updatedAt',
+    headerName: 'Last Updated',
+    width: 170,
+    sortable: false,
+    valueGetter: (value) => (value ? formatDateTime(value) : '-'),
+    csvValue: (row) => (row.updatedAt ? formatDateTime(row.updatedAt) : ''),
   },
 ];
 
