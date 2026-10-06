@@ -48,13 +48,14 @@ export default function StockReceiveImportDialog({ open, onClose, onSubmit, subm
               overflowX: 'auto',
             }}
           >
-            {`Component Name | Sub Component Name | Supplier Name | Amount | Quantity | Date | Reference / Challan No. | Remarks
-Cable          | 6mm wire           | ABC Traders    | 1500   | 10       | 2026-09-07 | CH-001                   | Sample`}
+            {`Component Name | Sub Component Name | Supplier Name | Amount | Quantity | UOM    | Date       | Reference / Challan No. | Remarks
+Cable          | 6mm wire           | ABC Traders   | 1500   | 10       | Metres | 2026-09-07 | CH-001                  | Sample`}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Match stock by <strong>Component Name</strong> + optional <strong>Sub Component Name</strong> (must
             already exist under Items). <strong>Supplier Name</strong>, <strong>Amount</strong>, and{' '}
-            <strong>Quantity</strong> are required. Upload .xlsx, .xls, or .csv.
+            <strong>Quantity</strong> are required. <strong>UOM</strong> is optional and defaults to the item&apos;s
+            unit. Upload .xlsx, .xls, or .csv.
           </Typography>
 
           <Button

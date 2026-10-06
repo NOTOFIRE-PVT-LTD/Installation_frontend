@@ -44,8 +44,8 @@ import { STOCK_MOVEMENT_TYPES, STOCK_MOVEMENT_LABELS } from '../../utils/constan
 import { stockApi } from '../../api/stockApi';
 
 const STOCK_PAGE_SIZE_OPTIONS = [100, 250, 500, 1000];
-const STOCK_DEFAULT_PAGE_SIZE = STOCK_PAGE_SIZE_OPTIONS[0];
 const STOCK_MAX_PAGE_SIZE = STOCK_PAGE_SIZE_OPTIONS[STOCK_PAGE_SIZE_OPTIONS.length - 1];
+const STOCK_DEFAULT_PAGE_SIZE = STOCK_MAX_PAGE_SIZE;
 
 function emptySelectionModel(ids = []) {
   return { type: 'include', ids: new Set(ids) };
@@ -141,6 +141,14 @@ function movementColumns(type) {
       csvValue: (row) => movementItemLabel(row.stockItem),
     },
     { field: 'quantity', headerName: 'Qty', width: 90 },
+    {
+      field: 'unit',
+      headerName: 'UOM',
+      width: 90,
+      sortable: false,
+      valueGetter: (value, row) => value || row.stockItem?.unit || '-',
+      csvValue: (row) => row.unit || row.stockItem?.unit || '',
+    },
     {
       field: 'movementDate',
       headerName: 'Date',

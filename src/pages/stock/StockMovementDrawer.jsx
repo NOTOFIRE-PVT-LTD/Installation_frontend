@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useEffect, useRef } from 'react';
+import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Drawer from '@mui/material/Drawer';
@@ -14,6 +14,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
+import RHFUnitSelect from '../../components/common/FormFields/RHFUnitSelect';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { fetchStockItemOptions } from '../../features/stockItems/stockItemsThunks';
 import { STOCK_MOVEMENT_TYPES, STOCK_MOVEMENT_LABELS } from '../../utils/constants';
@@ -22,6 +23,7 @@ function buildSchema(type) {
   const base = {
     stockItem: yup.string().required('Stock item is required'),
     quantity: yup.number().typeError('Must be a number').moreThan(0, 'Quantity must be greater than 0').required(),
+    unit: yup.string().trim().required('UOM is required').max(30, 'UOM must be 30 characters or fewer'),
     movementDate: yup.string().nullable(),
     referenceNo: yup.string().trim().nullable(),
     remarks: yup.string().trim().nullable(),
@@ -41,6 +43,7 @@ function defaultValues(movement) {
     return {
       stockItem: '',
       quantity: '',
+      unit: '',
       amount: '',
       movementDate: new Date().toISOString().slice(0, 10),
       supplierName: '',
@@ -52,6 +55,7 @@ function defaultValues(movement) {
   return {
     stockItem: movement.stockItem?._id || movement.stockItem || '',
     quantity: movement.quantity ?? '',
+    unit: movement.unit || movement.stockItem?.unit || 'Nos',
     amount: movement.amount ?? '',
     movementDate: movement.movementDate ? String(movement.movementDate).slice(0, 10) : '',
     supplierName: movement.supplierName || '',
@@ -78,12 +82,27 @@ export default function StockMovementDrawer({ open, type, movement, onClose, onS
     defaultValues: defaultValues(null),
   });
 
+  const selectedItemId = useWatch({ control: methods.control, name: 'stockItem' });
+  const lastItemRef = useRef('');
+
   useEffect(() => {
     if (!open) return;
     dispatch(fetchStockItemOptions());
-    methods.reset(defaultValues(movement));
+    const values = defaultValues(movement);
+    lastItemRef.current = values.stockItem;
+    methods.reset(values);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, type, movement]);
+
+  // Picking a different item pre-fills UOM with that item's unit; the user can still change it.
+  useEffect(() => {
+    if (!selectedItemId || selectedItemId === lastItemRef.current) return;
+    const item = (itemOptions || []).find((option) => option._id === selectedItemId);
+    if (!item) return;
+    lastItemRef.current = selectedItemId;
+    methods.setValue('unit', item.unit || 'Nos', { shouldValidate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItemId, itemOptions]);
 
   const needsPerson =
     type === STOCK_MOVEMENT_TYPES.ISSUE_OUT || type === STOCK_MOVEMENT_TYPES.RETURN_IN;
@@ -119,6 +138,7 @@ export default function StockMovementDrawer({ open, type, movement, onClose, onS
                   type,
                   stockItem: values.stockItem,
                   quantity: Number(values.quantity),
+                  unit: String(values.unit || '').trim(),
                   amount: type === STOCK_MOVEMENT_TYPES.SUPPLIER_IN ? Number(values.amount) : undefined,
                   movementDate: values.movementDate || null,
                   supplierName: String(values.supplierName || '').trim(),
@@ -166,6 +186,9 @@ export default function StockMovementDrawer({ open, type, movement, onClose, onS
                 )}
                 <Grid item xs={12} sm={6}>
                   <RHFTextField name="quantity" label="Quantity" type="number" required />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFUnitSelect name="unit" label="Unit of Measurement (UOM) *" />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <RHFDatePicker name="movementDate" label="Date" />
