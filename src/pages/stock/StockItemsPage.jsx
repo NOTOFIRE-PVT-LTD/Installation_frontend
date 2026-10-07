@@ -47,8 +47,9 @@ const STOCK_PAGE_SIZE_OPTIONS = [100, 250, 500, 1000];
 const STOCK_MAX_PAGE_SIZE = STOCK_PAGE_SIZE_OPTIONS[STOCK_PAGE_SIZE_OPTIONS.length - 1];
 const STOCK_DEFAULT_PAGE_SIZE = STOCK_MAX_PAGE_SIZE;
 
+// MUI X DataGrid v7 expects the selection as a plain array of row ids.
 function emptySelectionModel(ids = []) {
-  return { type: 'include', ids: new Set(ids) };
+  return [...new Set(ids)];
 }
 
 function bulkDeleteMessage(result, singular = 'item', plural = 'items') {

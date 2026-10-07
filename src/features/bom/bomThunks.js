@@ -31,7 +31,7 @@ export const createBom = createAsyncThunk('bom/create', async (payload, { reject
 export const updateBom = createAsyncThunk('bom/update', async ({ id, payload }, { rejectWithValue }) => {
   try {
     const { data } = await bomApi.update(id, payload);
-    return data.data;
+    return { bom: data.data, message: data.message };
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Failed to update BOM');
   }

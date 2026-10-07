@@ -241,8 +241,8 @@ function BomListPanel() {
         await dispatch(createBom(payload)).unwrap();
         dispatch(showSnackbar({ message: drawer.mode === 'copy' ? 'BOM copied' : 'BOM created' }));
       } else {
-        await dispatch(updateBom({ id: drawer.bom._id, payload })).unwrap();
-        dispatch(showSnackbar({ message: 'BOM updated' }));
+        const result = await dispatch(updateBom({ id: drawer.bom._id, payload })).unwrap();
+        dispatch(showSnackbar({ message: result?.message || 'BOM updated' }));
       }
       setDrawer({ open: false, mode: 'create', bom: null });
       refresh();
