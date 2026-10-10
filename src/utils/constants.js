@@ -67,6 +67,8 @@ export const PERMISSION_KEYS = [
   'itemsMaster',
   'billing',
   'quotations',
+  'quotationsOwnOnly',
+  'proformaInvoices',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

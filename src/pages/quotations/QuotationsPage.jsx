@@ -4,8 +4,13 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Tooltip from '@mui/material/Tooltip';
 import Pagination from '@mui/material/Pagination';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -16,7 +21,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
-import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyOutlined';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
@@ -24,6 +28,8 @@ import SendIcon from '@mui/icons-material/SendOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import RestoreIcon from '@mui/icons-material/RestoreFromTrashOutlined';
 import FileDownloadIcon from '@mui/icons-material/FileDownloadOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import PageHeader from '../../components/common/PageHeader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useAppDispatch } from '../../app/hooks';
@@ -66,122 +72,158 @@ function InfoCell({ label, children }) {
 
 function QuotationCard({ quotation, trash, busy, onAction }) {
   const status = statusMeta(quotation.status);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [statusAnchor, setStatusAnchor] = useState(null);
+
+  const stop = (handler) => (event) => {
+    event.stopPropagation();
+    handler(event);
+  };
+  const runMenuAction = (action, value) => {
+    setMenuAnchor(null);
+    setStatusAnchor(null);
+    onAction(action, quotation, value);
+  };
+
+  const menuItems = trash
+    ? [{ key: 'purge', label: 'Delete Permanently', icon: <DeleteIcon fontSize="small" />, danger: true }]
+    : [
+        { key: 'duplicate', label: 'Duplicate', icon: <ContentCopyIcon fontSize="small" /> },
+        ...(quotation.status === 'draft'
+          ? [{ key: 'status', value: 'sent', label: 'Mark as Sent', icon: <SendIcon fontSize="small" /> }]
+          : []),
+        { key: 'trash', label: 'Move to Trash', icon: <DeleteIcon fontSize="small" />, danger: true },
+      ];
+
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.75, sm: 2.25 }, borderRadius: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography fontWeight={700} fontSize="1.05rem">
-            {quotation.quotationNo}
+    <Paper
+      variant="outlined"
+      onClick={() => onAction('view', quotation)}
+      sx={{
+        p: { xs: 1.5, sm: 2 },
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'border-color 120ms ease, box-shadow 120ms ease',
+        '&:hover': { borderColor: 'primary.light', boxShadow: '0 6px 18px rgba(31, 42, 68, 0.08)' },
+      }}
+    >
+      <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} gap={{ xs: 1.25, md: 2 }}>
+        <Box sx={{ minWidth: 0, flex: { md: '0 0 240px' } }}>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Typography fontWeight={700} fontSize="1rem" noWrap>
+              {quotation.quotationNo}
+            </Typography>
+            <Chip
+              size="small"
+              label={status.label}
+              color={status.color}
+              variant={status.value === 'draft' ? 'filled' : 'outlined'}
+              onDelete={trash || busy ? undefined : stop((event) => setStatusAnchor(event.currentTarget))}
+              deleteIcon={<ArrowDropDownIcon />}
+              onClick={trash || busy ? undefined : stop((event) => setStatusAnchor(event.currentTarget))}
+            />
+          </Stack>
+          <Typography variant="body2" color="text.secondary" noWrap title={quotation.party?.name}>
+            {quotation.party?.name || '-'}
           </Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {quotation.party?.name || '-'} • Created {formatDate(quotation.createdAt)}
+          <Typography variant="caption" color="text.secondary">
+            Created {formatDate(quotation.createdAt)}
           </Typography>
         </Box>
-        <Chip size="small" label={status.label} color={status.color} variant={status.value === 'draft' ? 'filled' : 'outlined'} />
-      </Stack>
 
-      <Grid container spacing={2} sx={{ mt: 0.5, mb: 1.5 }}>
-        <Grid item xs={6} md={3}>
-          <Typography variant="caption" color="text.secondary">
-            Amount
-          </Typography>
-          <Typography fontWeight={700} fontSize="1.05rem">
-            {money(quotation.totalAmount)}
-          </Typography>
+        <Grid container spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Grid item xs={6} md={3}>
+            <Typography variant="caption" color="text.secondary">
+              Amount
+            </Typography>
+            <Typography fontWeight={700} noWrap>
+              {money(quotation.totalAmount)}
+            </Typography>
+          </Grid>
+          <Grid item xs={6} md={3}>
+            <InfoCell label="Company">{quotation.company?.name}</InfoCell>
+          </Grid>
+          <Grid item xs={6} md={3}>
+            <InfoCell label="Salesperson">{quotation.salesperson}</InfoCell>
+          </Grid>
+          <Grid item xs={6} md={3}>
+            <InfoCell label="Project">{quotation.projectName}</InfoCell>
+          </Grid>
         </Grid>
-        <Grid item xs={6} md={3}>
-          <InfoCell label="Company">{quotation.company?.name}</InfoCell>
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <InfoCell label="Salesperson">{quotation.salesperson}</InfoCell>
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <InfoCell label="Project">{quotation.projectName}</InfoCell>
-        </Grid>
-      </Grid>
 
-      <Stack direction="row" flexWrap="wrap" gap={1} alignItems="center">
-        <Button size="small" variant="outlined" startIcon={<VisibilityIcon />} onClick={() => onAction('view', quotation)}>
-          View
-        </Button>
-        {trash ? (
-          <>
+        <Stack direction="row" alignItems="center" gap={0.5} sx={{ flexShrink: 0, alignSelf: { xs: 'flex-end', md: 'center' } }}>
+          {trash ? (
             <Button
               size="small"
               variant="outlined"
               startIcon={<RestoreIcon />}
               disabled={busy}
-              onClick={() => onAction('restore', quotation)}
+              onClick={stop(() => onAction('restore', quotation))}
             >
               Restore
             </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              disabled={busy}
-              onClick={() => onAction('purge', quotation)}
-            >
-              Delete Permanently
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => onAction('edit', quotation)}>
-              Edit
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<ContentCopyIcon />}
-              disabled={busy}
-              onClick={() => onAction('duplicate', quotation)}
-            >
-              Duplicate
-            </Button>
-            <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={() => onAction('pdf', quotation)}>
-              Download PDF
-            </Button>
-            {quotation.status === 'draft' && (
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<SendIcon />}
-                disabled={busy}
-                onClick={() => onAction('status', quotation, 'sent')}
-              >
-                Mark as Sent
-              </Button>
-            )}
-            <TextField
-              select
-              size="small"
-              value=""
-              disabled={busy}
-              onChange={(event) => onAction('status', quotation, event.target.value)}
-              SelectProps={{ displayEmpty: true, renderValue: () => 'Set status' }}
-              sx={{ minWidth: 150, '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
-            >
-              {QUOTATION_STATUSES.filter((s) => s.value !== quotation.status).map((s) => (
-                <MenuItem key={s.value} value={s.value}>
-                  {s.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              disabled={busy}
-              onClick={() => onAction('trash', quotation)}
-            >
-              Delete
-            </Button>
-          </>
-        )}
+          ) : (
+            <>
+              <Tooltip title="Edit">
+                <IconButton size="small" onClick={stop(() => onAction('edit', quotation))}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Download PDF">
+                <IconButton size="small" onClick={stop(() => onAction('pdf', quotation))}>
+                  <DownloadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+          <Tooltip title="More actions">
+            <span>
+              <IconButton size="small" disabled={busy} onClick={stop((event) => setMenuAnchor(event.currentTarget))}>
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Stack>
       </Stack>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        onClick={(event) => event.stopPropagation()}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        {menuItems.map((item) => (
+          <MenuItem
+            key={item.label}
+            dense
+            onClick={() => runMenuAction(item.key, item.value)}
+            sx={{ color: item.danger ? 'error.main' : 'text.primary' }}
+          >
+            <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu
+        anchorEl={statusAnchor}
+        open={Boolean(statusAnchor)}
+        onClose={() => setStatusAnchor(null)}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {QUOTATION_STATUSES.map((s) => (
+          <MenuItem
+            key={s.value}
+            dense
+            selected={s.value === quotation.status}
+            onClick={() => (s.value === quotation.status ? setStatusAnchor(null) : runMenuAction('status', s.value))}
+          >
+            {s.label}
+          </MenuItem>
+        ))}
+      </Menu>
     </Paper>
   );
 }

@@ -14,6 +14,7 @@ import {
   faUsers,
   faReceipt,
   faFileInvoice,
+  faFileSignature,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -82,6 +83,14 @@ export const NAV_ITEMS = [
     permission: 'quotations',
     roles: [ROLES.ADMIN],
     accent: { color: '#4f46e5', bg: '#eef2ff' },
+  },
+  {
+    label: 'Proforma Invoices',
+    path: '/proforma-invoices',
+    icon: faFileSignature,
+    permission: 'proformaInvoices',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#0369a1', bg: '#e0f2fe' },
   },
   {
     label: 'Items Master',

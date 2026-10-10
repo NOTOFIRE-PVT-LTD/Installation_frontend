@@ -29,6 +29,7 @@ import ItemsMasterPage from '../pages/itemMaster/ItemsMasterPage';
 import BillingPage from '../pages/billing/BillingPage';
 import QuotationsPage from '../pages/quotations/QuotationsPage';
 import QuotationFormPage from '../pages/quotations/QuotationFormPage';
+import ProformaInvoicesPage from '../pages/proformaInvoices/ProformaInvoicesPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -268,6 +269,14 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="quotations" roles={[]}>
                 <QuotationFormPage mode="view" />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/proforma-invoices"
+            element={
+              <PermissionGate permission="proformaInvoices" roles={[]}>
+                <ProformaInvoicesPage />
               </PermissionGate>
             }
           />

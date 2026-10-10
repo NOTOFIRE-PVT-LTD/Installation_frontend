@@ -18,7 +18,7 @@ export const quotationApi = {
   updateProduct: (id, formData) =>
     axiosInstance.put(`/quotations/products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   removeProduct: (id) => axiosInstance.delete(`/quotations/products/${id}`),
-  listMasters: (kind) => axiosInstance.get(`/quotations/masters/${kind}`),
+  listMasters: (kind, params) => axiosInstance.get(`/quotations/masters/${kind}`, { params }),
   createMaster: (kind, payload) => axiosInstance.post(`/quotations/masters/${kind}`, payload),
   updateMaster: (id, payload) => axiosInstance.put(`/quotations/masters/item/${id}`, payload),
   removeMaster: (id) => axiosInstance.delete(`/quotations/masters/item/${id}`),

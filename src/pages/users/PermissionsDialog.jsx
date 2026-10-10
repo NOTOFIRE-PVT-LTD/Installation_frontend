@@ -30,6 +30,9 @@ const LABELS = {
   itemsMaster: 'Items Master',
   billing: 'Billing',
   quotations: 'Quotations',
+  quotationsOwnOnly:
+    'Quotation user',
+  proformaInvoices: 'Proforma Invoices',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];
@@ -67,7 +70,8 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
             Enable <b>Claim Approvals + WhatsApp alerts</b> for claim notifications, <b>Tender WhatsApp alerts</b> for
             tender-created notifications, and <b>BG Deadline WhatsApp alerts</b> for BG reminders (14 days after LOA
             Date). The admin must have a valid mobile number saved on their profile (
-            {user?.mobileNumber || 'not set'}).
+            {user?.mobileNumber || 'not set'}). For a <b>quotation user</b>, tick only <b>Quotations</b> and{' '}
+            <b>Quotation user</b>.
           </Typography>
         )}
         <FormGroup>

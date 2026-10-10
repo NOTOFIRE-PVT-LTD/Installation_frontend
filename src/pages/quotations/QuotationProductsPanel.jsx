@@ -23,6 +23,7 @@ import InventoryIcon from '@mui/icons-material/Inventory2Outlined';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useAppDispatch } from '../../app/hooks';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { quotationApi } from '../../api/quotationApi';
 import QuotationProductDialog from './QuotationProductDialog';
@@ -30,6 +31,7 @@ import { apiErrorMessage, money } from './quotationUtils';
 
 export default function QuotationProductsPanel() {
   const dispatch = useAppDispatch();
+  const canManage = !usePermission('quotationsOwnOnly');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -106,9 +108,11 @@ export default function QuotationProductsPanel() {
               <TableCell>Approvals</TableCell>
               <TableCell>Datasheet</TableCell>
               <TableCell align="right">Price</TableCell>
-              <TableCell align="right" width={100}>
-                Actions
-              </TableCell>
+              {canManage && (
+                <TableCell align="right" width={100}>
+                  Actions
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -141,19 +145,21 @@ export default function QuotationProductsPanel() {
                 <TableCell align="right" sx={{ fontWeight: 700 }}>
                   {money(row.price)}
                 </TableCell>
-                <TableCell align="right">
-                  <IconButton size="small" onClick={() => setDialog({ open: true, product: row })}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => setConfirmDelete(row)}>
-                    <DeleteIcon fontSize="small" color="error" />
-                  </IconButton>
-                </TableCell>
+                {canManage && (
+                  <TableCell align="right">
+                    <IconButton size="small" onClick={() => setDialog({ open: true, product: row })}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => setConfirmDelete(row)}>
+                      <DeleteIcon fontSize="small" color="error" />
+                    </IconButton>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
             {!loading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={canManage ? 7 : 6}>
                   <Box sx={{ py: 3, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                       {search ? 'No products match your search.' : 'No products yet. Click "Add Product" to add one.'}
