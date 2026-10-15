@@ -19,7 +19,18 @@ export const MASTER_LABELS = {
 };
 
 const EMPTY_BANK = { accountName: '', accountNo: '', bankName: '', ifsc: '', branch: '' };
-const EMPTY = { name: '', gstin: '', contactPerson: '', phone: '', email: '', address: '', content: '', code: '', bank: EMPTY_BANK };
+const EMPTY = {
+  name: '',
+  gstin: '',
+  contactPerson: '',
+  phone: '',
+  email: '',
+  address: '',
+  content: '',
+  code: '',
+  cin: '',
+  bank: EMPTY_BANK,
+};
 
 const BANK_FIELDS = [
   { name: 'accountName', label: 'Account Name', sm: 6 },
@@ -71,7 +82,7 @@ export default function QuotationMasterDialog({ open, kind, record, onClose, onS
             phone: values.phone,
             email: values.email,
             address: values.address,
-            ...(isCompany ? { code: values.code, bank: values.bank } : {}),
+            ...(isCompany ? { code: values.code, cin: values.cin, bank: values.bank } : {}),
           };
       const { data } = record?._id
         ? await quotationApi.updateMaster(record._id, payload)
@@ -109,6 +120,11 @@ export default function QuotationMasterDialog({ open, kind, record, onClose, onS
               <Grid item xs={12} sm={6}>
                 <TextField {...field('gstin')} label="GSTIN" />
               </Grid>
+              {isCompany && (
+                <Grid item xs={12} sm={6}>
+                  <TextField {...field('cin')} label="CIN" placeholder="e.g. U33100DL2020PTC365218" />
+                </Grid>
+              )}
               <Grid item xs={12} sm={6}>
                 <TextField {...field('contactPerson')} label="Contact Person" />
               </Grid>

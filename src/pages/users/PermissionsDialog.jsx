@@ -33,6 +33,7 @@ const LABELS = {
   quotationsOwnOnly:
     'Quotation user',
   proformaInvoices: 'Proforma Invoices',
+  deliveryChallans: 'Delivery Challans',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];

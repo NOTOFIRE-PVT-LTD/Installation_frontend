@@ -69,6 +69,7 @@ export const PERMISSION_KEYS = [
   'quotations',
   'quotationsOwnOnly',
   'proformaInvoices',
+  'deliveryChallans',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {
