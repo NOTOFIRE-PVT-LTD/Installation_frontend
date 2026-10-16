@@ -193,11 +193,11 @@ export default function StockMovementDrawer({ open, type, movement, onClose, onS
                 <Grid item xs={12} sm={6}>
                   <RHFDatePicker name="movementDate" label="Date" />
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <RHFTextField name="referenceNo" label="Reference / Challan No." />
-                </Grid>
                 <Grid item xs={12}>
                   <RHFTextField name="remarks" label="Remarks" multiline minRows={2} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="referenceNo" label="Reference / Challan No." />
                 </Grid>
               </Grid>
             </Stack>

@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
@@ -83,6 +84,12 @@ const ITEM_COLUMNS = [
     headerName: 'Type',
     width: 120,
     valueGetter: (value) => value || '-',
+  },
+  {
+    field: 'unit',
+    headerName: 'Unit',
+    width: 90,
+    valueGetter: (value) => value || 'Nos',
   },
 ];
 
@@ -187,16 +194,33 @@ function movementColumns(type) {
     });
   }
   cols.push({
+    field: 'remarks',
+    headerName: 'Remarks',
+    flex: 2,
+    minWidth: 320,
+    valueGetter: (value) => value || '-',
+    renderCell: (params) => (
+      <Tooltip title={params.value && params.value !== '-' ? params.value : ''} placement="top-start">
+        <Typography
+          variant="body2"
+          sx={{
+            whiteSpace: 'normal',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {params.value}
+        </Typography>
+      </Tooltip>
+    ),
+  });
+  cols.push({
     field: 'referenceNo',
     headerName: 'Reference',
     width: 130,
-    valueGetter: (value) => value || '-',
-  });
-  cols.push({
-    field: 'remarks',
-    headerName: 'Remarks',
-    flex: 1,
-    minWidth: 140,
     valueGetter: (value) => value || '-',
   });
   return cols;

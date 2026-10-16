@@ -13,6 +13,7 @@ import Grid from '@mui/material/Grid';
 import CloseIcon from '@mui/icons-material/Close';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
+import RHFUnitSelect from '../../components/common/FormFields/RHFUnitSelect';
 import { stockApi } from '../../api/stockApi';
 import { STOCK_CATALOG_KINDS, STOCK_ITEM_TYPES, STOCK_OTHER_VALUE } from '../../utils/constants';
 
@@ -28,6 +29,7 @@ const schema = yup.object({
   subComponent: yup.string().nullable(),
   newSubComponent: yup.string().nullable(),
   itemType: yup.string().oneOf(STOCK_ITEM_TYPES).required('Type is required'),
+  unit: yup.string().trim().required('Unit is required').max(30, 'Unit must be 30 characters or fewer'),
 });
 
 function mapItemToForm(item) {
@@ -38,6 +40,7 @@ function mapItemToForm(item) {
       subComponent: '',
       newSubComponent: '',
       itemType: STOCK_ITEM_TYPES[0],
+      unit: 'Nos',
     };
   }
   return {
@@ -46,6 +49,7 @@ function mapItemToForm(item) {
     subComponent: item.subComponent?._id || item.subComponent || '',
     newSubComponent: '',
     itemType: STOCK_ITEM_TYPES.includes(item.itemType) ? item.itemType : STOCK_ITEM_TYPES[0],
+    unit: item.unit || 'Nos',
   };
 }
 
@@ -210,6 +214,7 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
                   formData.append('newSubComponent', String(values.newSubComponent || '').trim());
                 }
                 formData.append('itemType', values.itemType);
+                formData.append('unit', String(values.unit || '').trim() || 'Nos');
                 onSubmit(formData);
               })}
             >
@@ -268,6 +273,14 @@ export default function StockItemDrawer({ open, mode = 'create', item, onClose, 
                       disabled={readOnly}
                       options={STOCK_ITEM_TYPES.map((type) => ({ value: type, label: type }))}
                     />
+                  </Stack>
+                </Grid>
+                <Grid item xs={12}>
+                  <Stack spacing={0.75}>
+                    <Typography variant="body2" fontWeight={600}>
+                      Unit
+                    </Typography>
+                    <RHFUnitSelect name="unit" label="" disabled={readOnly} />
                   </Stack>
                 </Grid>
               </Grid>

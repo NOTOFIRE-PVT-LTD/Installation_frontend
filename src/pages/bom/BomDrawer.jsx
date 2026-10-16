@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useFieldArray, useForm, FormProvider } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import { useFieldArray, useForm, useWatch, useFormContext, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Drawer from '@mui/material/Drawer';
@@ -18,6 +18,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
+import RHFUnitSelect from '../../components/common/FormFields/RHFUnitSelect';
 import RHFDatePicker from '../../components/common/FormFields/RHFDatePicker';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { fetchStockItemOptions } from '../../features/stockItems/stockItemsThunks';
@@ -32,6 +33,7 @@ const componentSchema = yup.object({
     .typeError('Must be a number')
     .moreThan(0, 'Qty for 1 PCS must be greater than 0')
     .required('Qty for 1 PCS is required'),
+  unit: yup.string().trim().nullable(),
 });
 
 const schema = yup.object({
@@ -48,6 +50,7 @@ function emptyComponent() {
   return {
     stockItem: '',
     qtyPerPcs: '',
+    unit: '',
   };
 }
 
@@ -75,6 +78,7 @@ function mapBomToForm(bom) {
         ? bom.components.map((c) => ({
             stockItem: c.stockItem?._id || c.stockItem || '',
             qtyPerPcs: c.qtyPerPcs ?? '',
+            unit: c.unit || c.stockItem?.unit || 'Nos',
           }))
         : [emptyComponent()],
   };
@@ -85,6 +89,21 @@ function itemLabel(item) {
     [item.categoryName, item.componentName, item.subComponentName || item.name].filter(Boolean).join(' / ') ||
     item.name
   );
+}
+
+/** Unit picker for one BOM component; re-fills from the stock item whenever a different item is picked. */
+function ComponentUnitField({ index, itemUnits, disabled }) {
+  const { setValue } = useFormContext();
+  const stockItem = useWatch({ name: `components.${index}.stockItem` });
+  const previous = useRef(stockItem);
+
+  useEffect(() => {
+    if (previous.current === stockItem) return;
+    previous.current = stockItem;
+    if (stockItem) setValue(`components.${index}.unit`, itemUnits[stockItem] || 'Nos');
+  }, [stockItem, index, itemUnits, setValue]);
+
+  return <RHFUnitSelect name={`components.${index}.unit`} label="Unit" size="medium" disabled={disabled} />;
 }
 
 export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmit, submitting }) {
@@ -123,6 +142,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
     value: item._id,
     label: itemLabel(item),
   }));
+  const itemUnits = Object.fromEntries((itemOptions || []).map((item) => [item._id, item.unit || 'Nos']));
 
   const handleImportComponents = async (formData) => {
     setImporting(true);
@@ -137,6 +157,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
           result.components.map((row) => ({
             stockItem: String(row.stockItem),
             qtyPerPcs: row.qtyPerPcs,
+            unit: row.unit || itemUnits[String(row.stockItem)] || 'Nos',
           }))
         );
         dispatch(
@@ -186,6 +207,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                       .map((c) => ({
                         stockItem: c.stockItem,
                         qtyPerPcs: Number(c.qtyPerPcs),
+                        unit: String(c.unit || '').trim() || itemUnits[c.stockItem] || 'Nos',
                       })),
                   })
                 )}
@@ -271,7 +293,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                   {fields.map((field, index) => (
                     <Paper key={field.id} variant="outlined" sx={{ p: 1.5 }}>
                       <Grid container spacing={1.25} alignItems="flex-start">
-                        <Grid item xs={12} sm={readOnly ? 7 : 6}>
+                        <Grid item xs={12} sm={readOnly ? 5 : 4}>
                           <RHFSelect
                             name={`components.${index}.stockItem`}
                             label="Item"
@@ -281,7 +303,7 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                             options={[{ value: '', label: 'Select item' }, ...itemOpts]}
                           />
                         </Grid>
-                        <Grid item xs={readOnly ? 12 : 10} sm={5}>
+                        <Grid item xs={6} sm={3}>
                           <RHFTextField
                             name={`components.${index}.qtyPerPcs`}
                             label="Qty Required for 1 PCS"
@@ -290,8 +312,11 @@ export default function BomDrawer({ open, mode = 'create', bom, onClose, onSubmi
                             required
                           />
                         </Grid>
+                        <Grid item xs={readOnly ? 6 : 4} sm={readOnly ? 4 : 3}>
+                          <ComponentUnitField index={index} itemUnits={itemUnits} disabled={readOnly} />
+                        </Grid>
                         {!readOnly && (
-                          <Grid item xs={2} sm={1}>
+                          <Grid item xs={2} sm={2}>
                             <IconButton
                               color="error"
                               disabled={fields.length <= 1}

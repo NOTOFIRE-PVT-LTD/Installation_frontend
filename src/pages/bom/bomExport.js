@@ -44,7 +44,7 @@ export function downloadBomCsv(bom) {
     sno: index + 1,
     item: itemLabel(component.stockItem),
     qtyPerPcs: component.qtyPerPcs ?? '',
-    unit: component.stockItem?.unit || 'Nos',
+    unit: component.unit || component.stockItem?.unit || 'Nos',
   }));
 
   exportToCsv(
@@ -122,7 +122,7 @@ export function downloadBomPdf(bom) {
           String(index + 1),
           itemLabel(component.stockItem),
           dash(component.qtyPerPcs ?? 0),
-          dash(component.stockItem?.unit || 'Nos'),
+          dash(component.unit || component.stockItem?.unit || 'Nos'),
         ])
       : [['-', 'No components', '-', '-']];
 
