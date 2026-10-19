@@ -16,6 +16,7 @@ import {
   faFileInvoice,
   faFileSignature,
   faTruck,
+  faMoneyBillWave,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -100,6 +101,14 @@ export const NAV_ITEMS = [
     permission: 'deliveryChallans',
     roles: [ROLES.ADMIN],
     accent: { color: '#0e7490', bg: '#ecfeff' },
+  },
+  {
+    label: 'Atlanta Payments',
+    path: '/atlanta-payments',
+    icon: faMoneyBillWave,
+    permission: 'atlantaPayments',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#dc2626', bg: '#fef2f2' },
   },
   {
     label: 'Items Master',

@@ -70,6 +70,7 @@ export const PERMISSION_KEYS = [
   'quotationsOwnOnly',
   'proformaInvoices',
   'deliveryChallans',
+  'atlantaPayments',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {
