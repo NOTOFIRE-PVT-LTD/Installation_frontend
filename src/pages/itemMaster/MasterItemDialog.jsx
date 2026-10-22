@@ -21,6 +21,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFileOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import EditIcon from '@mui/icons-material/EditOutlined';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -432,53 +433,255 @@ function ItemNameField({ nameOptions, readOnly, mode, adding, onAddName }) {
   );
 }
 
-function CurrentLocationField({ location, loading, error, onRefresh, readOnly }) {
+function LocationField({
+  location,
+  onChange,
+  mode: locationMode,
+  onModeChange,
+  loading,
+  error,
+  onRefresh,
+  readOnly,
+}) {
   return (
     <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <MyLocationIcon fontSize="small" color="primary" />
           <Typography variant="body2" fontWeight={600}>
-            Current Location
+            {readOnly ? 'Location' : locationMode === 'manual' ? 'Location (Manual Entry)' : 'Current Location (GPS)'}
           </Typography>
         </Stack>
+
         {!readOnly && (
-          <IconButton size="small" onClick={onRefresh} disabled={loading} title="Refresh location">
-            {loading ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
-          </IconButton>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box
+              sx={{
+                display: 'inline-flex',
+                bgcolor: 'action.hover',
+                p: '3px',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Button
+                size="small"
+                variant={locationMode === 'auto' ? 'contained' : 'text'}
+                color={locationMode === 'auto' ? 'primary' : 'inherit'}
+                onClick={() => onModeChange('auto')}
+                startIcon={<MyLocationIcon sx={{ fontSize: 14 }} />}
+                sx={{
+                  fontSize: '0.6875rem',
+                  py: 0.25,
+                  px: 1,
+                  minWidth: 0,
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  boxShadow: locationMode === 'auto' ? 1 : 0,
+                  bgcolor: locationMode === 'auto' ? 'primary.main' : 'transparent',
+                  color: locationMode === 'auto' ? '#fff' : 'text.secondary',
+                  fontWeight: locationMode === 'auto' ? 700 : 500,
+                  '&:hover': {
+                    bgcolor: locationMode === 'auto' ? 'primary.dark' : 'action.selected',
+                  },
+                }}
+              >
+                Auto GPS
+              </Button>
+              <Button
+                size="small"
+                variant={locationMode === 'manual' ? 'contained' : 'text'}
+                color={locationMode === 'manual' ? 'primary' : 'inherit'}
+                onClick={() => onModeChange('manual')}
+                startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                sx={{
+                  fontSize: '0.6875rem',
+                  py: 0.25,
+                  px: 1,
+                  minWidth: 0,
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  boxShadow: locationMode === 'manual' ? 1 : 0,
+                  bgcolor: locationMode === 'manual' ? 'primary.main' : 'transparent',
+                  color: locationMode === 'manual' ? '#fff' : 'text.secondary',
+                  fontWeight: locationMode === 'manual' ? 700 : 500,
+                  '&:hover': {
+                    bgcolor: locationMode === 'manual' ? 'primary.dark' : 'action.selected',
+                  },
+                }}
+              >
+                Manual
+              </Button>
+            </Box>
+
+            {locationMode === 'auto' && (
+              <IconButton size="small" onClick={() => onRefresh('auto')} disabled={loading} title="Refresh GPS location">
+                {loading ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
+              </IconButton>
+            )}
+          </Stack>
         )}
       </Stack>
-      {loading && location.latitude == null ? (
-        <Stack direction="row" spacing={1} alignItems="center">
-          <CircularProgress size={18} />
-          <Typography variant="body2" color="text.secondary">
-            Acquiring GPS fix…
-          </Typography>
-        </Stack>
-      ) : error ? (
-        <Typography variant="body2" color="error">
-          {error}
-        </Typography>
-      ) : location.latitude != null ? (
-        <Stack spacing={0.75}>
-          <Typography variant="body2">
-            Lat: {location.latitude.toFixed(6)} · Lng: {location.longitude.toFixed(6)}
-            {location.accuracy != null && (
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                ±{location.accuracy} m
+
+      {readOnly ? (
+        location.address || location.latitude != null ? (
+          <Stack spacing={0.5}>
+            {location.latitude != null && location.longitude != null && (
+              <Typography variant="body2" color="text.secondary">
+                Lat: {Number(location.latitude).toFixed(6)} · Lng: {Number(location.longitude).toFixed(6)}
               </Typography>
             )}
+            {location.address && (
+              <Typography variant="body2" fontWeight={500}>
+                {location.address}
+              </Typography>
+            )}
+          </Stack>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No location recorded.
           </Typography>
-          {location.address && (
-            <Typography variant="body2" color="text.secondary">
-              {location.address}
-            </Typography>
-          )}
+        )
+      ) : locationMode === 'manual' ? (
+        <Stack spacing={1.5}>
+          <TextField
+            fullWidth
+            size="small"
+            multiline
+            minRows={2}
+            label="Address / Location Details"
+            placeholder="e.g. Shop No. 12, Chandni Chowk, Delhi or Sector 63, Noida"
+            value={location.address || ''}
+            onChange={(e) => onChange({ ...location, address: e.target.value })}
+            helperText="Enter the manual address or location where the item is located / sourced"
+          />
+          <Grid container spacing={1.5}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Latitude (optional)"
+                placeholder="e.g. 28.614120"
+                value={location.latitude ?? ''}
+                onChange={(e) => onChange({ ...location, latitude: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Longitude (optional)"
+                placeholder="e.g. 77.388027"
+                value={location.longitude ?? ''}
+                onChange={(e) => onChange({ ...location, longitude: e.target.value })}
+              />
+            </Grid>
+          </Grid>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={loading ? <CircularProgress size={14} /> : <MyLocationIcon sx={{ fontSize: 15 }} />}
+              onClick={() => onRefresh('manual')}
+              disabled={loading}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+            >
+              {loading ? 'Detecting GPS…' : 'Fill from Current GPS'}
+            </Button>
+            {Boolean(location.address || location.latitude != null) && (
+              <Button
+                size="small"
+                variant="text"
+                color="secondary"
+                onClick={() => onChange({ latitude: null, longitude: null, address: '', accuracy: null })}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Clear Location
+              </Button>
+            )}
+          </Stack>
         </Stack>
       ) : (
-        <Typography variant="body2" color="text.secondary">
-          Location unavailable. Enable location access in your browser/device settings.
-        </Typography>
+        /* Auto GPS mode */
+        loading && location.latitude == null ? (
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <CircularProgress size={18} />
+              <Typography variant="body2" color="text.secondary">
+                Acquiring GPS fix…
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              Taking time?{' '}
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => onModeChange('manual')}
+                sx={{ p: 0, minWidth: 0, textTransform: 'none', fontSize: 'inherit', verticalAlign: 'baseline', fontWeight: 600 }}
+              >
+                Enter location manually
+              </Button>
+            </Typography>
+          </Stack>
+        ) : error ? (
+          <Stack spacing={1}>
+            <Typography variant="body2" color="error">
+              {error}
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+              onClick={() => onModeChange('manual')}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+            >
+              Enter Location Manually
+            </Button>
+          </Stack>
+        ) : location.latitude != null ? (
+          <Stack spacing={0.75}>
+            <Typography variant="body2">
+              Lat: {Number(location.latitude).toFixed(6)} · Lng: {Number(location.longitude).toFixed(6)}
+              {location.accuracy != null && (
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                  ±{location.accuracy} m
+                </Typography>
+              )}
+            </Typography>
+            {location.address && (
+              <Typography variant="body2" color="text.secondary">
+                {location.address}
+              </Typography>
+            )}
+            <Box sx={{ pt: 0.5 }}>
+              <Button
+                size="small"
+                variant="text"
+                startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                onClick={() => onModeChange('manual')}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', p: 0, minWidth: 0, fontWeight: 600 }}
+              >
+                Edit address manually
+              </Button>
+            </Box>
+          </Stack>
+        ) : (
+          <Stack spacing={1}>
+            <Typography variant="body2" color="text.secondary">
+              Location unavailable. Enable location access in your browser/device settings.
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+              onClick={() => onModeChange('manual')}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+            >
+              Enter Location Manually
+            </Button>
+          </Stack>
+        )
       )}
     </Box>
   );
@@ -494,6 +697,7 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
   const [billPhotos, setBillPhotos] = useState([]);
   const [visitingCards, setVisitingCards] = useState([]);
   const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null, address: '', accuracy: null });
+  const [locationMode, setLocationMode] = useState('auto');
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
@@ -502,10 +706,24 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
   const [nameOptions, setNameOptions] = useState([]);
   const prevItemNameRef = useRef('');
   const initialAttachmentsRef = useRef({ image: [], billPhoto: [], visitingCard: [] });
+  const watchIdRef = useRef(null);
+
+  const clearLocationWatch = useCallback(() => {
+    if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearLocationWatch();
+    };
+  }, [clearLocationWatch]);
 
   const itemNameSelect = useWatch({ control: methods.control, name: 'itemNameSelect' });
 
-  const fetchCurrentLocation = useCallback(() => {
+  const fetchCurrentLocation = useCallback((targetMode = 'auto') => {
     if (!navigator.geolocation) {
       setLocationLoading(false);
       setLocationError('Geolocation is not supported by this browser.');
@@ -513,11 +731,12 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
     }
     setLocationLoading(true);
     setLocationError('');
+    clearLocationWatch();
 
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        if (accuracy <= 50) navigator.geolocation.clearWatch(watchId);
+        if (accuracy <= 50) clearLocationWatch();
         let address = '';
         try {
           const res = await fetch(
@@ -528,7 +747,12 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
         } catch {
           // reverse geocoding failed
         }
-        setCurrentLocation({ latitude, longitude, address, accuracy: Math.round(accuracy) });
+        setCurrentLocation((prev) => ({
+          latitude,
+          longitude,
+          address: targetMode === 'manual' && prev.address ? prev.address : (address || prev.address || ''),
+          accuracy: Math.round(accuracy),
+        }));
         setLocationLoading(false);
       },
       (err) => {
@@ -536,13 +760,24 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
         setLocationError(
           err.code === 1
             ? 'Location access denied. Please enable it in browser/device settings.'
-            : 'Unable to retrieve location. Try refreshing.'
+            : 'Unable to retrieve location. Try entering manually.'
         );
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
-    setTimeout(() => navigator.geolocation.clearWatch(watchId), 20000);
-  }, []);
+    watchIdRef.current = watchId;
+    setTimeout(() => clearLocationWatch(), 20000);
+  }, [clearLocationWatch]);
+
+  const handleLocationModeChange = (nextMode) => {
+    setLocationMode(nextMode);
+    if (nextMode === 'manual') {
+      clearLocationWatch();
+      setLocationError('');
+    } else {
+      fetchCurrentLocation('auto');
+    }
+  };
 
   const applyTemplate = useCallback(
     (template, selectedName) => {
@@ -563,17 +798,18 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
       if (mode === 'create') {
         setBillPhotos([]);
         setVisitingCards([]);
-        fetchCurrentLocation();
+        fetchCurrentLocation('auto');
       } else {
         setBillPhotos(normalizeAttachments(template.billPhoto));
         setVisitingCards(normalizeAttachments(template.visitingCard));
-        if (template.location?.latitude != null) {
+        if (template.location?.latitude != null || (template.location?.address && String(template.location.address).trim() !== '')) {
           setCurrentLocation({
-            latitude: template.location.latitude,
-            longitude: template.location.longitude,
+            latitude: template.location.latitude ?? null,
+            longitude: template.location.longitude ?? null,
             address: template.location.address || '',
             accuracy: null,
           });
+          setLocationMode('manual');
           setLocationLoading(false);
           setLocationError('');
         }
@@ -607,17 +843,19 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
       billPhoto: nextBills.map((entry) => entry.publicId).filter(Boolean),
       visitingCard: nextCards.map((entry) => entry.publicId).filter(Boolean),
     };
-    if (item?.location?.latitude != null) {
+    if (item?.location?.latitude != null || (item?.location?.address && String(item.location.address).trim() !== '')) {
       setCurrentLocation({
-        latitude: item.location.latitude,
-        longitude: item.location.longitude,
+        latitude: item.location.latitude ?? null,
+        longitude: item.location.longitude ?? null,
         address: item.location.address || '',
         accuracy: null,
       });
+      setLocationMode('manual');
       setLocationLoading(false);
       setLocationError('');
     } else {
-      fetchCurrentLocation();
+      setLocationMode('auto');
+      fetchCurrentLocation('auto');
     }
     Promise.all([
       ...CATALOG_FIELDS.map((field) =>
@@ -742,8 +980,30 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
     images.filter((entry) => entry.file).forEach((entry) => formData.append('itemImage', entry.file));
     billPhotos.filter((entry) => entry.file).forEach((entry) => formData.append('billPhoto', entry.file));
     visitingCards.filter((entry) => entry.file).forEach((entry) => formData.append('visitingCard', entry.file));
-    if (currentLocation.latitude != null) {
-      formData.append('location', JSON.stringify(currentLocation));
+    const latVal = String(currentLocation.latitude ?? '').trim();
+    const lngVal = String(currentLocation.longitude ?? '').trim();
+    const lat = latVal !== '' && !isNaN(Number(latVal)) ? Number(latVal) : null;
+    const lng = lngVal !== '' && !isNaN(Number(lngVal)) ? Number(lngVal) : null;
+    const address = String(currentLocation.address || '').trim();
+
+    if (lat != null || lng != null || address) {
+      formData.append(
+        'location',
+        JSON.stringify({
+          latitude: lat,
+          longitude: lng,
+          address,
+        })
+      );
+    } else if (mode === 'edit') {
+      formData.append(
+        'location',
+        JSON.stringify({
+          latitude: null,
+          longitude: null,
+          address: '',
+        })
+      );
     }
     if (mode === 'edit') {
       const keptImageIds = new Set(images.map((entry) => entry.publicId).filter(Boolean));
@@ -844,8 +1104,11 @@ export default function MasterItemDialog({ open, mode = 'create', item, onClose,
               </Grid>
 
               <Grid item xs={12}>
-                <CurrentLocationField
+                <LocationField
                   location={currentLocation}
+                  onChange={setCurrentLocation}
+                  mode={locationMode}
+                  onModeChange={handleLocationModeChange}
                   loading={locationLoading}
                   error={locationError}
                   onRefresh={fetchCurrentLocation}

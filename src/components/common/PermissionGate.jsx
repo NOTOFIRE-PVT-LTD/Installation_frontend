@@ -10,7 +10,12 @@ export default function PermissionGate({ permission, roles = [], children }) {
   const hasPermission = usePermission(permission);
 
   if (!isAdmin && roles.includes(user?.role)) {
-    const allowed = permissions ? permissions[permission] !== false : true;
+    const allowed =
+      permission === 'atlantaPayments'
+        ? Boolean(permissions?.[permission])
+        : permissions
+        ? permissions[permission] !== false
+        : true;
     return allowed ? children : <Navigate to="/403" replace />;
   }
   if (isAdmin && hasPermission) return children;

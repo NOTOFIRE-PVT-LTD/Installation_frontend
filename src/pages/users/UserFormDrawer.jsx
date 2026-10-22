@@ -10,13 +10,16 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPen, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import { ROLES, USER_STATUS } from '../../utils/constants';
@@ -86,6 +89,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
   const readOnly = mode === 'view';
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [atlantaAccess, setAtlantaAccess] = useState('none');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
@@ -103,6 +107,11 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       });
       setImagePreview(user?.profileImage?.url || '');
       setImageFile(null);
+      if (user?.permissions?.atlantaPayments) {
+        setAtlantaAccess(user?.permissions?.atlantaPaymentsOwnOnly ? 'own' : 'all');
+      } else {
+        setAtlantaAccess('none');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
@@ -124,6 +133,25 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       formData.append('password', values.password);
     }
     if (imageFile) formData.append('profileImage', imageFile);
+
+    if (atlantaAccess !== 'none') {
+      formData.append(
+        'permissions',
+        JSON.stringify({
+          atlantaPayments: true,
+          atlantaPaymentsOwnOnly: atlantaAccess === 'own',
+        })
+      );
+    } else if (isEdit) {
+      formData.append(
+        'permissions',
+        JSON.stringify({
+          atlantaPayments: false,
+          atlantaPaymentsOwnOnly: false,
+        })
+      );
+    }
+
     onSubmit(formData);
   };
 
@@ -235,6 +263,17 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
               <DetailRow icon={<PhoneOutlinedIcon sx={{ fontSize: 15 }} />} label="Mobile" value={user?.mobileNumber} />
               <DetailRow icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />} label="Role" value={user?.role} />
               <DetailRow
+                icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
+                label="Atlanta Payments"
+                value={
+                  user?.permissions?.atlantaPayments
+                    ? user?.permissions?.atlantaPaymentsOwnOnly
+                      ? 'User Flow (Own records only)'
+                      : 'Admin Flow (All records)'
+                    : 'No Access'
+                }
+              />
+              <DetailRow
                 icon={<CalendarMonthOutlinedIcon sx={{ fontSize: 15 }} />}
                 label="Created"
                 value={user?.createdAt ? formatDate(user.createdAt) : '—'}
@@ -272,6 +311,40 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 {!isEdit && <RHFTextField name="password" label="Password" type="password" />}
                 <RHFTextField name="mobileNumber" label="Mobile Number" />
                 <RHFSelect name="role" label="Role" options={ROLE_OPTIONS} />
+
+                <Box
+                  sx={{
+                    p: 1.75,
+                    borderRadius: '10px',
+                    bgcolor: '#fbfbfe',
+                    border: '1px solid',
+                    borderColor: '#e9e8f4',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
+                    Atlanta Payments Access
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
+                    Configure whether this user can view Atlanta Payments records.
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={atlantaAccess}
+                      onChange={(e) => setAtlantaAccess(e.target.value)}
+                      sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
+                    >
+                      <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
+                        No Access
+                      </MenuItem>
+                      <MenuItem value="own" sx={{ fontSize: '0.8125rem' }}>
+                        User Flow (Own Records Only)
+                      </MenuItem>
+                      <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>
+                        Admin Flow (All Records)
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Stack>
             </FormProvider>
           )}

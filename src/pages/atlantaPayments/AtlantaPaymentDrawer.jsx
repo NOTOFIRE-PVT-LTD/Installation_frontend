@@ -12,6 +12,7 @@ import Drawer from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import CalculateIcon from '@mui/icons-material/CalculateOutlined';
@@ -24,14 +25,17 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FlightIcon from '@mui/icons-material/FlightTakeoffOutlined';
 import PersonIcon from '@mui/icons-material/PersonOutline';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import RadioUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ReceiptIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SendIcon from '@mui/icons-material/SendOutlined';
 import WorkIcon from '@mui/icons-material/WorkOutline';
 import { useAppDispatch } from '../../app/hooks';
+import { useAuth } from '../../hooks/useAuth';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { atlantaPaymentApi } from '../../api/atlantaPaymentApi';
 import { apiErrorMessage } from '../quotations/quotationUtils';
+import { downloadAtlantaPaymentPdf } from './atlantaPaymentPdf';
 import {
   EXPENSE_FIELDS,
   TADA_RATE_PER_DAY,
@@ -374,7 +378,11 @@ function TravelExpenseRow({ index, field, values, files, setFiles, onRemove }) {
 export default function AtlantaPaymentDrawer({ open, payment, onClose, onSaved }) {
   const isEdit = Boolean(payment?._id);
   const dispatch = useAppDispatch();
+  const { user, isAdmin } = useAuth();
+  const isOwnOnly = !isAdmin || Boolean(user?.permissions?.atlantaPaymentsOwnOnly);
+
   const [saving, setSaving] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [files, setFiles] = useState({});
   const [collapsed, setCollapsed] = useState({});
 
@@ -389,12 +397,43 @@ export default function AtlantaPaymentDrawer({ open, payment, onClose, onSaved }
 
   useEffect(() => {
     if (!open) return;
-    reset(payment ? paymentToForm(payment) : emptyForm());
+    const initial = payment ? paymentToForm(payment) : emptyForm();
+    if (!payment && isOwnOnly && user?.name) {
+      initial.employeeName = user.name;
+    }
+    reset(initial);
     setFiles({});
     setCollapsed({});
-  }, [open, payment, reset]);
+  }, [open, payment, reset, isOwnOnly, user]);
 
   const toggleEntry = (key) => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      let paymentData = payment;
+      if (payment?._id) {
+        try {
+          const res = await atlantaPaymentApi.getById(payment._id);
+          paymentData = res.data?.data || payment;
+        } catch {
+          paymentData = payment;
+        }
+      } else {
+        const formVals = methods.getValues();
+        paymentData = {
+          ...formVals,
+          ...computeTotals(formVals),
+        };
+      }
+      await downloadAtlantaPaymentPdf(paymentData);
+      dispatch(showSnackbar({ message: 'PDF downloaded successfully' }));
+    } catch (err) {
+      dispatch(showSnackbar({ message: apiErrorMessage(err, 'Failed to download PDF'), severity: 'error' }));
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const onSubmit = async (formValues) => {
     setSaving(true);
@@ -442,9 +481,24 @@ export default function AtlantaPaymentDrawer({ open, payment, onClose, onSaved }
                   {isEdit ? 'Update the details below to save changes to this payment record' : 'Fill in the details below to create a new payment record'}
                 </Typography>
               </Box>
-              <IconButton onClick={onClose} disabled={saving} aria-label="Close">
-                <CloseIcon />
-              </IconButton>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {isEdit && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={downloadingPdf ? <CircularProgress size={16} color="inherit" /> : <PictureAsPdfIcon fontSize="small" />}
+                    disabled={downloadingPdf || saving}
+                    onClick={handleDownloadPdf}
+                    sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
+                  >
+                    {downloadingPdf ? 'Downloading…' : 'Download PDF'}
+                  </Button>
+                )}
+                <IconButton onClick={onClose} disabled={saving} aria-label="Close">
+                  <CloseIcon />
+                </IconButton>
+              </Stack>
             </Stack>
           </Box>
 

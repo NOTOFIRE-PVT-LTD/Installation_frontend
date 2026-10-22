@@ -111,6 +111,18 @@ const COLUMNS = [
     csvValue: (row) => name(row.payment),
   },
   {
+    field: 'location',
+    headerName: 'Location',
+    flex: 1.4,
+    minWidth: 180,
+    valueGetter: (_value, row) =>
+      row.location?.address ||
+      (row.location?.latitude != null ? `${row.location.latitude.toFixed(4)}, ${row.location.longitude.toFixed(4)}` : '-'),
+    csvValue: (row) =>
+      row.location?.address ||
+      (row.location?.latitude != null ? `${row.location.latitude}, ${row.location.longitude}` : ''),
+  },
+  {
     field: 'createdAt',
     headerName: 'Added On',
     width: 120,

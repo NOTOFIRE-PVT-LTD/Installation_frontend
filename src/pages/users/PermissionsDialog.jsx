@@ -35,9 +35,10 @@ const LABELS = {
   proformaInvoices: 'Proforma Invoices',
   deliveryChallans: 'Delivery Challans',
   atlantaPayments: 'Atlanta Payments',
+  atlantaPaymentsOwnOnly: 'Atlanta Payments user (own records only)',
 };
 
-const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing'];
+const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly'];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -48,8 +49,15 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
     if (open) {
       setValues(
         keys.reduce((acc, key) => {
-          // Admins default to no access with no doc; Installers default to full access (matches backend).
-          acc[key] = user?.permissions ? user.permissions[key] !== false : !isAdmin;
+          if (!isAdmin) {
+            if (['atlantaPayments', 'atlantaPaymentsOwnOnly'].includes(key)) {
+              acc[key] = Boolean(user?.permissions?.[key]);
+            } else {
+              acc[key] = user?.permissions ? user.permissions[key] !== false : true;
+            }
+          } else {
+            acc[key] = Boolean(user?.permissions?.[key]);
+          }
           return acc;
         }, {})
       );
@@ -57,23 +65,36 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
+  const handleCheckboxChange = (key, checked) => {
+    setValues((prev) => {
+      const next = { ...prev, [key]: checked };
+      if (key === 'atlantaPaymentsOwnOnly' && checked) {
+        next.atlantaPayments = true;
+      }
+      if (key === 'atlantaPayments' && !checked) {
+        next.atlantaPaymentsOwnOnly = false;
+      }
+      return next;
+    });
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Permissions — {user?.name}</DialogTitle>
       <DialogContent>
         {!isAdmin && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Installers can use Projects and Reports by default. Cad Drawing is available inside each project when
-            Cad Drawing permission is enabled.
+            Installers can use Projects and Reports by default. For Atlanta Payments, enable <b>Atlanta Payments</b> and{' '}
+            <b>Atlanta Payments user (own records only)</b> so they can only view and manage their own payment records.
           </Typography>
         )}
         {isAdmin && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enable <b>Claim Approvals + WhatsApp alerts</b> for claim notifications, <b>Tender WhatsApp alerts</b> for
             tender-created notifications, and <b>BG Deadline WhatsApp alerts</b> for BG reminders (14 days after LOA
-            Date). The admin must have a valid mobile number saved on their profile (
-            {user?.mobileNumber || 'not set'}). For a <b>quotation user</b>, tick only <b>Quotations</b> and{' '}
-            <b>Quotation user</b>.
+            Date). For a <b>quotation user</b>, tick only <b>Quotations</b> and <b>Quotation user</b>. For an{' '}
+            <b>Atlanta Payments user (own records only)</b>, tick <b>Atlanta Payments</b> and{' '}
+            <b>Atlanta Payments user (own records only)</b>.
           </Typography>
         )}
         <FormGroup>
@@ -83,7 +104,7 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
               control={
                 <Checkbox
                   checked={values[key] || false}
-                  onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.checked }))}
+                  onChange={(e) => handleCheckboxChange(key, e.target.checked)}
                 />
               }
               label={LABELS[key]}

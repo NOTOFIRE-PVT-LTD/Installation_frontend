@@ -107,7 +107,7 @@ export const NAV_ITEMS = [
     path: '/atlanta-payments',
     icon: faMoneyBillWave,
     permission: 'atlantaPayments',
-    roles: [ROLES.ADMIN],
+    roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#dc2626', bg: '#fef2f2' },
   },
   {
@@ -173,6 +173,7 @@ export const NAV_ITEMS = [
 export function isNavItemAllowed(item, user, permissions) {
   if (!item.roles.includes(user?.role)) return false;
   if (user?.role === ROLES.ADMIN) return Boolean(permissions?.[item.permission]);
+  if (item.permission === 'atlantaPayments') return Boolean(permissions?.[item.permission]);
   return permissions ? permissions[item.permission] !== false : true;
 }
 

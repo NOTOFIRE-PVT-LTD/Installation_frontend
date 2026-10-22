@@ -16,13 +16,20 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import PageHeader from '../../components/common/PageHeader';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useAppDispatch } from '../../app/hooks';
+import { useAuth } from '../../hooks/useAuth';
 import { useDebounce } from '../../hooks/useDebounce';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { atlantaPaymentApi } from '../../api/atlantaPaymentApi';
@@ -30,11 +37,15 @@ import { formatDate } from '../../utils/formatters';
 import { apiErrorMessage } from '../quotations/quotationUtils';
 import { inr } from './atlantaUtils';
 import AtlantaPaymentDrawer from './AtlantaPaymentDrawer';
+import { downloadAtlantaPaymentPdf } from './atlantaPaymentPdf';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
 export default function AtlantaPaymentsPage() {
   const dispatch = useAppDispatch();
+  const { user, isAdmin } = useAuth();
+  const isOwnOnly = !isAdmin || Boolean(user?.permissions?.atlantaPaymentsOwnOnly);
+
   const [drawer, setDrawer] = useState({ open: false, payment: null });
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -45,6 +56,38 @@ export default function AtlantaPaymentsPage() {
   const debouncedSearch = useDebounce(search, 350);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [actionAnchor, setActionAnchor] = useState(null);
+  const [actionRow, setActionRow] = useState(null);
+
+  const handleOpenMenu = (event, row) => {
+    event.stopPropagation();
+    setActionAnchor(event.currentTarget);
+    setActionRow(row);
+  };
+
+  const handleCloseMenu = () => {
+    setActionAnchor(null);
+    setActionRow(null);
+  };
+
+  const handleDownloadPdf = async (row) => {
+    setDownloadingId(row._id);
+    try {
+      let payment = row;
+      // Fetch full payment document if sub-arrays are missing or to ensure complete details
+      if (!row.invoiceEntries || !row.travelExpenses || !row.paymentsReceived) {
+        const res = await atlantaPaymentApi.getById(row._id);
+        payment = res.data?.data || row;
+      }
+      await downloadAtlantaPaymentPdf(payment);
+      dispatch(showSnackbar({ message: `PDF downloaded for "${payment.fileName || payment.employeeName}"` }));
+    } catch (err) {
+      dispatch(showSnackbar({ message: apiErrorMessage(err, 'Failed to download PDF'), severity: 'error' }));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,8 +127,6 @@ export default function AtlantaPaymentsPage() {
 
   return (
     <Box>
-      <PageHeader title="Atlanta Payments" subtitle="Track employee travel expenses, invoices and payments received" />
-
       <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -95,9 +136,13 @@ export default function AtlantaPaymentsPage() {
           sx={{ p: 2 }}
         >
           <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>All Payment Entries</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>
+              {isOwnOnly ? 'My Payment Entries' : 'All Payment Entries'}
+            </Typography>
             <Typography color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-              Create, edit and delete Atlanta payment records.
+              {isOwnOnly
+                ? 'View, edit and download your Atlanta payment records.'
+                : 'Create, edit and delete Atlanta payment records.'}
             </Typography>
           </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDrawer({ open: true, payment: null })}>
@@ -108,10 +153,10 @@ export default function AtlantaPaymentsPage() {
         <Box sx={{ px: 2, pb: 1.5 }}>
           <TextField
             size="small"
-            fullWidth
             placeholder="Search by file name, consignee, employee..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            sx={{ width: { xs: '100%', sm: 360 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -173,15 +218,21 @@ export default function AtlantaPaymentsPage() {
                         {inr(row.amountToGive)}
                       </TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => setDrawer({ open: true, payment: row })}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton size="small" color="error" onClick={() => setDeleteTarget(row)}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                        <Tooltip title="Actions">
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={downloadingId === row._id}
+                              onClick={(event) => handleOpenMenu(event, row)}
+                              aria-label="Actions"
+                            >
+                              {downloadingId === row._id ? (
+                                <CircularProgress size={18} color="inherit" />
+                              ) : (
+                                <MoreVertIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
                         </Tooltip>
                       </TableCell>
                     </TableRow>
@@ -202,8 +253,80 @@ export default function AtlantaPaymentsPage() {
             setPageSize(Number(event.target.value));
             setPage(0);
           }}
+          sx={{
+            '& .MuiTablePagination-toolbar': {
+              justifyContent: 'flex-start',
+              pl: 2,
+            },
+            '& .MuiTablePagination-spacer': {
+              display: 'none',
+            },
+          }}
         />
       </Paper>
+
+      <Menu
+        anchorEl={actionAnchor}
+        open={Boolean(actionAnchor)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '10px',
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 8px 24px rgba(31, 42, 68, 0.12)',
+              minWidth: 160,
+              py: 0.5,
+            },
+          },
+        }}
+      >
+        <MenuItem
+          dense
+          onClick={() => {
+            const r = actionRow;
+            handleCloseMenu();
+            if (r) handleDownloadPdf(r);
+          }}
+          sx={{ py: 1 }}
+        >
+          <ListItemIcon sx={{ minWidth: 32, color: 'error.main' }}>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Download PDF" primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem
+          dense
+          onClick={() => {
+            const r = actionRow;
+            handleCloseMenu();
+            if (r) setDrawer({ open: true, payment: r });
+          }}
+          sx={{ py: 1 }}
+        >
+          <ListItemIcon sx={{ minWidth: 32, color: 'text.secondary' }}>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Edit" primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem
+          dense
+          onClick={() => {
+            const r = actionRow;
+            handleCloseMenu();
+            if (r) setDeleteTarget(r);
+          }}
+          sx={{ py: 1, color: 'error.main' }}
+        >
+          <ListItemIcon sx={{ minWidth: 32, color: 'error.main' }}>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Delete" primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 500, color: 'error.main' }} />
+        </MenuItem>
+      </Menu>
 
       <AtlantaPaymentDrawer
         open={drawer.open}

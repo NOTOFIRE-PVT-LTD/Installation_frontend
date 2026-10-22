@@ -293,7 +293,7 @@ export default function AppRoutes() {
           <Route
             path="/atlanta-payments"
             element={
-              <PermissionGate permission="atlantaPayments" roles={[]}>
+              <PermissionGate permission="atlantaPayments" roles={[ROLES.USER]}>
                 <AtlantaPaymentsPage />
               </PermissionGate>
             }
