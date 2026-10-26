@@ -72,6 +72,7 @@ export const PERMISSION_KEYS = [
   'deliveryChallans',
   'atlantaPayments',
   'atlantaPaymentsOwnOnly',
+  'auditLogs',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

@@ -17,6 +17,7 @@ import {
   faFileSignature,
   faTruck,
   faMoneyBillWave,
+  faClockRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -165,6 +166,14 @@ export const NAV_ITEMS = [
     permission: 'numbers',
     roles: [ROLES.ADMIN],
     accent: { color: '#06b6d4', bg: '#e7fbff' },
+  },
+  {
+    label: 'Audit Logs',
+    path: '/audit-logs',
+    icon: faClockRotateLeft,
+    permission: 'auditLogs',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#6366f1', bg: '#eef2ff' },
   },
 ];
 

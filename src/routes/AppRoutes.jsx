@@ -32,6 +32,7 @@ import QuotationFormPage from '../pages/quotations/QuotationFormPage';
 import ProformaInvoicesPage from '../pages/proformaInvoices/ProformaInvoicesPage';
 import DeliveryChallansPage from '../pages/deliveryChallans/DeliveryChallansPage';
 import AtlantaPaymentsPage from '../pages/atlantaPayments/AtlantaPaymentsPage';
+import AuditLogsPage from '../pages/auditLogs/AuditLogsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -295,6 +296,14 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="atlantaPayments" roles={[ROLES.USER]}>
                 <AtlantaPaymentsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <PermissionGate permission="auditLogs" roles={[]}>
+                <AuditLogsPage />
               </PermissionGate>
             }
           />

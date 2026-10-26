@@ -356,6 +356,7 @@ function ProductionPanel() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [issuingId, setIssuingId] = useState(null);
+  const [issuingAll, setIssuingAll] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
 
   useEffect(() => {
@@ -427,6 +428,56 @@ function ProductionPanel() {
     }
   };
 
+  const handleIssueAllPending = async () => {
+    if (issuingAll || issuingId) return;
+    setIssuingAll(true);
+    try {
+      // Collect every pending production across all pages.
+      const ids = [];
+      for (let p = 1; ; p += 1) {
+        const { data } = await bomApi.listProductions({ page: p, pageSize: 100, status: 'pending' });
+        const rows = data?.data || [];
+        ids.push(...rows.map((r) => r._id));
+        if (rows.length < 100) break;
+      }
+      if (ids.length === 0) {
+        dispatch(showSnackbar({ message: 'No pending productions to issue', severity: 'info' }));
+        return;
+      }
+      let completed = 0;
+      let stillPending = 0;
+      let failed = 0;
+      for (const id of ids) {
+        try {
+          const updated = await dispatch(issuePendingBomProduction(id)).unwrap();
+          if (updated?.status === 'pending') stillPending += 1;
+          else completed += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      const parts = [`${completed} completed`];
+      if (stillPending) parts.push(`${stillPending} still pending (stock short)`);
+      if (failed) parts.push(`${failed} failed`);
+      dispatch(
+        showSnackbar({
+          message: `Issue all pending: ${parts.join(', ')}`,
+          severity: failed || stillPending ? 'warning' : 'success',
+        })
+      );
+      refresh();
+    } catch (err) {
+      dispatch(
+        showSnackbar({
+          message: err.response?.data?.message || 'Failed to issue pending productions',
+          severity: 'error',
+        })
+      );
+    } finally {
+      setIssuingAll(false);
+    }
+  };
+
   const handleUnitChange = async (production, index, unit) => {
     if (!production?._id) return;
     setSavingUnit(true);
@@ -456,11 +507,20 @@ function ProductionPanel() {
         records for the person and updates warehouse. If stock is short, the shortage is kept as pending — use
         &quot;Issue Pending&quot; once the stock is received.
       </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ mb: 2 }}>
+        <Button
+          startIcon={<PlaylistAddCheckIcon />}
+          variant="outlined"
+          color="warning"
+          onClick={handleIssueAllPending}
+          disabled={issuingAll || Boolean(issuingId)}
+        >
+          {issuingAll ? 'Issuing…' : 'Issue All Pending'}
+        </Button>
         <Button startIcon={<AddIcon />} variant="contained" onClick={() => setUseOpen(true)}>
           Use BOM / Create Production
         </Button>
-      </Box>
+      </Stack>
       <DataTable
         columns={PRODUCTION_COLUMNS}
         rows={items}

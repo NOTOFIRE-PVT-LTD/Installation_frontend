@@ -36,6 +36,7 @@ const LABELS = {
   deliveryChallans: 'Delivery Challans',
   atlantaPayments: 'Atlanta Payments',
   atlantaPaymentsOwnOnly: 'Atlanta Payments user (own records only)',
+  auditLogs: 'Audit Logs',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly'];
