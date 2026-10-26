@@ -31,10 +31,11 @@ export default function PageHeader({ title, subtitle, actions }) {
             flexShrink: 0,
             width: { xs: '100%', sm: 'auto' },
             display: 'flex',
-            flexWrap: 'wrap',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
             alignItems: 'center',
             gap: 1.25,
-            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+            '& .MuiButton-root': { flex: { xs: 1, sm: '0 0 auto' }, minWidth: 0, whiteSpace: 'nowrap' },
           }}
         >
           {actions}

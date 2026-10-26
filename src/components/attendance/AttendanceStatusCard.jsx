@@ -104,7 +104,7 @@ export default function AttendanceStatusCard({
                   <Button variant="contained" disabled={pending || punching || !photo} onClick={onPunchIn} sx={{ alignSelf: 'flex-start' }}>
                     {punching ? 'Punching in…' : 'Punch In'}
                   </Button>
-                ) : null}
+                ) : null
               }
             >
               {record?.punchInAt ? (
