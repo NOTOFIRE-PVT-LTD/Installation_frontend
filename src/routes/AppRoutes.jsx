@@ -33,6 +33,7 @@ import ProformaInvoicesPage from '../pages/proformaInvoices/ProformaInvoicesPage
 import DeliveryChallansPage from '../pages/deliveryChallans/DeliveryChallansPage';
 import AtlantaPaymentsPage from '../pages/atlantaPayments/AtlantaPaymentsPage';
 import AuditLogsPage from '../pages/auditLogs/AuditLogsPage';
+import PayflowPage from '../pages/payflow/PayflowPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -304,6 +305,14 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="auditLogs" roles={[]}>
                 <AuditLogsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/payflow"
+            element={
+              <PermissionGate permission="payflow" roles={[]}>
+                <PayflowPage />
               </PermissionGate>
             }
           />

@@ -37,6 +37,7 @@ const LABELS = {
   atlantaPayments: 'Atlanta Payments',
   atlantaPaymentsOwnOnly: 'Atlanta Payments user (own records only)',
   auditLogs: 'Audit Logs',
+  payflow: 'Payflow (Vendors, Categories, Companies, Branches)',
 };
 
 const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly'];

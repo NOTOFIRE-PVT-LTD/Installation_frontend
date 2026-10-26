@@ -1,0 +1,98 @@
+// Frontend mirror of Backend/src/config/payflow.config.js — drives the tabs, table columns and forms.
+export const PAYFLOW_TABS = [
+  {
+    resource: 'vendors',
+    label: 'Vendors',
+    singular: 'Vendor',
+    subtitle: 'Manage your vendors',
+    fields: [
+      {
+        name: 'name',
+        label: 'Vendor Name',
+        placeholder: 'Enter vendor name',
+        helper: 'Vendor name will be automatically converted to uppercase',
+        uppercase: true,
+        required: true,
+      },
+      {
+        name: 'accountNumber',
+        label: 'Account Number',
+        placeholder: 'Enter account number',
+        helper: 'Alphanumeric values are allowed (8-20 characters)',
+        pattern: /^[A-Za-z0-9]{8,20}$/,
+        patternMessage: 'Account number must be alphanumeric (8-20 characters)',
+        required: true,
+      },
+      {
+        name: 'ifscCode',
+        label: 'IFSC Code',
+        placeholder: 'Enter IFSC code',
+        helper: 'Alphanumeric values are allowed (8-11 characters)',
+        uppercase: true,
+        pattern: /^[A-Z0-9]{8,11}$/,
+        patternMessage: 'IFSC code must be alphanumeric (8-11 characters)',
+        required: true,
+      },
+    ],
+  },
+  {
+    resource: 'categories',
+    label: 'Categories',
+    singular: 'Category',
+    subtitle: 'Manage your categories',
+    fields: [
+      { name: 'name', label: 'Category Name', placeholder: 'Enter category name', required: true },
+      { name: 'description', label: 'Description', placeholder: 'Enter category description' },
+    ],
+  },
+  {
+    resource: 'subcategories',
+    label: 'Subcategories',
+    singular: 'Subcategory',
+    subtitle: 'Manage your subcategories',
+    fields: [
+      { name: 'name', label: 'Subcategory Name', placeholder: 'Enter subcategory name', required: true },
+      { name: 'description', label: 'Description', placeholder: 'Enter subcategory description' },
+    ],
+  },
+  {
+    resource: 'companies',
+    label: 'Companies',
+    singular: 'Company',
+    subtitle: 'Manage your company information and details',
+    fields: [
+      { name: 'name', label: 'Company Name', placeholder: 'Enter company name', required: true },
+      {
+        name: 'code',
+        label: 'Company Code',
+        placeholder: 'ENTER COMPANY CODE',
+        helper: 'Code must be uppercase letters and numbers only (max 10 characters)',
+        uppercase: true,
+        pattern: /^[A-Z0-9]{1,10}$/,
+        patternMessage: 'Code must be uppercase letters and numbers only (max 10 characters)',
+        maxLength: 10,
+        required: true,
+      },
+    ],
+  },
+  {
+    resource: 'branches',
+    label: 'Branches',
+    singular: 'Branch',
+    subtitle: 'Manage your branch information and details',
+    fields: [
+      { name: 'name', label: 'Branch Name', placeholder: 'Enter branch name', required: true },
+      {
+        name: 'code',
+        label: 'Branch Code',
+        placeholder: 'ENTER BRANCH CODE',
+        helper: 'Code must be uppercase letters only (max 10 characters)',
+        uppercase: true,
+        pattern: /^[A-Z]{1,10}$/,
+        patternMessage: 'Code must be uppercase letters only (max 10 characters)',
+        maxLength: 10,
+        required: true,
+      },
+    ],
+  },
+];
