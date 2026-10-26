@@ -93,7 +93,7 @@ function RowActionsMenu({ row, actions }) {
           setAnchorEl(e.currentTarget);
         }}
         sx={{
-          borderRadius: '8px',
+          borderRadius: '999px',
           color: 'text.secondary',
           '&:hover': { bgcolor: 'primary.light', color: 'primary.main' },
         }}
@@ -181,6 +181,8 @@ export default function DataTable({
   onBulkDelete,
   bulkDeleteLabel = 'Delete selected',
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  toolbarStart,
+  toolbarEnd,
 }) {
   const largePages = pageSizeOptions.some((size) => size > GRID_MAX_PAGE_SIZE);
   const [columnsMenuAnchor, setColumnsMenuAnchor] = useState(null);
@@ -228,10 +230,11 @@ export default function DataTable({
 
   const finalColumns = useMemo(() => {
     let cols = columns.map((col) => {
-      if (col.field === statusField && !col.renderCell) {
-        return { ...col, renderCell: (params) => <StatusBadge status={params.value} /> };
+      const sized = col.flex == null && col.width == null ? { ...col, flex: 1 } : col;
+      if (sized.field === statusField && !sized.renderCell) {
+        return { ...sized, renderCell: (params) => <StatusBadge status={params.value} /> };
       }
-      return col;
+      return sized;
     });
 
     if (actions.length > 0) {
@@ -256,7 +259,15 @@ export default function DataTable({
 
   return (
     <Box sx={{ minWidth: 0 }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2 }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
+      <Stack
+        direction="row"
+        spacing={1.25}
+        useFlexGap
+        flexWrap="wrap"
+        sx={{ mb: 2 }}
+        alignItems="center"
+      >
+        {toolbarStart}
         {onSearchChange ? (
           <TextField
             size="small"
@@ -264,30 +275,29 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              width: '100%',
-              minWidth: { xs: 0, sm: 220 },
-              maxWidth: { xs: '100%', sm: 360 },
-              flex: 1,
+              flex: '1 1 180px',
+              minWidth: 160,
+              maxWidth: toolbarStart ? 280 : 360,
               '& .MuiOutlinedInput-root': {
-                borderRadius: 999,
-                bgcolor: 'background.default',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.light' },
+                borderRadius: '20px',
+                minHeight: 40,
+                '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main', borderWidth: 1 },
               },
             }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <SearchIcon fontSize="small" sx={{ color: 'primary.main' }} />
                 </InputAdornment>
               ),
             }}
           />
         ) : (
-          <Box />
+          <Box sx={{ flex: 1 }} />
         )}
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ ml: { sm: 'auto' } }}>
           {checkboxSelection && selectedCount > 0 && onBulkDelete && (
             <Button
               size="small"
@@ -295,7 +305,7 @@ export default function DataTable({
               variant="outlined"
               startIcon={<DeleteOutlineIcon />}
               onClick={() => onBulkDelete(selectedIds)}
-              sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
             >
               {bulkDeleteLabel} ({selectedCount})
             </Button>
@@ -308,18 +318,19 @@ export default function DataTable({
                   sx={{
                     width: 34,
                     height: 34,
-                    borderRadius: '8px',
-                    bgcolor: '#fff7ed',
-                    color: '#d97706',
-                    border: '1px solid #fed7aa',
-                    '&:hover': { bgcolor: '#ffedd5', color: '#b45309' },
+                    borderRadius: '999px',
+                    bgcolor: 'primary.light',
+                    color: 'primary.main',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: '#FFD6DA', color: 'primary.dark' },
                   }}
                 >
                   <Badge
                     badgeContent={activeFilterCount}
                     sx={{
                       '& .MuiBadge-badge': {
-                        bgcolor: '#d97706',
+                        bgcolor: 'primary.main',
                         color: '#fff',
                         fontSize: '0.625rem',
                         minWidth: 16,
@@ -356,8 +367,8 @@ export default function DataTable({
                         width: 24,
                         height: 24,
                         borderRadius: '6px',
-                        bgcolor: '#fff7ed',
-                        color: '#d97706',
+                        bgcolor: 'primary.light',
+                        color: 'primary.main',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -378,8 +389,8 @@ export default function DataTable({
                       fullWidth
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: '8px',
-                          bgcolor: '#fff',
+                          borderRadius: '999px',
+                          bgcolor: 'background.paper',
                           fontSize: '0.75rem',
                         },
                       }}
@@ -396,7 +407,7 @@ export default function DataTable({
                     <Button
                       size="small"
                       onClick={() => filters.forEach((filter) => onFilterChange(filter.field, ''))}
-                      sx={{ alignSelf: 'flex-start', color: '#d97706', fontWeight: 600 }}
+                      sx={{ alignSelf: 'flex-start', color: 'primary.main', fontWeight: 600 }}
                     >
                       Clear Filters
                     </Button>
@@ -411,11 +422,12 @@ export default function DataTable({
               sx={{
                 width: 34,
                 height: 34,
-                borderRadius: '8px',
-                bgcolor: '#eaf2ff',
-                color: '#2f6fed',
-                border: '1px solid #c7d9fb',
-                '&:hover': { bgcolor: '#dbe8ff', color: '#1746b7' },
+                borderRadius: '999px',
+                bgcolor: 'primary.light',
+                color: 'primary.main',
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': { bgcolor: '#FFD6DA', color: 'primary.dark' },
               }}
             >
               <ViewColumnIcon sx={{ fontSize: 18 }} />
@@ -444,9 +456,9 @@ export default function DataTable({
                   sx={{
                     width: 24,
                     height: 24,
-                    borderRadius: '6px',
-                    bgcolor: '#eaf2ff',
-                    color: '#2f6fed',
+                    borderRadius: '999px',
+                    bgcolor: 'primary.light',
+                    color: 'primary.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -477,8 +489,8 @@ export default function DataTable({
                     sx={{
                       p: 0.35,
                       mr: 0.5,
-                      color: '#2f6fed',
-                      '&.Mui-checked': { color: '#2f6fed' },
+                      color: 'primary.main',
+                      '&.Mui-checked': { color: 'primary.main' },
                       '& .MuiSvgIcon-root': { fontSize: 16 },
                     }}
                   />
@@ -497,7 +509,7 @@ export default function DataTable({
                 sx={{
                   width: 34,
                   height: 34,
-                  borderRadius: '8px',
+                  borderRadius: '999px',
                   bgcolor: '#ecfdf5',
                   color: '#059669',
                   border: '1px solid #a7f3d0',
@@ -508,13 +520,14 @@ export default function DataTable({
               </IconButton>
             </Tooltip>
           )}
+          {toolbarEnd}
         </Stack>
       </Stack>
 
       <Box
         sx={{
           bgcolor: 'background.paper',
-          borderRadius: '8px',
+          borderRadius: '18px',
           border: '1px solid',
           borderColor: 'divider',
           overflowX: 'auto',

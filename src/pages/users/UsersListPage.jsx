@@ -47,7 +47,7 @@ const ROLE_STYLE = {
   [ROLES.USER]: { color: '#0891b2', bg: '#e0f7fa' },
 };
 
-const AVATAR_COLORS = ['#2f6fed', '#20b486', '#d97706', '#7c3aed', '#0891b2', '#ef4444'];
+const AVATAR_COLORS = ['#DC1F2E', '#20b486', '#d97706', '#7c3aed', '#0891b2', '#ef4444'];
 
 function avatarColor(name = '') {
   let hash = 0;

@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
+import ListSubheader from '@mui/material/ListSubheader';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -16,8 +17,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/PersonOutline';
 import Tooltip from '@mui/material/Tooltip';
@@ -36,6 +37,23 @@ import GlobalSearchBar from '../components/common/GlobalSearchBar';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 76;
+
+function isSidebarItemActive(pathname, item) {
+  if (item.path === '/visits/today') return pathname === '/visits/today';
+  if (item.path === '/visits/new') return pathname === '/visits/new';
+  if (item.path === '/visits') {
+    return (
+      pathname === '/visits' ||
+      (pathname.startsWith('/visits/') && pathname !== '/visits/new' && pathname !== '/visits/today')
+    );
+  }
+  if (item.path === '/expenses') return pathname === '/expenses' || pathname.startsWith('/expenses/');
+  if (pathname === item.path || pathname.startsWith(`${item.path}/`)) return true;
+  if (item.path === '/salesperson-tracking' && (pathname.startsWith('/visits/') || pathname.startsWith('/expenses/'))) {
+    return true;
+  }
+  return false;
+}
 
 function useVisibleNavItems() {
   const { user, permissions } = useAuth();
@@ -72,6 +90,8 @@ export default function DashboardLayout() {
 
     const canStayOnPath =
       location.pathname === '/profile' ||
+      location.pathname.startsWith('/visits/') ||
+      location.pathname.startsWith('/expenses') ||
       navItems.some((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`));
 
     if (!canStayOnPath) {
@@ -91,43 +111,64 @@ export default function DashboardLayout() {
     navigate(restoredPath, { replace: true });
   };
 
-  const renderDrawerContent = ({ collapsible = false, forceExpanded = false } = {}) => {
+  const renderDrawerContent = ({ forceExpanded = false } = {}) => {
     const isCollapsed = forceExpanded ? false : collapsed;
     return (
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          {!isCollapsed && (
-            <Box component="img" src={logo} alt={APP_NAME} sx={{ height: 36, maxWidth: 160, objectFit: 'contain' }} />
-          )}
-          {collapsible && (
-            <IconButton onClick={toggleCollapsed} size="small" sx={{ ml: isCollapsed ? 'auto' : 0, mr: isCollapsed ? 'auto' : 0 }}>
-              <MenuIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-        <Divider />
-        <List sx={{ flex: 1, px: 1 }}>
-          {navItems.map((item) => (
-            <Tooltip key={item.path} title={isCollapsed ? item.label : ''} placement="right">
-              <ListItemButton
-                component={NavLink}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
-                sx={{
-                  borderRadius: 0,
-                  mb: 0.5,
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  px: isCollapsed ? 1.5 : 2,
-                  '&.active': { bgcolor: 'primary.main', color: 'primary.contrastText', '& .MuiListItemIcon-root': { color: 'inherit' } },
-                }}
-              >
-                <ListItemIcon sx={{ color: item.accent?.color, minWidth: isCollapsed ? 0 : 40, justifyContent: 'center' }}>
-                  <FontAwesomeIcon icon={item.icon} fixedWidth />
-                </ListItemIcon>
-                {!isCollapsed && <ListItemText primary={item.label} />}
-              </ListItemButton>
-            </Tooltip>
-          ))}
+        <List sx={{ flex: 1, px: 1, pt: 1, overflowY: 'auto' }}>
+          {navItems.map((item, index) => {
+            const prev = navItems[index - 1];
+            const showSection = item.section && item.section !== prev?.section && !isCollapsed;
+            const active = isSidebarItemActive(location.pathname, item);
+            return (
+              <Box key={item.path}>
+                {showSection ? (
+                  <ListSubheader disableSticky sx={{ bgcolor: 'transparent', lineHeight: 2, fontSize: '0.7rem', letterSpacing: '0.04em' }}>
+                    {item.section}
+                  </ListSubheader>
+                ) : null}
+                <Tooltip title={isCollapsed ? item.label : ''} placement="right">
+                  <ListItemButton
+                    component={NavLink}
+                    to={item.path}
+                    selected={active}
+                    onClick={() => setMobileOpen(false)}
+                    sx={{
+                      borderRadius: 999,
+                      mb: 0.5,
+                      justifyContent: isCollapsed ? 'center' : 'flex-start',
+                      px: isCollapsed ? 1.5 : 2,
+                      '&.Mui-selected': {
+                        background: (t) => `${t.palette.primary.gradient} !important`,
+                        color: 'primary.contrastText',
+                        '& .MuiListItemIcon-root': { color: 'inherit' },
+                        '& .MuiListItemText-primary': { color: 'inherit', fontWeight: 600 },
+                      },
+                      '&.Mui-selected:hover': {
+                        background: (t) => `${t.palette.primary.gradientHover} !important`,
+                      },
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                        color: 'primary.dark',
+                        '& .MuiListItemIcon-root': { color: 'inherit' },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: isCollapsed ? 0 : 40,
+                        justifyContent: 'center',
+                        color: active ? '#fff' : 'primary.main',
+                      }}
+                    >
+                      <FontAwesomeIcon icon={item.icon} fixedWidth style={{ color: 'currentColor' }} />
+                    </ListItemIcon>
+                    {!isCollapsed && <ListItemText primary={item.label} />}
+                  </ListItemButton>
+                </Tooltip>
+              </Box>
+            );
+          })}
         </List>
       </Box>
     );
@@ -140,31 +181,101 @@ export default function DashboardLayout() {
         color="inherit"
         elevation={0}
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          zIndex: (t) => t.zIndex.drawer + 1,
+          width: '100%',
+          left: 0,
           borderRadius: 0,
+          boxShadow: 'none',
+          border: 'none',
           borderBottom: '1px solid',
           borderColor: 'divider',
-          transition: 'width 0.2s, margin-left 0.2s',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', gap: 1, px: { xs: 1, sm: 2 }, minWidth: 0 }}>
-          <IconButton edge="start" sx={{ display: { sm: 'none' } }} onClick={() => setMobileOpen(true)}>
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'none', sm: 'block' } }}>
-            <GlobalSearchBar />
+        <Toolbar sx={{ gap: 0, px: { xs: 1, sm: 0 }, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: { xs: 'auto', sm: drawerWidth },
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'flex-start', sm: collapsed ? 'center' : 'flex-start' },
+              gap: 0.5,
+              px: { xs: 0, sm: collapsed ? 0 : 1 },
+              boxSizing: 'border-box',
+              transition: 'width 0.2s',
+            }}
+          >
+            <IconButton
+              color="primary"
+              onClick={() => (isMobile ? setMobileOpen(true) : toggleCollapsed())}
+              sx={{ color: 'primary.main' }}
+            >
+              {collapsed && !isMobile ? <MenuOpenIcon /> : <MenuIcon />}
+            </IconButton>
+            <Box
+              component="img"
+              src={logo}
+              alt="Valuecon"
+              sx={{
+                height: 32,
+                maxWidth: 160,
+                objectFit: 'contain',
+                display: { xs: 'none', sm: collapsed ? 'none' : 'block' },
+              }}
+            />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'flex', sm: 'none' }, alignItems: 'center' }}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>
-              {APP_NAME}
-            </Typography>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              pr: { xs: 0, sm: 2 },
+            }}
+          >
+            <Box
+              sx={{
+                display: { xs: 'none', sm: 'flex' },
+                justifyContent: 'center',
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                px: 2,
+                pointerEvents: 'none',
+                '& > *': { pointerEvents: 'auto', width: '100%', maxWidth: 520 },
+              }}
+            >
+              <GlobalSearchBar />
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'flex', sm: 'none' }, alignItems: 'center', mr: 1 }}>
+              <Typography variant="subtitle2" fontWeight={700} noWrap>
+                {APP_NAME}
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+              sx={{ p: 0, position: 'relative', zIndex: 1, '&:hover': { bgcolor: 'transparent' } }}
+            >
+              <Avatar
+                src={user?.profileImage?.url}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: 0,
+                  color: '#fff',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  bgcolor: 'transparent',
+                  background: (t) =>
+                    `${Boolean(anchorEl) ? t.palette.primary.gradientHover : t.palette.primary.gradient60} !important`,
+                }}
+              >
+                {user?.name?.[0]?.toUpperCase()}
+              </Avatar>
+            </IconButton>
           </Box>
-          <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-            <Avatar src={user?.profileImage?.url} sx={{ width: 34, height: 34 }}>
-              {user?.name?.[0]?.toUpperCase()}
-            </Avatar>
-          </IconButton>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
             <MenuItem
               onClick={() => {
@@ -172,13 +283,13 @@ export default function DashboardLayout() {
                 navigate('/profile');
               }}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ color: 'primary.main' }}>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
               Profile
             </MenuItem>
             <MenuItem onClick={handleLogout}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ color: 'primary.main' }}>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
               Logout
@@ -195,7 +306,16 @@ export default function DashboardLayout() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, borderRadius: 0 },
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              borderRadius: 0,
+              border: 'none',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              boxShadow: 'none',
+              top: 52,
+              height: 'calc(100% - 52px)',
+            },
           }}
         >
           {renderDrawerContent({ forceExpanded: true })}
@@ -208,13 +328,20 @@ export default function DashboardLayout() {
               width: drawerWidth,
               boxSizing: 'border-box',
               overflowX: 'hidden',
+              overflowY: 'auto',
               transition: 'width 0.2s',
               borderRadius: 0,
+              border: 'none',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              boxShadow: 'none',
+              top: 52,
+              height: 'calc(100% - 52px)',
             },
           }}
           open
         >
-          {renderDrawerContent({ collapsible: true })}
+          {renderDrawerContent()}
         </Drawer>
       </Box>
 

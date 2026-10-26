@@ -8,6 +8,16 @@ import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import UsersListPage from '../pages/users/UsersListPage';
+import SalespersonTrackingPage from '../pages/salespersonTracking/SalespersonTrackingPage';
+import TrackingApprovalsPage from '../pages/salespersonTracking/TrackingApprovalsPage';
+import AttendancePage from '../pages/attendance/AttendancePage';
+import LeavePage from '../pages/leave/LeavePage';
+import VisitsHomePage from '../pages/visits/VisitsHomePage';
+import VisitCreatePage from '../pages/visits/VisitCreatePage';
+import VisitDayPage from '../pages/visits/VisitDayPage';
+import VisitDetailPage from '../pages/visits/VisitDetailPage';
+import MyExpensesPage from '../pages/expenses/MyExpensesPage';
+import ExpenseDayPage from '../pages/expenses/ExpenseDayPage';
 import ProjectsListPage from '../pages/projects/ProjectsListPage';
 import ProjectDetailPage from '../pages/projects/ProjectDetailPage';
 import StationDetailPage from '../pages/projects/StationDetailPage';
@@ -76,6 +86,137 @@ export default function AppRoutes() {
               </PermissionGate>
             }
           />
+          <Route
+            path="/salesperson-tracking"
+            element={
+              <PermissionGate permission="salespersonTracking" roles={[]}>
+                <SalespersonTrackingPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/attendance"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <AttendancePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/visits/new"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <VisitCreatePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/visits/today"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <VisitDayPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/visits/:id"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <VisitDetailPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/visits"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <VisitsHomePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <MyExpensesPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/expenses/:id"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <ExpenseDayPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/leave"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <LeavePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/my-approvals"
+            element={
+              <PermissionGate
+                permission="salespersonTracking"
+                roles={[ROLES.USER]}
+                userPermission="attendance"
+                jobRole="SALESPERSON"
+              >
+                <TrackingApprovalsPage
+                  title="My Requests"
+                  subtitle="See whether your attendance, visit, expense, and leave requests were approved"
+                />
+              </PermissionGate>
+            }
+          />
+          <Route path="/people" element={<Navigate to="/salesperson-tracking?tab=people" replace />} />
+          <Route path="/customers" element={<Navigate to="/salesperson-tracking?tab=customers" replace />} />
+          <Route path="/visit-approvals" element={<Navigate to="/salesperson-tracking?tab=approvals" replace />} />
 
           <Route
             path="/projects"

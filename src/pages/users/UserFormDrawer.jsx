@@ -10,9 +10,6 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
@@ -22,7 +19,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
-import { ROLES, USER_STATUS } from '../../utils/constants';
+import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS, GENDER } from '../../utils/constants';
 import { formatDate } from '../../utils/formatters';
 
 const ROLE_OPTIONS = [
@@ -41,9 +38,25 @@ function buildSchema(isEdit) {
     email: yup.string().email('Enter a valid email').required('Email is required'),
     password: isEdit ? yup.string().notRequired() : yup.string().min(8, 'Must be at least 8 characters').required('Password is required'),
     mobileNumber: yup.string().required('Mobile number is required'),
+    gender: yup.string().oneOf([GENDER.MALE, GENDER.FEMALE]).required('Gender is required'),
     role: yup.string().required('Role is required'),
+    adminType: yup.string().when('role', {
+      is: ROLES.ADMIN,
+      then: (schema) => (isEdit ? schema.notRequired() : schema.required('Admin type is required')),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
 }
+
+const GENDER_OPTIONS = [
+  { value: GENDER.MALE, label: 'Male (10:00–7:00 · 9 hours)' },
+  { value: GENDER.FEMALE, label: 'Female (10:00–6:30 · 8:30 hours)' },
+];
+
+const ADMIN_TYPE_OPTIONS = [
+  { value: ADMIN_TYPES.SALES_COORDINATOR, label: ADMIN_TYPE_LABELS.SALES_COORDINATOR },
+  { value: ADMIN_TYPES.TENDER_COORDINATOR, label: ADMIN_TYPE_LABELS.TENDER_COORDINATOR },
+];
 
 function DetailRow({ icon, label, value }) {
   return (
@@ -64,7 +77,7 @@ function DetailRow({ icon, label, value }) {
           width: 28,
           height: 28,
           borderRadius: '7px',
-          bgcolor: '#eaf2ff',
+          bgcolor: '#FFE8EA',
           color: 'primary.main',
           display: 'flex',
           alignItems: 'center',
@@ -87,13 +100,11 @@ function DetailRow({ icon, label, value }) {
 export default function UserFormDrawer({ open, mode = 'create', user, onClose, onSubmit, submitting }) {
   const isEdit = mode === 'edit';
   const readOnly = mode === 'view';
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [atlantaAccess, setAtlantaAccess] = useState('none');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
-    defaultValues: { name: '', email: '', password: '', mobileNumber: '', role: ROLES.USER },
+    defaultValues: { name: '', email: '', password: '', mobileNumber: '', gender: GENDER.MALE, role: ROLES.USER, adminType: '' },
   });
 
   useEffect(() => {
@@ -103,55 +114,29 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
         email: user?.email || '',
         password: '',
         mobileNumber: user?.mobileNumber || '',
+        gender: user?.gender || GENDER.MALE,
         role: user?.role || ROLES.USER,
+        adminType:
+          user?.adminType && user.adminType !== ADMIN_TYPES.SUPER_ADMIN
+            ? user.adminType
+            : '',
       });
       setImagePreview(user?.profileImage?.url || '');
-      setImageFile(null);
-      if (user?.permissions?.atlantaPayments) {
-        setAtlantaAccess(user?.permissions?.atlantaPaymentsOwnOnly ? 'own' : 'all');
-      } else {
-        setAtlantaAccess('none');
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  };
 
   const submit = (values) => {
     const formData = new FormData();
     formData.append('name', values.name);
     formData.append('mobileNumber', values.mobileNumber);
+    formData.append('gender', values.gender);
     formData.append('role', values.role);
+    if (values.role === ROLES.ADMIN && values.adminType) formData.append('adminType', values.adminType);
     if (!isEdit) {
       formData.append('email', values.email);
       formData.append('password', values.password);
     }
-    if (imageFile) formData.append('profileImage', imageFile);
-
-    if (atlantaAccess !== 'none') {
-      formData.append(
-        'permissions',
-        JSON.stringify({
-          atlantaPayments: true,
-          atlantaPaymentsOwnOnly: atlantaAccess === 'own',
-        })
-      );
-    } else if (isEdit) {
-      formData.append(
-        'permissions',
-        JSON.stringify({
-          atlantaPayments: false,
-          atlantaPaymentsOwnOnly: false,
-        })
-      );
-    }
-
     onSubmit(formData);
   };
 
@@ -261,7 +246,15 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
             <Stack spacing={1}>
               <DetailRow icon={<EmailOutlinedIcon sx={{ fontSize: 15 }} />} label="Email" value={user?.email} />
               <DetailRow icon={<PhoneOutlinedIcon sx={{ fontSize: 15 }} />} label="Mobile" value={user?.mobileNumber} />
+              <DetailRow icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />} label="Gender" value={user?.gender || '—'} />
               <DetailRow icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />} label="Role" value={user?.role} />
+              {user?.adminType && (
+                <DetailRow
+                  icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />}
+                  label="Admin type"
+                  value={ADMIN_TYPE_LABELS[user.adminType] || user.adminType}
+                />
+              )}
               <DetailRow
                 icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
                 label="Atlanta Payments"
@@ -282,69 +275,15 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
           ) : (
             <FormProvider {...methods}>
               <Stack component="form" id="user-form" spacing={2} onSubmit={methods.handleSubmit(submit)}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Avatar
-                    src={imagePreview}
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      bgcolor: '#ede9fe',
-                      color: '#7c3aed',
-                      fontWeight: 700,
-                      border: '2px solid #f3e8ff',
-                    }}
-                  >
-                    {(methods.watch('name') || 'U')[0]?.toUpperCase()}
-                  </Avatar>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    size="small"
-                    sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary' }}
-                  >
-                    Upload Photo
-                    <input type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} />
-                  </Button>
-                </Stack>
                 <RHFTextField name="name" label="Name" />
                 <RHFTextField name="email" label="Email" disabled={isEdit} />
                 {!isEdit && <RHFTextField name="password" label="Password" type="password" />}
                 <RHFTextField name="mobileNumber" label="Mobile Number" />
+                <RHFSelect name="gender" label="Gender" options={GENDER_OPTIONS} />
                 <RHFSelect name="role" label="Role" options={ROLE_OPTIONS} />
-
-                <Box
-                  sx={{
-                    p: 1.75,
-                    borderRadius: '10px',
-                    bgcolor: '#fbfbfe',
-                    border: '1px solid',
-                    borderColor: '#e9e8f4',
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
-                    Atlanta Payments Access
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
-                    Configure whether this user can view Atlanta Payments records.
-                  </Typography>
-                  <FormControl fullWidth size="small">
-                    <Select
-                      value={atlantaAccess}
-                      onChange={(e) => setAtlantaAccess(e.target.value)}
-                      sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
-                    >
-                      <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
-                        No Access
-                      </MenuItem>
-                      <MenuItem value="own" sx={{ fontSize: '0.8125rem' }}>
-                        User Flow (Own Records Only)
-                      </MenuItem>
-                      <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>
-                        Admin Flow (All Records)
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
+                {methods.watch('role') === ROLES.ADMIN && user?.adminType !== ADMIN_TYPES.SUPER_ADMIN && (
+                  <RHFSelect name="adminType" label="Admin type" options={ADMIN_TYPE_OPTIONS} />
+                )}
               </Stack>
             </FormProvider>
           )}

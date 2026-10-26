@@ -3,6 +3,88 @@ export const ROLES = {
   USER: 'User',
 };
 
+export const ADMIN_TYPES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  SALES_COORDINATOR: 'SALES_COORDINATOR',
+  TENDER_COORDINATOR: 'TENDER_COORDINATOR',
+};
+
+export const ADMIN_TYPE_LABELS = {
+  SUPER_ADMIN: 'Super Admin',
+  SALES_COORDINATOR: 'Sales Coordinator',
+  TENDER_COORDINATOR: 'Tender Coordinator',
+};
+
+export const JOB_ROLES = {
+  INSTALLER: 'INSTALLER',
+  SALESPERSON: 'SALESPERSON',
+};
+
+export const GENDER = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+};
+
+export const LEAVE_PAY = {
+  PAID: 'PAID',
+  UNPAID: 'UNPAID',
+};
+
+export const LEAVE_STATUS = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+};
+
+export const VISIT_STATUS = {
+  PLANNED: 'PLANNED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  APPROVED_MISSED: 'APPROVED_MISSED',
+  REJECTED: 'REJECTED',
+};
+
+export const VISIT_TYPE = {
+  HOURLY: 'HOURLY',
+  TOUR: 'TOUR',
+};
+
+export const DAY_VISIT_STATUS = {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+};
+
+export const VISIT_EXPENSE_STATUS = {
+  DRAFT: 'DRAFT',
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+};
+
+export const TRANSPORT_MODE = {
+  PRIVATE: 'PRIVATE',
+  TRAIN: 'TRAIN',
+  METRO: 'METRO',
+  BUS: 'BUS',
+  TAXI: 'TAXI',
+  AUTO: 'AUTO',
+  OTHER: 'OTHER',
+};
+
+export const PRIVATE_KM_RATE = 50;
+
+export const MISSED_VISIT_REASONS = [
+  'Customer unavailable',
+  'Customer cancelled',
+  'Emergency',
+  'Vehicle/transport issue',
+  'Unable to reach location',
+  'Location/GPS problem',
+  'Customer requested reschedule',
+  'Other',
+];
+
 export const USER_STATUS = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
@@ -50,6 +132,9 @@ export const STATION_STAGE_LABELS = [
 export const PERMISSION_KEYS = [    
   'dashboard',
   'users',
+  'salespersonTracking',
+  'customers',
+  'attendance',
   'projects',
   'reports',
   'payments',

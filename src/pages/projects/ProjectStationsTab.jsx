@@ -119,7 +119,7 @@ export default function ProjectStationsTab({ project, canManage, onProjectUpdate
                   transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                   '&:hover': {
                     borderColor: 'primary.light',
-                    boxShadow: '0 4px 12px rgba(47, 111, 237, 0.08)',
+                    boxShadow: '0 4px 12px rgba(220, 31, 46, 0.08)',
                   },
                 }}
               >

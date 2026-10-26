@@ -18,6 +18,12 @@ import {
   faTruck,
   faMoneyBillWave,
   faClockRotateLeft,
+  faRoute,
+  faClock,
+  faCalendarDay,
+  faCalendarPlus,
+  faUmbrella,
+  faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -29,7 +35,7 @@ export const NAV_ITEMS = [
     icon: faChartLine,
     permission: 'dashboard',
     roles: [ROLES.ADMIN],
-    accent: { color: '#2f6fed', bg: '#eaf2ff' },
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
   },
   {
     label: 'Users',
@@ -38,6 +44,86 @@ export const NAV_ITEMS = [
     permission: 'users',
     roles: [ROLES.ADMIN],
     accent: { color: '#8b5cf6', bg: '#f3e8ff' },
+  },
+  {
+    label: 'Salesperson Tracking',
+    path: '/salesperson-tracking',
+    icon: faRoute,
+    permission: 'salespersonTracking',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Attendance',
+    path: '/attendance',
+    icon: faClock,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Visit Plan',
+    path: '/visits',
+    icon: faCalendarDay,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Today’s visits',
+    path: '/visits/today',
+    icon: faRoute,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Create Visit',
+    path: '/visits/new',
+    icon: faCalendarPlus,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Leave',
+    path: '/leave',
+    icon: faUmbrella,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'My Expenses',
+    path: '/expenses',
+    icon: faWallet,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Approvals',
+    path: '/my-approvals',
+    icon: faClipboardCheck,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
   },
   {
     label: 'Projects',
@@ -181,15 +267,27 @@ export const NAV_ITEMS = [
 // full access) but respect an explicit false once an Admin has restricted that module for them.
 export function isNavItemAllowed(item, user, permissions) {
   if (!item.roles.includes(user?.role)) return false;
+  if (item.jobRole && user?.role !== ROLES.ADMIN && user?.jobRole !== item.jobRole) return false;
   if (user?.role === ROLES.ADMIN) return Boolean(permissions?.[item.permission]);
-  if (item.permission === 'atlantaPayments') return Boolean(permissions?.[item.permission]);
-  return permissions ? permissions[item.permission] !== false : true;
+  const key = item.userPermission || item.permission;
+  if (key === 'atlantaPayments') return Boolean(permissions?.[key]);
+  return permissions ? permissions[key] !== false : true;
 }
 
 // Where to land a user right after they log in (or an admin impersonates them) —
 // the first nav item their role/permissions actually grant access to.
 export function getDefaultLandingPath(user, permissions) {
   if (!user) return '/login';
+  if (user.jobRole === 'SALESPERSON') return '/attendance';
   const eligible = NAV_ITEMS.find((item) => isNavItemAllowed(item, user, permissions));
   return eligible ? eligible.path : '/profile';
+}
+
+export function canOpenPath(pathname, user, permissions) {
+  if (!pathname || pathname === '/login' || pathname === '/403' || pathname === '/404') return false;
+  if (pathname === '/' || pathname === '/profile') return true;
+  const match = NAV_ITEMS.filter(
+    (item) => pathname === item.path || pathname.startsWith(`${item.path}/`)
+  ).sort((a, b) => b.path.length - a.path.length)[0];
+  return match ? isNavItemAllowed(match, user, permissions) : false;
 }

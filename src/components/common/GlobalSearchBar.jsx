@@ -38,10 +38,14 @@ const SECTION_ORDER = ['projects', 'stations', 'users', 'numbers', 'tenders'];
 
 const ROUND_SX = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: 999,
+    borderRadius: '20px',
+    minHeight: 40,
     bgcolor: 'background.default',
-    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.light' },
+    boxShadow: 'none',
+    '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' },
+    '&:hover': { boxShadow: 'none', bgcolor: 'background.default' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+    '&.Mui-focused': { boxShadow: 'none' },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main', borderWidth: 1 },
   },
 };
@@ -118,7 +122,7 @@ export default function GlobalSearchBar() {
 
   return (
     <ClickAwayListener onClickAway={() => setOpen(false)}>
-      <Box sx={{ flex: 1, maxWidth: 520, mx: { xs: 1, sm: 2 }, position: 'relative' }} ref={anchorRef}>
+      <Box sx={{ width: '100%', maxWidth: 520, position: 'relative' }} ref={anchorRef}>
         <TextField
           fullWidth
           size="small"
@@ -133,7 +137,7 @@ export default function GlobalSearchBar() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <SearchIcon sx={{ color: 'primary.main', fontSize: 20 }} />
               </InputAdornment>
             ),
             endAdornment: (

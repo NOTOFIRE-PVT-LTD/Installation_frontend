@@ -16,7 +16,9 @@ import {
   faClock,
   faFolderOpen,
   faGift,
+  faHandshake,
   faLocationDot,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import ProjectMaterialPieCard from '../../components/projects/ProjectMaterialPieCard';
 import ProjectDrawer from '../projects/ProjectDrawer';
@@ -24,55 +26,63 @@ import { dashboardApi } from '../../api/dashboardApi';
 import { usePermission } from '../../hooks/usePermission';
 import { formatCurrency } from '../../utils/formatters';
 
+const TONE = {
+  red: { color: '#DC1F2E', bg: '#FBECEE' },
+  flame: { color: '#F2554A', bg: '#FBECEE' },
+  gold: { color: '#DC1F2E', bg: '#FBECEE' },
+  cream: { color: '#9B1520', bg: '#FFF8F8' },
+};
+
 const SUMMARY_CARDS = [
   {
     key: 'overallWorkDone',
     label: 'Work Done',
     icon: faChartPie,
-    color: '#0f766e',
-    bg: '#ccfbf1',
+    ...TONE.gold,
     format: (v) => `${v ?? 0}%`,
   },
   {
     key: 'totalProjects',
     label: 'Projects',
     icon: faFolderOpen,
-    color: '#2f6fed',
-    bg: '#eaf2ff',
+    ...TONE.red,
     format: (v) => v ?? 0,
   },
   {
     key: 'stationsTracked',
     label: 'Stations',
     icon: faLocationDot,
-    color: '#0891b2',
-    bg: '#e0f7fa',
+    ...TONE.cream,
     format: (v) => v ?? 0,
   },
   {
     key: 'pendingApprovals',
     label: 'Approvals',
     icon: faClock,
-    color: '#d97706',
-    bg: '#fff7ed',
+    ...TONE.gold,
     format: (v) => v ?? 0,
   },
   {
     key: 'delayFlags',
     label: 'Delays',
     icon: faBolt,
-    color: '#dc2626',
-    bg: '#fef2f2',
+    ...TONE.flame,
     format: (v) => v ?? 0,
   },
   {
     key: 'bonusAwarded',
     label: 'Bonus',
     icon: faGift,
-    color: '#059669',
-    bg: '#ecfdf5',
+    ...TONE.red,
     format: (v) => formatCurrency(v || 0),
   },
+];
+
+const FIELD_SALES_CARDS = [
+  { key: 'fieldCustomers', label: 'Customers', icon: faHandshake, ...TONE.red, format: (v) => v ?? 0 },
+  { key: 'fieldSalespeople', label: 'Salespeople', icon: faUsers, ...TONE.flame, format: (v) => v ?? 0 },
+  { key: 'fieldPunchedIn', label: 'Punched in today', icon: faClock, ...TONE.gold, format: (v) => v ?? 0 },
+  { key: 'fieldPunchedOut', label: 'Closed attendance', icon: faCheckDouble, ...TONE.cream, format: (v) => v ?? 0 },
 ];
 
 function SummaryStat({ label, value, icon, color, bg }) {
@@ -83,8 +93,8 @@ function SummaryStat({ label, value, icon, color, bg }) {
         p: 1.25,
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: '8px',
-        bgcolor: '#fff',
+        borderRadius: '18px',
+        bgcolor: 'background.paper',
         height: '100%',
         minWidth: 0,
         display: 'flex',
@@ -96,7 +106,7 @@ function SummaryStat({ label, value, icon, color, bg }) {
         sx={{
           width: 32,
           height: 32,
-          borderRadius: '8px',
+          borderRadius: '999px',
           bgcolor: bg,
           color,
           display: 'flex',
@@ -203,12 +213,9 @@ export default function DashboardPage() {
             onClick={() => setAddOpen(true)}
             sx={{
               flexShrink: 0,
-              bgcolor: '#2f6fed',
-              borderRadius: '8px',
               px: 1.5,
               py: 0.6,
               fontSize: '0.75rem',
-              '&:hover': { bgcolor: '#1746b7' },
             }}
           >
             Add Project
@@ -230,14 +237,29 @@ export default function DashboardPage() {
         ))}
       </Grid>
 
+      <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem', mb: 1 }}>Field sales</Typography>
+      <Grid container spacing={1.25} sx={{ mb: 2 }}>
+        {FIELD_SALES_CARDS.map((card) => (
+          <Grid item xs={6} md={3} key={card.key} sx={{ minWidth: 0 }}>
+            <SummaryStat
+              label={card.label}
+              value={card.format(stats?.[card.key])}
+              icon={card.icon}
+              color={card.color}
+              bg={card.bg}
+            />
+          </Grid>
+        ))}
+      </Grid>
+
       <Paper
         elevation={0}
         sx={{
           p: 1.5,
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: '8px',
-          bgcolor: '#fff',
+          borderRadius: '18px',
+          bgcolor: 'background.paper',
         }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.25 }}>
@@ -246,9 +268,9 @@ export default function DashboardPage() {
               sx={{
                 width: 24,
                 height: 24,
-                borderRadius: '6px',
-                bgcolor: '#eaf2ff',
-                color: '#2f6fed',
+                borderRadius: '999px',
+                bgcolor: '#FFE8EA',
+                color: '#DC1F2E',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

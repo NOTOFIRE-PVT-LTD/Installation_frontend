@@ -12,7 +12,7 @@ import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
 import { login } from '../../features/auth/authThunks';
-import { getDefaultLandingPath } from '../../routes/routeConfig';
+import { canOpenPath, getDefaultLandingPath } from '../../routes/routeConfig';
 
 const schema = yup.object({
   email: yup.string().email('Enter a valid email').required('Email is required'),
@@ -34,7 +34,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated) {
       const fallback = getDefaultLandingPath(user, permissions);
-      navigate(location.state?.from?.pathname || fallback, { replace: true });
+      const from = location.state?.from?.pathname;
+      navigate(from && canOpenPath(from, user, permissions) ? from : fallback, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, navigate, location.state]);

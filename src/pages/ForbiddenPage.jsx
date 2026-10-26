@@ -1,5 +1,8 @@
-import NotFoundPage from './NotFoundPage';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { getDefaultLandingPath } from '../routes/routeConfig';
 
 export default function ForbiddenPage() {
-  return <NotFoundPage code={403} message="You do not have permission to view this page" />;
+  const { isAuthenticated, user, permissions } = useAuth();
+  return <Navigate to={isAuthenticated ? getDefaultLandingPath(user, permissions) : '/login'} replace />;
 }

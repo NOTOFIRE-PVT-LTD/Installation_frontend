@@ -13,18 +13,30 @@ export default function PageHeader({ title, subtitle, actions }) {
     >
       <Box sx={{ minWidth: 0 }}>
         {typeof title === 'string' ? (
-          <Typography sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3 }}>{title}</Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3, color: 'primary.main' }}>
+            {title}
+          </Typography>
         ) : (
-          <Box sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3 }}>{title}</Box>
+          <Box sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3, color: 'primary.main' }}>{title}</Box>
         )}
         {subtitle && (
-          <Typography color="text.secondary" sx={{ fontSize: '0.6875rem', mt: 0.15 }}>
+          <Typography sx={{ fontSize: '0.75rem', mt: 0.15, color: 'primary.dark' }}>
             {subtitle}
           </Typography>
         )}
       </Box>
       {actions && (
-        <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' }, '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}>
+        <Box
+          sx={{
+            flexShrink: 0,
+            width: { xs: '100%', sm: 'auto' },
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 1.25,
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           {actions}
         </Box>
       )}

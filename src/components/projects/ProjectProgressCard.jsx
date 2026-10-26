@@ -43,7 +43,7 @@ export default function ProjectProgressCard({ project, onOpen, onDelete }) {
   const startDate = project.installationStartDate || project.loaDate;
   const targetDate = project.targetDate;
   const chip = statusChip(project.statusLabel, pct);
-  const barColor = pct >= 100 ? '#23b26d' : pct > 0 ? '#2f6fed' : '#d1d5db';
+  const barColor = pct >= 100 ? '#23b26d' : pct > 0 ? '#DC1F2E' : '#d1d5db';
 
   return (
     <Paper

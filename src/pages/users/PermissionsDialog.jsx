@@ -13,6 +13,9 @@ import { PERMISSION_KEYS, ROLES } from '../../utils/constants';
 const LABELS = {
   dashboard: 'Dashboard',
   users: 'Users',
+  salespersonTracking: 'Salesperson Tracking (People, Customers, Attendance, Visits)',
+  customers: 'Customers (field sales)',
+  attendance: 'Attendance (field sales)',
   projects: 'Projects',
   reports: 'Reports',
   payments: 'Payments',
@@ -39,11 +42,21 @@ const LABELS = {
   auditLogs: 'Audit Logs',
 };
 
-const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly'];
+const INSTALLER_PERMISSION_KEYS = [
+  'projects',
+  'reports',
+  'cadDrawing',
+  'customers',
+  'attendance',
+  'atlantaPayments',
+  'atlantaPaymentsOwnOnly',
+];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
-  const keys = isAdmin ? PERMISSION_KEYS : INSTALLER_PERMISSION_KEYS;
+  const keys = isAdmin
+    ? PERMISSION_KEYS.filter((key) => key !== 'customers' && key !== 'attendance')
+    : INSTALLER_PERMISSION_KEYS;
   const [values, setValues] = useState({});
 
   useEffect(() => {
@@ -57,7 +70,7 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
               acc[key] = user?.permissions ? user.permissions[key] !== false : true;
             }
           } else {
-            acc[key] = Boolean(user?.permissions?.[key]);
+            acc[key] = user?.permissions?.[key] == null ? true : Boolean(user.permissions[key]);
           }
           return acc;
         }, {})
@@ -74,6 +87,10 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       }
       if (key === 'atlantaPayments' && !checked) {
         next.atlantaPaymentsOwnOnly = false;
+      }
+      if (key === 'salespersonTracking') {
+        next.customers = checked;
+        next.attendance = checked;
       }
       return next;
     });
@@ -95,7 +112,8 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
             tender-created notifications, and <b>BG Deadline WhatsApp alerts</b> for BG reminders (14 days after LOA
             Date). For a <b>quotation user</b>, tick only <b>Quotations</b> and <b>Quotation user</b>. For an{' '}
             <b>Atlanta Payments user (own records only)</b>, tick <b>Atlanta Payments</b> and{' '}
-            <b>Atlanta Payments user (own records only)</b>.
+            <b>Atlanta Payments user (own records only)</b>. Tick only <b>Salesperson Tracking</b> for an admin who
+            should see People, Customers, Attendance, and Visits — no Installation modules.
           </Typography>
         )}
         <FormGroup>
@@ -115,7 +133,17 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={() => onSubmit(values)} disabled={submitting}>
+        <Button
+          variant="contained"
+          onClick={() =>
+            onSubmit(
+              isAdmin
+                ? { ...values, customers: Boolean(values.salespersonTracking), attendance: Boolean(values.salespersonTracking) }
+                : values
+            )
+          }
+          disabled={submitting}
+        >
           {submitting ? 'Saving…' : 'Save'}
         </Button>
       </DialogActions>
