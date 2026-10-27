@@ -2,15 +2,22 @@ const placeCache = new Map();
 
 export function formatPlaceFromNominatim(json) {
   const a = json?.address || {};
-  const city = a.city || a.town || a.village || a.suburb || a.county;
-  const area = a.suburb || a.neighbourhood || a.residential || a.city_district;
-  if (area && city && area !== city) return `${area}, ${city}`;
-  if (city) return city;
+  const road = a.road || a.street || a.pedestrian || a.path;
+  const area = a.suburb || a.neighbourhood || a.residential || a.subdistrict;
+  const city = a.city || a.town || a.village || a.county || a.state_district;
+  const state = a.state;
+
+  const parts = [road, area, city, state].filter(Boolean);
+  if (parts.length >= 2) {
+    return parts.slice(0, 3).join(', ');
+  }
+  if (parts.length === 1) return parts[0];
+
   const bits = String(json?.display_name || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  return bits.slice(0, 2).join(', ') || null;
+  return bits.slice(0, 3).join(', ') || null;
 }
 
 export async function placeNameFromCoords(lat, lng) {
@@ -18,39 +25,57 @@ export async function placeNameFromCoords(lat, lng) {
   const key = `${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`;
   if (placeCache.has(key)) return placeCache.get(key);
   try {
-    // shortcut: public Nominatim, swap to a keyed geocoder if this starts 429ing
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&addressdetails=1`
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16&addressdetails=1`,
+      { headers: { Accept: 'application/json' } }
     );
+    if (!res.ok) throw new Error('Geocode failed');
     const json = await res.json();
-    const name = formatPlaceFromNominatim(json);
-    if (name) placeCache.set(key, name);
+    const name = formatPlaceFromNominatim(json) || `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+    placeCache.set(key, name);
     return name;
   } catch {
-    return null;
+    return `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
   }
 }
 
 export async function readLocation() {
   if (!navigator.geolocation) return { error: 'Location is not supported on this device' };
-  const result = await new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ pos }),
-      (err) =>
-        resolve({
-          error:
-            err?.code === 1
-              ? 'Location permission was denied. Enable location to check in or check out.'
-              : 'Could not read GPS location.',
-        }),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  });
-  if (!result.pos) return { error: result.error };
+
+  const getPosition = (options) =>
+    new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ pos }),
+        (err) => resolve({ error: err }),
+        options
+      );
+    });
+
+  // Try high accuracy with a 12s timeout and small maximumAge for fast lock
+  let result = await getPosition({ enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 });
+
+  // If high accuracy timed out, retry with normal accuracy as fallback
+  if (!result.pos && result.error?.code === 3) {
+    result = await getPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+  }
+
+  if (!result.pos) {
+    const code = result.error?.code;
+    return {
+      error:
+        code === 1
+          ? 'Location permission denied. Please allow location access in your phone/browser settings.'
+          : code === 2
+          ? 'Position unavailable. Please check that phone GPS / Location is turned ON.'
+          : 'GPS request timed out. Please try again.',
+    };
+  }
+
   const lat = result.pos.coords.latitude;
   const lng = result.pos.coords.longitude;
+  const accuracy = Math.round(result.pos.coords.accuracy || 0);
   const address = await placeNameFromCoords(lat, lng);
-  return { lat, lng, accuracy: result.pos.coords.accuracy, address };
+  return { lat, lng, accuracy, address };
 }
 
 export function formatPlanTime(hm) {

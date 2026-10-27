@@ -86,16 +86,6 @@ export const NAV_ITEMS = [
     accent: { color: '#DC1F2E', bg: '#FFE8EA' },
   },
   {
-    label: 'Create Visit',
-    path: '/visits/new',
-    icon: faCalendarPlus,
-    permission: 'attendance',
-    userPermission: 'attendance',
-    jobRole: 'SALESPERSON',
-    roles: [ROLES.USER],
-    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
-  },
-  {
     label: 'Leave',
     path: '/leave',
     icon: faUmbrella,
