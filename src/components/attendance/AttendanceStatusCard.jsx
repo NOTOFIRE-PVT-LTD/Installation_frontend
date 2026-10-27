@@ -7,6 +7,7 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import CameraFileInput from '../common/CameraFileInput';
 import { useLiveDuration } from '../../hooks/useLiveDuration';
 import { placeNameFromCoords } from '../../utils/readLocation';
 import {
@@ -65,8 +66,6 @@ export default function AttendanceStatusCard({
   today,
   pending = false,
   punching = false,
-  photo,
-  onPhoto,
   onPunchIn,
   onPunchOut,
 }) {
@@ -76,7 +75,6 @@ export default function AttendanceStatusCard({
   const loading = !today;
   const dateLabel = today?.attendanceDate ? formatIstDate(today.attendanceDate) : '—';
   const canPunchIn = !loading && (phase === ATTENDANCE_PHASE.NOT_STARTED || phase === ATTENDANCE_PHASE.COMPLETED);
-  const needsSelfie = canPunchIn || phase === ATTENDANCE_PHASE.WORKING;
 
   return (
     <Card sx={{ mb: 2.5, border: '1px solid', borderColor: 'divider' }}>
@@ -84,25 +82,19 @@ export default function AttendanceStatusCard({
         {loading && <Typography color="text.secondary">Loading attendance…</Typography>}
         {!loading && (
           <Stack spacing={2}>
-            {needsSelfie && (
-              <Button component="label" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
-                {photo ? photo.name : 'Take selfie'}
-                <input
-                  hidden
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={(e) => onPhoto?.(e.target.files?.[0] || null)}
-                />
-              </Button>
-            )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} divider={<Divider flexItem orientation="vertical" />}>
             <Side
               title="Punch In"
               action={
                 canPunchIn ? (
-                  <Button variant="contained" disabled={pending || punching || !photo} onClick={onPunchIn} sx={{ alignSelf: 'flex-start' }}>
-                    {punching ? 'Punching in…' : 'Punch In'}
+                  <Button
+                    component="label"
+                    variant="contained"
+                    disabled={pending || punching}
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    {punching ? 'Punching in…' : 'Click picture & punch in'}
+                    {!punching && <CameraFileInput capture="user" onFile={(file) => file && onPunchIn(file)} />}
                   </Button>
                 ) : null
               }
@@ -128,7 +120,7 @@ export default function AttendanceStatusCard({
                 </>
               ) : (
                 <Typography color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
-                  Take a selfie, then punch in to capture time and location.
+                  Opens the camera, then saves time and location.
                 </Typography>
               )}
             </Side>
@@ -136,8 +128,14 @@ export default function AttendanceStatusCard({
               title="Punch Out"
               action={
                 phase === ATTENDANCE_PHASE.WORKING ? (
-                  <Button variant="contained" disabled={pending || punching || !photo} onClick={onPunchOut} sx={{ alignSelf: 'flex-start' }}>
-                    {punching ? 'Punching out…' : 'Punch Out'}
+                  <Button
+                    component="label"
+                    variant="contained"
+                    disabled={pending || punching}
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    {punching ? 'Punching out…' : 'Click picture & punch out'}
+                    {!punching && <CameraFileInput capture="user" onFile={(file) => file && onPunchOut(file)} />}
                   </Button>
                 ) : phase === ATTENDANCE_PHASE.NOT_STARTED ? (
                   <Button variant="contained" disabled sx={{ alignSelf: 'flex-start' }}>
@@ -166,7 +164,7 @@ export default function AttendanceStatusCard({
               ) : (
                 <Typography color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
                   {phase === ATTENDANCE_PHASE.WORKING
-                    ? 'Take a selfie, then punch out to save time, date, and location.'
+                    ? 'Opens the camera, then saves time, date, and location.'
                     : 'Available after punch in.'}
                 </Typography>
               )}

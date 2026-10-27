@@ -51,7 +51,10 @@ const theme = createTheme({
       main: '#b91c1c',
     },
     info: {
-      main: '#06b6d4',
+      main: BRAND.red,
+      light: BRAND.wash,
+      dark: BRAND.redDark,
+      contrastText: '#ffffff',
     },
     background: {
       default: BRAND.ink,
@@ -387,6 +390,24 @@ const theme = createTheme({
         root: {
           borderRadius: 16,
         },
+        standardInfo: {
+          backgroundColor: BRAND.wash,
+          color: BRAND.redDeep,
+          '& .MuiAlert-icon': { color: BRAND.red },
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          color: BRAND.redDark,
+          borderColor: BRAND.line,
+          '&.Mui-selected': {
+            color: '#fff',
+            background: `${BRAND.gradient} !important`,
+            '&:hover': { background: `${BRAND.gradientHover} !important` },
+          },
+        },
       },
     },
     MuiPaginationItem: {
@@ -415,7 +436,7 @@ const theme = createTheme({
     MuiDataGrid: {
       styleOverrides: {
         root: {
-          minWidth: 640,
+          minWidth: 0,
           borderRadius: 18,
           borderColor: BRAND.line,
           backgroundColor: BRAND.panel,

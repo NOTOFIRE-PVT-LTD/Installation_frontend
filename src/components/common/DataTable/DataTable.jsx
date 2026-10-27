@@ -530,7 +530,7 @@ export default function DataTable({
           borderRadius: '18px',
           border: '1px solid',
           borderColor: 'divider',
-          overflowX: 'auto',
+          overflow: 'hidden',
           WebkitOverflowScrolling: 'touch',
         }}
       >
@@ -583,6 +583,8 @@ export default function DataTable({
           disableRowSelectionOnClick
           sx={{
             border: 'none',
+            '& .MuiDataGrid-virtualScroller': { overflowX: 'auto' },
+            '& .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller': { border: 'none' },
             ...(onRowClick ? { '& .MuiDataGrid-row': { cursor: 'pointer' } } : {}),
             '& .MuiDataGrid-cell': {
               display: 'flex',

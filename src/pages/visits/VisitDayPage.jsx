@@ -29,7 +29,7 @@ function stateLabel(visit) {
 
 function stateColor(visit) {
   if (visit.status === VISIT_STATUS.COMPLETED) return 'success';
-  if (visit.status === VISIT_STATUS.IN_PROGRESS) return 'info';
+  if (visit.status === VISIT_STATUS.IN_PROGRESS) return 'primary';
   if (visit.status === VISIT_STATUS.APPROVED_MISSED) return 'default';
   return 'warning';
 }
@@ -103,7 +103,7 @@ export default function VisitDayPage() {
   return (
     <>
       <PageHeader title="Today's visits" subtitle="Select the visits you are doing, then check in and out in order." />
-      <Alert severity={submitted ? 'success' : 'info'} sx={{ mb: 2 }}>
+      <Alert severity={submitted ? 'success' : 'info'} sx={{ mb: 2, border: '1px solid', borderColor: 'divider' }}>
         Day status: {day.status}. {selected.length} selected · {day.completed} completed · {day.remaining} remaining.
         {day.totalKm ? ` Travel so far ${day.totalKm} km.` : ''}
       </Alert>

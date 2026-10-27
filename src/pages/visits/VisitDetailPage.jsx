@@ -9,6 +9,7 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import TextField from '@mui/material/TextField';
 import PageHeader from '../../components/common/PageHeader';
+import CameraFileInput from '../../components/common/CameraFileInput';
 import MissedVisitDialog from './MissedVisitDialog';
 import { useAppDispatch } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
@@ -188,14 +189,8 @@ export default function VisitDetailPage() {
 
             {(canCheckIn || canCheckOut) && (
               <Button component="label" variant="outlined">
-                {photo ? photo.name : canCheckOut ? 'Take photo & check out' : 'Take photo'}
-                <input
-                  hidden
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => setPhoto(e.target.files?.[0] || null)}
-                />
+                {photo ? photo.name : 'Click picture'}
+                <CameraFileInput capture="environment" onFile={setPhoto} />
               </Button>
             )}
 

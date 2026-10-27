@@ -97,12 +97,14 @@ export default function AttendancePage({ embedded = false }) {
     ]);
   };
 
-  const punch = async (kind, confirmUnfinished = false) => {
+  const punch = async (kind, confirmUnfinished = false, file) => {
     if (pending || punching) return;
-    if (!punchPhoto) {
-      dispatch(showSnackbar({ message: 'Take a selfie first', severity: 'error' }));
+    const selfie = file || punchPhoto;
+    if (!selfie) {
+      dispatch(showSnackbar({ message: 'Click picture first', severity: 'error' }));
       return;
     }
+    setPunchPhoto(selfie);
     setPunching(true);
     try {
       const loc = await readLocation();
@@ -113,7 +115,7 @@ export default function AttendancePage({ embedded = false }) {
       form.append('lng', String(loc.lng));
       if (loc.address) form.append('address', loc.address);
       if (confirmUnfinished) form.append('confirmUnfinished', 'true');
-      form.append('photo', punchPhoto);
+      form.append('photo', selfie);
       const { data } = await attendanceApi.punch(form);
       dispatch(
         showSnackbar({
@@ -166,10 +168,8 @@ export default function AttendancePage({ embedded = false }) {
           <AttendanceStatusCard
             today={today}
             punching={punching}
-            photo={punchPhoto}
-            onPhoto={setPunchPhoto}
-            onPunchIn={() => punch('IN')}
-            onPunchOut={() => punch('OUT')}
+            onPunchIn={(file) => punch('IN', false, file)}
+            onPunchOut={(file) => punch('OUT', false, file)}
           />
           <AttendanceSummaryChart
             days={summary.days || []}
