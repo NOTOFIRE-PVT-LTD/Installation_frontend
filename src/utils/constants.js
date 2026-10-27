@@ -213,5 +213,11 @@ export const NUMBER_CATEGORIES = {
   MANAGEMENT: 'Management',
 };
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+export const API_BASE_URL =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1' &&
+  (import.meta.env.VITE_API_BASE_URL?.includes('localhost') || !import.meta.env.VITE_API_BASE_URL)
+    ? '/api'
+    : (import.meta.env.VITE_API_BASE_URL || '/api');
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'NF Site Installation Report';
