@@ -601,7 +601,7 @@ export default function BomPage() {
         sx={{
           mb: 2,
           p: 2,
-          borderRadius: 2,
+          borderRadius: '8px',
           bgcolor: 'action.hover',
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
           fontSize: 13,

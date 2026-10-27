@@ -36,7 +36,7 @@ export default function MultiVideoDropzone({ value = [], onChange, label = 'Comm
             direction="row"
             alignItems="center"
             spacing={1.5}
-            sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, width: 'fit-content' }}
+            sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px', width: 'fit-content' }}
           >
             <VideoFileIcon color="primary" />
             <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>

@@ -108,7 +108,7 @@ export default function DeliveryChallansPage() {
     <Box>
       <PageHeader title="Delivery Challans" subtitle="Manage your Delivery Challans" />
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper variant="outlined" sx={{ borderRadius: '8px', overflow: 'hidden' }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"

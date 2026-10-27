@@ -38,7 +38,7 @@ const SECTION_ORDER = ['projects', 'stations', 'users', 'numbers', 'tenders'];
 
 const ROUND_SX = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: '20px',
+    borderRadius: '8px',
     minHeight: 40,
     bgcolor: 'background.default',
     boxShadow: 'none',
@@ -164,7 +164,7 @@ export default function GlobalSearchBar() {
             elevation={0}
             sx={{
               mt: 1,
-              borderRadius: '16px',
+              borderRadius: '8px',
               border: '1px solid',
               borderColor: 'divider',
               boxShadow: '0 18px 40px rgba(31, 42, 68, 0.12)',

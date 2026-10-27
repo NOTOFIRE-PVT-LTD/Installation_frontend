@@ -84,14 +84,14 @@ export default function DocumentDropzone({
           direction="row"
           alignItems="center"
           spacing={1.25}
-          sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, width: 'fit-content', maxWidth: '100%' }}
+          sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px', width: 'fit-content', maxWidth: '100%' }}
         >
           {showImage && value.url ? (
             <Box
               component="img"
               src={value.url}
               alt={fileName}
-              sx={{ width: 56, height: 56, borderRadius: 1, objectFit: 'cover', flexShrink: 0 }}
+              sx={{ width: 56, height: 56, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
             />
           ) : (
             <PictureAsPdfIcon color="error" />

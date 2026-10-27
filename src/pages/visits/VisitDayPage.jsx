@@ -140,7 +140,7 @@ export default function VisitDayPage() {
       {/* Progress summary banner */}
       <Alert
         severity={submitted ? 'success' : selected.length && day.remaining === 0 ? 'success' : 'info'}
-        sx={{ mb: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
+        sx={{ mb: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ sm: 'center' }}>
           <div>
@@ -164,7 +164,7 @@ export default function VisitDayPage() {
 
       {/* Selection Box: Pick which visits to execute today */}
       {!submitted && (
-        <Card sx={{ mb: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 2.5 }}>
+        <Card sx={{ mb: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
           <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
               <div>
@@ -249,7 +249,7 @@ export default function VisitDayPage() {
               sx={{
                 border: '1px solid',
                 borderColor: isDone ? 'success.light' : 'divider',
-                borderRadius: 2.5,
+                borderRadius: '8px',
                 bgcolor: isDone ? 'action.hover' : 'background.paper',
               }}
             >
@@ -314,7 +314,7 @@ export default function VisitDayPage() {
 
       {/* Submit Day Button & Expense Flow */}
       {day.canSubmit && (
-        <Card sx={{ mt: 3, p: 2.5, bgcolor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 3 }}>
+        <Card sx={{ mt: 3, p: 2.5, bgcolor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px' }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
             <div>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#166534' }}>
@@ -331,7 +331,7 @@ export default function VisitDayPage() {
               disabled={busy}
               endIcon={<ArrowForwardIcon />}
               onClick={submitDay}
-              sx={{ fontWeight: 700, px: 3, py: 1.25, borderRadius: 2 }}
+              sx={{ fontWeight: 700, px: 3, py: 1.25, borderRadius: 999 }}
             >
               {busy ? 'Submitting Day…' : 'Submit Day & Enter Expenses'}
             </Button>
@@ -340,7 +340,7 @@ export default function VisitDayPage() {
       )}
 
       {submitted && day.expense?._id && (
-        <Card sx={{ mt: 3, p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+        <Card sx={{ mt: 3, p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between">
             <div>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>

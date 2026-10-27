@@ -71,7 +71,7 @@ export default function SelectQuotationDialog({ open, onClose, onSelect }) {
             ),
           }}
         />
-        <Box sx={{ minHeight: 240, maxHeight: 420, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+        <Box sx={{ minHeight: 240, maxHeight: 420, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
           {loading ? (
             <Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
               <CircularProgress size={24} />

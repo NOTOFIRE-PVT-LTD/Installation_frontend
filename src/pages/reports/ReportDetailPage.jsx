@@ -108,7 +108,7 @@ export default function ReportDetailPage() {
               href={photo.url}
               target="_blank"
               rel="noopener noreferrer"
-              sx={{ width: 140, height: 140, borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
+              sx={{ width: 140, height: 140, borderRadius: '8px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
             >
               <Box component="img" src={photo.url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Box>
@@ -120,7 +120,7 @@ export default function ReportDetailPage() {
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Site Video
             </Typography>
-            <Box component="video" src={report.siteVideo.url} controls sx={{ maxWidth: 480, borderRadius: 2 }} />
+            <Box component="video" src={report.siteVideo.url} controls sx={{ maxWidth: 480, borderRadius: '8px' }} />
           </>
         )}
       </Paper>

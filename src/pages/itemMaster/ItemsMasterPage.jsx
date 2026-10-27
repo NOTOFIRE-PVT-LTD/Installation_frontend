@@ -351,7 +351,7 @@ export default function ItemsMasterPage() {
             <Grid container spacing={2}>
               {Array.from({ length: 8 }).map((_, index) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                  <Skeleton variant="rounded" height={420} sx={{ borderRadius: 3 }} />
+                  <Skeleton variant="rounded" height={420} sx={{ borderRadius: '8px' }} />
                 </Grid>
               ))}
             </Grid>
@@ -362,7 +362,7 @@ export default function ItemsMasterPage() {
                 textAlign: 'center',
                 border: '1px dashed',
                 borderColor: 'divider',
-                borderRadius: 3,
+                borderRadius: '8px',
                 bgcolor: 'background.paper',
               }}
             >

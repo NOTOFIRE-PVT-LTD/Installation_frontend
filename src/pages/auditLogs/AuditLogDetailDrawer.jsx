@@ -146,7 +146,7 @@ export default function AuditLogDetailDrawer({ open, log, onClose }) {
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5 }}>
         <Stack spacing={2.5}>
           {/* Performed By User */}
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', bgcolor: '#fff' }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: '8px', bgcolor: '#fff' }}>
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', mb: 1.5, letterSpacing: '0.04em' }}>
               Performed By
             </Typography>
@@ -232,7 +232,7 @@ export default function AuditLogDetailDrawer({ open, log, onClose }) {
               component="pre"
               sx={{
                 p: 2,
-                borderRadius: '10px',
+                borderRadius: '8px',
                 bgcolor: '#0f172a',
                 color: '#e2e8f0',
                 fontSize: '0.75rem',

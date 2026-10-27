@@ -54,7 +54,7 @@ export default function ProjectProgressCard({ project, onOpen, onDelete }) {
         height: '100%',
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: '10px',
+        borderRadius: '8px',
         bgcolor: '#fff',
         overflow: 'hidden',
         minWidth: 0,

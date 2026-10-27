@@ -101,7 +101,7 @@ function QuotationCard({ quotation, trash, busy, onAction }) {
       onClick={() => onAction('view', quotation)}
       sx={{
         p: { xs: 1.5, sm: 2 },
-        borderRadius: 2,
+        borderRadius: '8px',
         cursor: 'pointer',
         transition: 'border-color 120ms ease, box-shadow 120ms ease',
         '&:hover': { borderColor: 'primary.light', boxShadow: '0 6px 18px rgba(31, 42, 68, 0.08)' },

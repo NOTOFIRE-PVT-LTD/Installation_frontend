@@ -273,7 +273,7 @@ export default function MultiVisitPlanDrawer({ open, onClose, onCreated }) {
             sx={{
               p: 1.5,
               mb: 2,
-              borderRadius: 1.5,
+              borderRadius: '8px',
               bgcolor: 'background.default',
               border: '1px solid',
               borderColor: 'divider',
@@ -323,7 +323,7 @@ export default function MultiVisitPlanDrawer({ open, onClose, onCreated }) {
                     key={item.id}
                     variant="outlined"
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: '8px',
                       border: '1px solid',
                       borderColor: 'divider',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -484,7 +484,7 @@ export default function MultiVisitPlanDrawer({ open, onClose, onCreated }) {
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={addVisitRow}
-              sx={{ mt: 2, py: 1.25, borderStyle: 'dashed', borderRadius: 2 }}
+              sx={{ mt: 2, py: 1.25, borderStyle: 'dashed', borderRadius: 999 }}
             >
               Add Another Visit (Visit {visits.length + 1})
             </Button>

@@ -25,7 +25,7 @@ export default function AuthLayout() {
           maxWidth: 420,
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 4,
+          borderRadius: '8px',
         }}
       >
         <Box

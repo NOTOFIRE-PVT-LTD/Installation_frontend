@@ -41,7 +41,7 @@ export default function StockItemImportDialog({ open, onClose, onSubmit, submitt
             sx={{
               m: 0,
               p: 1.25,
-              borderRadius: 1.5,
+              borderRadius: '8px',
               bgcolor: 'action.hover',
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               fontSize: '0.75rem',

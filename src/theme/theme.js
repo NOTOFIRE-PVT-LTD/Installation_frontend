@@ -67,7 +67,7 @@ const theme = createTheme({
     divider: BRAND.line,
   },
   shape: {
-    borderRadius: 18,
+    borderRadius: 8,
   },
   typography: {
     fontFamily: ['"DM Sans"', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'].join(','),
@@ -178,7 +178,7 @@ const theme = createTheme({
         root: {
           backgroundImage: 'none',
           backgroundColor: BRAND.panel,
-          borderRadius: 18,
+          borderRadius: 8,
           boxShadow: 'none',
         },
       },
@@ -187,7 +187,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           boxShadow: 'none',
-          borderRadius: 18,
+          borderRadius: 8,
           backgroundColor: BRAND.panel,
         },
       },
@@ -199,8 +199,8 @@ const theme = createTheme({
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: ({ ownerState }) => ({
-          borderRadius: ownerState.multiline ? 18 : 999,
+        root: {
+          borderRadius: 8,
           backgroundColor: '#FFF8F8',
           fontSize: '0.8125rem',
           transition: 'box-shadow 0.2s ease, background-color 0.2s ease',
@@ -230,7 +230,7 @@ const theme = createTheme({
           '&.Mui-error:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: '#b91c1c',
           },
-        }),
+        },
         input: {
           fontSize: '0.8125rem',
         },
@@ -267,7 +267,7 @@ const theme = createTheme({
       styleOverrides: {
         paper: {
           border: `1px solid ${BRAND.line}`,
-          borderRadius: 16,
+          borderRadius: 8,
           backgroundColor: BRAND.panel,
           boxShadow: '0 8px 24px rgba(220, 31, 46, 0.14)',
         },
@@ -388,7 +388,7 @@ const theme = createTheme({
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
+          borderRadius: 8,
         },
         standardInfo: {
           backgroundColor: BRAND.wash,
@@ -429,7 +429,7 @@ const theme = createTheme({
         paper: {
           margin: 12,
           width: 'calc(100% - 24px)',
-          borderRadius: 20,
+          borderRadius: 8,
         },
       },
     },
@@ -437,7 +437,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           minWidth: 0,
-          borderRadius: 18,
+          borderRadius: 8,
           borderColor: BRAND.line,
           backgroundColor: BRAND.panel,
           color: '#1A1F26',

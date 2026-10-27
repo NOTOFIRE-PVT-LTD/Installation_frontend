@@ -110,7 +110,7 @@ function RowActionsMenu({ row, actions }) {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: '10px',
+              borderRadius: '8px',
               border: '1px solid',
               borderColor: 'divider',
               boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
@@ -279,7 +279,7 @@ export default function DataTable({
               minWidth: 160,
               maxWidth: toolbarStart ? 280 : 360,
               '& .MuiOutlinedInput-root': {
-                borderRadius: '20px',
+                borderRadius: '8px',
                 minHeight: 40,
                 '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
@@ -351,7 +351,7 @@ export default function DataTable({
                 slotProps={{
                   paper: {
                     sx: {
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid',
                       borderColor: 'divider',
                       boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
@@ -366,7 +366,7 @@ export default function DataTable({
                       sx={{
                         width: 24,
                         height: 24,
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         bgcolor: 'primary.light',
                         color: 'primary.main',
                         display: 'flex',
@@ -389,7 +389,7 @@ export default function DataTable({
                       fullWidth
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: '999px',
+                          borderRadius: '8px',
                           bgcolor: 'background.paper',
                           fontSize: '0.75rem',
                         },
@@ -440,7 +440,7 @@ export default function DataTable({
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid',
                   borderColor: 'divider',
                   boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
@@ -527,7 +527,7 @@ export default function DataTable({
       <Box
         sx={{
           bgcolor: 'background.paper',
-          borderRadius: '18px',
+          borderRadius: '8px',
           border: '1px solid',
           borderColor: 'divider',
           overflow: 'hidden',

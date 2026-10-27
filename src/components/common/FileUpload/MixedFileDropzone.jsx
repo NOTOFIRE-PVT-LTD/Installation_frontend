@@ -78,7 +78,7 @@ export default function MixedFileDropzone({
                 position: 'relative',
                 width: 96,
                 height: 96,
-                borderRadius: 2,
+                borderRadius: '8px',
                 overflow: 'hidden',
                 border: '1px solid',
                 borderColor: 'divider',

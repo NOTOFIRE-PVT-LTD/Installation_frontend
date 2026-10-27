@@ -100,7 +100,7 @@ function StatCard({ label, value, icon, color, bg }) {
       elevation={0}
       sx={{
         p: 2,
-        borderRadius: '12px',
+        borderRadius: '8px',
         border: '1px solid #e2e8f0',
         bgcolor: '#fff',
         display: 'flex',
@@ -122,7 +122,7 @@ function StatCard({ label, value, icon, color, bg }) {
         sx={{
           width: 40,
           height: 40,
-          borderRadius: '10px',
+          borderRadius: '8px',
           bgcolor: bg,
           color: color,
           display: 'flex',
@@ -306,7 +306,7 @@ export default function AuditLogsPage() {
       </Stack>
 
       {/* Main Table Card */}
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: '#fff' }}>
+      <Paper variant="outlined" sx={{ borderRadius: '8px', overflow: 'hidden', bgcolor: '#fff' }}>
         {/* Table Header Bar */}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}

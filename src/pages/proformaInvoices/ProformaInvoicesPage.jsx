@@ -118,7 +118,7 @@ export default function ProformaInvoicesPage() {
     <Box>
       <PageHeader title="Proforma Invoices" subtitle="Manage your Proforma Invoices" />
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper variant="outlined" sx={{ borderRadius: '8px', overflow: 'hidden' }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           justifyContent="space-between"

@@ -245,7 +245,7 @@ function MultiFilePicker({ label, value = [], onChange, readOnly }) {
                 position: 'relative',
                 width: 88,
                 height: 88,
-                borderRadius: 2,
+                borderRadius: '8px',
                 overflow: 'hidden',
                 border: '1px solid',
                 borderColor: 'divider',
@@ -444,7 +444,7 @@ function LocationField({
   readOnly,
 }) {
   return (
-    <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+    <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <MyLocationIcon fontSize="small" color="primary" />
@@ -460,7 +460,7 @@ function LocationField({
                 display: 'inline-flex',
                 bgcolor: 'action.hover',
                 p: '3px',
-                borderRadius: 2,
+                borderRadius: '8px',
                 border: '1px solid',
                 borderColor: 'divider',
               }}
@@ -476,7 +476,7 @@ function LocationField({
                   py: 0.25,
                   px: 1,
                   minWidth: 0,
-                  borderRadius: 1.5,
+                  borderRadius: 999,
                   textTransform: 'none',
                   boxShadow: locationMode === 'auto' ? 1 : 0,
                   bgcolor: locationMode === 'auto' ? 'primary.main' : 'transparent',
@@ -500,7 +500,7 @@ function LocationField({
                   py: 0.25,
                   px: 1,
                   minWidth: 0,
-                  borderRadius: 1.5,
+                  borderRadius: 999,
                   textTransform: 'none',
                   boxShadow: locationMode === 'manual' ? 1 : 0,
                   bgcolor: locationMode === 'manual' ? 'primary.main' : 'transparent',
@@ -585,7 +585,7 @@ function LocationField({
               startIcon={loading ? <CircularProgress size={14} /> : <MyLocationIcon sx={{ fontSize: 15 }} />}
               onClick={() => onRefresh('manual')}
               disabled={loading}
-              sx={{ textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', borderRadius: 999 }}
             >
               {loading ? 'Detecting GPS…' : 'Fill from Current GPS'}
             </Button>
@@ -634,7 +634,7 @@ function LocationField({
               variant="outlined"
               startIcon={<EditIcon sx={{ fontSize: 14 }} />}
               onClick={() => onModeChange('manual')}
-              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 999 }}
             >
               Enter Location Manually
             </Button>
@@ -676,7 +676,7 @@ function LocationField({
               variant="outlined"
               startIcon={<EditIcon sx={{ fontSize: 14 }} />}
               onClick={() => onModeChange('manual')}
-              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5 }}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.75rem', borderRadius: 999 }}
             >
               Enter Location Manually
             </Button>

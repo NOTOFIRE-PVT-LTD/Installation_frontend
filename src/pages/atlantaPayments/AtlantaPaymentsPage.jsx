@@ -127,7 +127,7 @@ export default function AtlantaPaymentsPage() {
 
   return (
     <Box>
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper variant="outlined" sx={{ borderRadius: '8px', overflow: 'hidden' }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"

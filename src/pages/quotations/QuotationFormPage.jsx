@@ -87,7 +87,7 @@ function defaultValues(preparedBy = '') {
 
 function Section({ title, subtitle, action, children }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 2 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: '8px' }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} gap={1} sx={{ mb: 2 }}>
         <Box>
           <Typography fontWeight={700} fontSize="1.05rem">
@@ -109,7 +109,7 @@ function Section({ title, subtitle, action, children }) {
 function ContactDetails({ title, contact }) {
   if (!contact) return null;
   return (
-    <Box sx={{ mt: 1.5, p: 1.75, borderRadius: 1.5, bgcolor: 'action.hover' }}>
+    <Box sx={{ mt: 1.5, p: 1.75, borderRadius: '8px', bgcolor: 'action.hover' }}>
       <Typography variant="body2" fontWeight={700} sx={{ mb: 0.75 }}>
         {title}
       </Typography>

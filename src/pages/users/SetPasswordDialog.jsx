@@ -64,7 +64,7 @@ export default function SetPasswordDialog({ open, user, submitting, onClose, onS
             sx={{
               width: 36,
               height: 36,
-              borderRadius: "10px",
+              borderRadius: "8px",
               bgcolor: "#fef3c7",
               color: "#d97706",
               display: "flex",

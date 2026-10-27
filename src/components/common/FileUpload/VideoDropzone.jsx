@@ -21,7 +21,7 @@ export default function VideoDropzone({ value, onChange, label = 'Site Video (op
         {label}
       </Typography>
       {value ? (
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, width: 'fit-content' }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: '8px', width: 'fit-content' }}>
           <VideoFileIcon color="primary" />
           <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
             {value.name}

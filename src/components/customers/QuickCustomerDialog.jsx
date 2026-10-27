@@ -168,7 +168,7 @@ export default function QuickCustomerDialog({ open, onClose, onCreated }) {
             justifyContent="space-between"
             sx={{
               p: 1.5,
-              borderRadius: 1.5,
+              borderRadius: '8px',
               bgcolor: 'action.hover',
               border: '1px solid',
               borderColor: 'divider',

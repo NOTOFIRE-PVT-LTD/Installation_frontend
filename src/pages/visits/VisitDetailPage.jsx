@@ -189,7 +189,7 @@ export default function VisitDetailPage() {
         }
       />
 
-      <Card sx={{ maxWidth: 640, mx: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+      <Card sx={{ maxWidth: 640, mx: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
         <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Stack spacing={2.5}>
             {/* Status & Timing */}
@@ -205,7 +205,7 @@ export default function VisitDetailPage() {
             </Stack>
 
             {/* Customer Details */}
-            <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ p: 2, borderRadius: '8px', bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                 {visit.customer?.companyName}
               </Typography>
@@ -221,7 +221,7 @@ export default function VisitDetailPage() {
 
             {/* Check-In Details if completed */}
             {visit.checkInAt && (
-              <Box sx={{ p: 1.5, borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ p: 1.5, borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
                   ✓ Checked In: {new Date(visit.checkInAt).toLocaleTimeString()}
                 </Typography>
@@ -235,7 +235,7 @@ export default function VisitDetailPage() {
                     component="img"
                     src={visit.checkInPhotoUrl}
                     alt="Check-in photo"
-                    sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, mt: 1 }}
+                    sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '8px', mt: 1 }}
                   />
                 )}
               </Box>
@@ -243,7 +243,7 @@ export default function VisitDetailPage() {
 
             {/* Check-Out Details if completed */}
             {visit.checkOutAt && (
-              <Box sx={{ p: 1.5, borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ p: 1.5, borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>
                   ✓ Checked Out: {new Date(visit.checkOutAt).toLocaleTimeString()}
                 </Typography>
@@ -262,7 +262,7 @@ export default function VisitDetailPage() {
                     component="img"
                     src={visit.checkOutPhotoUrl}
                     alt="Check-out photo"
-                    sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, mt: 1 }}
+                    sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '8px', mt: 1 }}
                   />
                 )}
               </Box>
@@ -301,7 +301,7 @@ export default function VisitDetailPage() {
                   size="large"
                   disabled={busy || (!within && !isInitial)}
                   startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
-                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 2 }}
+                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
                 >
                   {busy ? (readingLoc ? 'Reading GPS…' : 'Checking in…') : 'Click Picture & Check In'}
                   <CameraFileInput capture="environment" onFile={handleCheckInWithPhoto} />
@@ -334,7 +334,7 @@ export default function VisitDetailPage() {
                   size="large"
                   disabled={busy || !remark.trim()}
                   startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
-                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 2 }}
+                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
                 >
                   {busy ? (readingLoc ? 'Reading GPS…' : 'Checking out…') : 'Click Picture & Check Out'}
                   <CameraFileInput capture="environment" onFile={handleCheckOutWithPhoto} />

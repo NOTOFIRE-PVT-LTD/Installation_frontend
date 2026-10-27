@@ -33,7 +33,7 @@ export default function ImageDropzone({ value = [], onChange, label = 'Site Phot
         {value.map((item, index) => (
           <Box
             key={item.url || item.publicId || index}
-            sx={{ position: 'relative', width: 96, height: 96, borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
+            sx={{ position: 'relative', width: 96, height: 96, borderRadius: '8px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
           >
             <Box component="img" src={item.url} alt={item.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <IconButton

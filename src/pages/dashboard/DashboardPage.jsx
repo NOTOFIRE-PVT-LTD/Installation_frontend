@@ -93,7 +93,7 @@ function SummaryStat({ label, value, icon, color, bg }) {
         p: 1.25,
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: '18px',
+        borderRadius: '8px',
         bgcolor: 'background.paper',
         height: '100%',
         minWidth: 0,
@@ -258,7 +258,7 @@ export default function DashboardPage() {
           p: 1.5,
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: '18px',
+          borderRadius: '8px',
           bgcolor: 'background.paper',
         }}
       >
