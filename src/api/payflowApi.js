@@ -10,6 +10,7 @@ export const payflowApi = {
 export const payflowRequestApi = {
   list: (params) => axiosInstance.get('/payflow/payment-requests', { params }),
   stats: () => axiosInstance.get('/payflow/payment-requests/stats'),
+  userOptions: () => axiosInstance.get('/payflow/payment-requests/user-options'),
   addFund: (payload) => axiosInstance.post('/payflow/payment-requests/funds', payload),
   exportSummary: (params) => axiosInstance.get('/payflow/payment-requests/export/summary', { params }),
   exportExcel: (params) => axiosInstance.get('/payflow/payment-requests/export/excel', { params, responseType: 'blob' }),

@@ -38,9 +38,12 @@ const LABELS = {
   atlantaPaymentsOwnOnly: 'Atlanta Payments user (own records only)',
   auditLogs: 'Audit Logs',
   payflow: 'Payflow (Vendors, Categories, Companies, Branches)',
+  payflowUser: 'Payflow user (submit & view own payment requests)',
 };
 
-const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly'];
+const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser'];
+// Opt-in modules: off unless an Admin explicitly grants them.
+const OPT_IN_KEYS = ['atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser'];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -52,7 +55,7 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       setValues(
         keys.reduce((acc, key) => {
           if (!isAdmin) {
-            if (['atlantaPayments', 'atlantaPaymentsOwnOnly'].includes(key)) {
+            if (OPT_IN_KEYS.includes(key)) {
               acc[key] = Boolean(user?.permissions?.[key]);
             } else {
               acc[key] = user?.permissions ? user.permissions[key] !== false : true;

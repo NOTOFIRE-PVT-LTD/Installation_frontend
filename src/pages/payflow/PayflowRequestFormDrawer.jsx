@@ -1,20 +1,36 @@
-import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import { payflowApi } from '../../api/payflowApi';
-import { ITEM_TYPE_OPTIONS, PAY_AGAINST_OPTIONS, PAYMENT_MODE_OPTIONS, PRIORITY_OPTIONS } from './payflowRequestConfig';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { payflowApi, payflowRequestApi } from '../../api/payflowApi';
+import { uploadFileToCloudinary } from '../../utils/cloudinaryUpload';
+import { useAppDispatch } from '../../app/hooks';
+import { showSnackbar } from '../../features/ui/uiSlice';
+import {
+  BANK_OPTIONS,
+  ITEM_TYPE_OPTIONS,
+  PAY_AGAINST_OPTIONS,
+  PAYMENT_MODE_OPTIONS,
+  PRIORITY_OPTIONS,
+} from './payflowRequestConfig';
+
+const MAX_FILE_MB = 10;
+const ACCEPTED_FILES = 'image/jpeg,image/png,image/webp,application/pdf';
 
 const num = (label) =>
   yup
@@ -23,150 +39,410 @@ const num = (label) =>
     .typeError(`${label} must be a number`)
     .min(0, `${label} cannot be negative`);
 
+const req = (label) => yup.string().trim().required(`${label} is required`);
+
 const schema = yup.object({
-  company: yup.string().required('Company is required'),
-  branch: yup.string().required('Branch is required'),
-  vendor: yup.string().required('Vendor is required'),
-  category: yup.string().required('Category is required'),
-  subcategory: yup.string(),
-  itemType: yup.string(),
-  description: yup.string(),
-  billNumber: yup.string(),
-  billDate: yup.string(),
+  vendor: req('Vendor name'),
+  isNewVendor: yup.boolean(),
+  vendorAccountNumber: yup.string().when('isNewVendor', {
+    is: true,
+    then: (s) => s.trim().matches(/^[A-Za-z0-9]{8,20}$/, 'Account number must be alphanumeric (8-20 characters)'),
+    otherwise: (s) => s,
+  }),
+  vendorIfsc: yup.string().when('isNewVendor', {
+    is: true,
+    then: (s) => s.trim().matches(/^[A-Za-z0-9]{8,11}$/, 'IFSC code must be alphanumeric (8-11 characters)'),
+    otherwise: (s) => s,
+  }),
+  company: req('Company name'),
+  branch: req('Company branch'),
+  category: req('Category'),
+  subcategory: req('Sub-category'),
+  itemType: req('Item type'),
   totalOutstanding: num('Total outstanding'),
-  amount: num('Amount').required('Amount is required'),
-  payAgainst: yup.string(),
-  bankName: yup.string(),
-  paymentMode: yup.string(),
-  priority: yup.string(),
-  priceCheckName: yup.string(),
-  priceCheckEmail: yup.string().email('Enter a valid email'),
+  bankName: req('Bank name'),
+  paymentMode: req('Payment mode'),
+  priority: req('Urgency level'),
+  payAgainst: req('Pay against'),
+  amount: num('Payment amount').required('Payment amount is required'),
+  priceCheckBy: req('Price check guaranteed by'),
+  quantityCheckedBy: yup.string(),
+  qualityCheckedBy: yup.string(),
+  purchaseOwner: yup.string(),
+  description: req('Item description'),
+  department: yup.string(),
+  endUse: yup.string(),
+  lpr: yup.string(),
+  ioa: yup.string(),
+  cpp: num('CPP'),
+  bills: yup
+    .array()
+    .of(
+      yup.object({
+        billNumber: req('Bill number'),
+        billDate: req('Bill date'),
+      })
+    )
+    .min(1, 'At least one bill is required'),
 });
 
+const EMPTY_BILL = { billNumber: '', billDate: '' };
 const EMPTY = {
-  company: '', branch: '', vendor: '', category: '', subcategory: '', itemType: '', description: '',
-  billNumber: '', billDate: '', totalOutstanding: '', amount: '', payAgainst: '', bankName: '',
-  paymentMode: '', priority: 'Medium', priceCheckName: '', priceCheckEmail: '',
+  vendor: '', isNewVendor: false, vendorAccountNumber: '', vendorIfsc: '',
+  company: '', branch: '', category: '', subcategory: '', itemType: '',
+  totalOutstanding: '', bankName: '', paymentMode: '', priority: '', payAgainst: 'Tax Invoice', amount: '',
+  priceCheckBy: '', quantityCheckedBy: '', qualityCheckedBy: '', purchaseOwner: '',
+  description: '', department: '', endUse: '', lpr: '', ioa: '', cpp: '',
+  bills: [{ ...EMPTY_BILL }],
 };
 
 const MASTERS = [
-  ['vendors', 'vendor'],
   ['categories', 'category'],
   ['subcategories', 'subcategory'],
   ['companies', 'company'],
   ['branches', 'branch'],
 ];
 
+const labelSx = { '& .MuiInputLabel-root': { fontWeight: 600 } };
+
 export default function PayflowRequestFormDrawer({ open, submitting, onClose, onSubmit }) {
+  const dispatch = useAppDispatch();
   const [options, setOptions] = useState({});
-  const { control, handleSubmit, reset } = useForm({ resolver: yupResolver(schema), defaultValues: EMPTY });
+  const [users, setUsers] = useState([]);
+  const [vendorOptions, setVendorOptions] = useState([]);
+  const [vendorMatch, setVendorMatch] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef(null);
+  const vendorTimer = useRef(null);
+
+  const { control, handleSubmit, reset, watch, setValue } = useForm({ resolver: yupResolver(schema), defaultValues: EMPTY });
+  const { fields: billFields, append, remove } = useFieldArray({ control, name: 'bills' });
+
+  const outstanding = Number(watch('totalOutstanding')) || 0;
+  const payment = Number(watch('amount')) || 0;
+  const balance = Math.max(outstanding - payment, 0);
+  const isNewVendor = watch('isNewVendor');
+
+  const searchVendors = (term) => {
+    clearTimeout(vendorTimer.current);
+    vendorTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await payflowApi.list('vendors', { pageSize: 20, search: term || undefined });
+        setVendorOptions(data.data);
+      } catch {
+        // typed vendors are still accepted as new entries
+      }
+    }, 250);
+  };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
     reset(EMPTY);
+    setFiles([]);
+    setVendorMatch(null);
+    searchVendors('');
     MASTERS.forEach(async ([resource, key]) => {
       try {
         const { data } = await payflowApi.list(resource, { pageSize: 100 });
         setOptions((prev) => ({ ...prev, [key]: data.data.map((d) => d.name) }));
       } catch {
-        // master lists are a convenience; the field still accepts typed values
+        // master lists are a convenience; the field simply stays empty
       }
     });
+    payflowRequestApi
+      .userOptions()
+      .then(({ data }) => setUsers(data.data))
+      .catch(() => {});
+    return () => clearTimeout(vendorTimer.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, reset]);
+
+  const handleVendorInput = (text) => {
+    setValue('vendor', text, { shouldValidate: false });
+    const match = vendorOptions.find((v) => v.name.toLowerCase() === text.trim().toLowerCase());
+    setVendorMatch(match || null);
+    setValue('isNewVendor', !match && Boolean(text.trim()));
+    setValue('vendorAccountNumber', match ? match.accountNumber : '');
+    setValue('vendorIfsc', match ? match.ifscCode : '');
+    searchVendors(text);
+  };
 
   const text = (name, label, extra = {}) => (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
-        <TextField {...field} label={label} size="small" fullWidth error={Boolean(error)} helperText={error?.message} {...extra} />
-      )}
-    />
-  );
-
-  const select = (name, label, items) =>
-    text(name, label, {
-      select: true,
-      children: [<MenuItem key="none" value="">—</MenuItem>, ...items.map((i) => <MenuItem key={i} value={i}>{i}</MenuItem>)],
-    });
-
-  const combo = (name, label) => (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <Autocomplete
-          freeSolo
-          options={options[name] || []}
-          value={field.value}
-          onChange={(_, v) => field.onChange(v || '')}
-          onInputChange={(_, v) => field.onChange(v)}
-          renderInput={(params) => <TextField {...params} label={label} size="small" error={Boolean(error)} helperText={error?.message} />}
+        <TextField
+          {...field}
+          label={label}
+          size="small"
+          fullWidth
+          error={Boolean(error)}
+          helperText={error?.message}
+          sx={labelSx}
+          slotProps={{ inputLabel: { shrink: true } }}
+          {...extra}
         />
       )}
     />
   );
 
-  const submit = handleSubmit((v) =>
-    onSubmit({
-      ...v,
-      billDate: v.billDate || undefined,
-      priceCheckBy: v.priceCheckName ? { name: v.priceCheckName, email: v.priceCheckEmail } : undefined,
-    })
+  const select = (name, label, items, extra = {}) =>
+    text(name, label, {
+      select: true,
+      slotProps: { inputLabel: { shrink: true }, select: { displayEmpty: true } },
+      children: [
+        <MenuItem key="__empty" value="" sx={{ color: 'text.disabled' }}>
+          {extra.emptyLabel || `Select ${label.toLowerCase()}`}
+        </MenuItem>,
+        ...items.map((i) => {
+          const [value, display] = typeof i === 'string' ? [i, i] : [i.value, i.label];
+          return (
+            <MenuItem key={value} value={value}>
+              {display}
+            </MenuItem>
+          );
+        }),
+      ],
+      required: extra.required,
+    });
+
+  const userSelect = (name, label, required = false) =>
+    select(
+      name,
+      label,
+      users.map((u) => ({ value: u._id, label: u.name })),
+      { required, emptyLabel: 'Select user' }
+    );
+
+  const combo = (name, label, placeholder, required = true) => (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState: { error } }) => (
+        <Autocomplete
+          options={options[name] || []}
+          value={field.value || null}
+          onChange={(_, v) => field.onChange(v || '')}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={label}
+              required={required}
+              placeholder={placeholder}
+              size="small"
+              error={Boolean(error)}
+              helperText={error?.message}
+              sx={labelSx}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+          )}
+        />
+      )}
+    />
   );
 
+  const addFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = '';
+    const tooBig = picked.find((f) => f.size > MAX_FILE_MB * 1024 * 1024);
+    if (tooBig) {
+      dispatch(showSnackbar({ message: `${tooBig.name} is larger than ${MAX_FILE_MB} MB`, severity: 'error' }));
+      return;
+    }
+    setFiles((prev) => [...prev, ...picked].slice(0, 20));
+  };
+
+  const pickUser = (id) => {
+    const u = users.find((x) => x._id === id);
+    return u ? { user: u._id, name: u.name, email: u.email } : undefined;
+  };
+
+  const submit = handleSubmit(async (v) => {
+    setUploading(true);
+    try {
+      const attachments = [];
+      for (const file of files) {
+        const kind = file.type === 'application/pdf' ? 'document' : 'image';
+        const { url, publicId } = await uploadFileToCloudinary(file, kind);
+        attachments.push({ url, publicId, name: file.name });
+      }
+      const payload = { ...v };
+      delete payload.isNewVendor;
+      await onSubmit({
+        ...payload,
+        vendorAccountNumber: v.vendorAccountNumber || undefined,
+        vendorIfsc: v.vendorIfsc || undefined,
+        totalOutstanding: v.totalOutstanding === '' ? 0 : v.totalOutstanding,
+        cpp: v.cpp === '' ? undefined : v.cpp,
+        priceCheckBy: pickUser(v.priceCheckBy),
+        quantityCheckedBy: pickUser(v.quantityCheckedBy),
+        qualityCheckedBy: pickUser(v.qualityCheckedBy),
+        purchaseOwner: pickUser(v.purchaseOwner),
+        attachments,
+      });
+    } catch (err) {
+      dispatch(showSnackbar({ message: err.message || 'Failed to upload attachments', severity: 'error' }));
+    } finally {
+      setUploading(false);
+    }
+  });
+
+  const busy = submitting || uploading;
+  const grid = useMemo(() => ({ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }), []);
+
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 520 }, display: 'flex', flexDirection: 'column' } }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2 }}>
-        <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
-          New Payment Request
-        </Typography>
-        <IconButton onClick={onClose} size="small" aria-label="Close">
-          <CloseIcon fontSize="small" />
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={busy ? undefined : onClose}
+      PaperProps={{ sx: { width: { xs: '100vw', md: 760 }, maxWidth: '100vw', display: 'flex', flexDirection: 'column' } }}
+    >
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700 }}>
+        Submit Payment Request
+        <IconButton onClick={onClose} size="small" aria-label="Close" disabled={busy} sx={{ color: 'error.light' }}>
+          <CloseIcon />
         </IconButton>
-      </Stack>
-      <Divider />
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
-        <Stack spacing={2.5}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Request Information</Typography>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-            {combo('company', 'Company')}
-            {combo('branch', 'Branch')}
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2.5} sx={{ pt: 0.5 }}>
+          <Box sx={grid}>
+            <Box>
+              <Controller
+                name="vendor"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <Autocomplete
+                    freeSolo
+                    options={vendorOptions.map((v) => v.name)}
+                    inputValue={field.value}
+                    onInputChange={(_, v) => handleVendorInput(v)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Vendor Name"
+                        required
+                        placeholder="Type to search vendors..."
+                        size="small"
+                        error={Boolean(error)}
+                        helperText={error?.message || 'Type to search vendors or add new one'}
+                        sx={labelSx}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                      />
+                    )}
+                  />
+                )}
+              />
+            </Box>
+            {text('vendorAccountNumber', isNewVendor ? 'Account Number' : 'Account Number (Auto-filled)', {
+              placeholder: vendorMatch ? '' : 'Select vendor to view account number',
+              disabled: !isNewVendor,
+              required: isNewVendor,
+            })}
+            {text('vendorIfsc', isNewVendor ? 'IFSC Code/ Swift Code' : 'IFSC Code/ Swift Code (Auto-filled)', {
+              placeholder: vendorMatch ? '' : 'Select vendor to view IFSC code',
+              disabled: !isNewVendor,
+              required: isNewVendor,
+            })}
+            {combo('company', 'Company', 'Select Company')}
+            {combo('branch', 'Company Branch', 'Select Branch')}
+            {combo('category', 'Category', 'Type to search categories...')}
+            {combo('subcategory', 'Sub-category', 'Type to search sub-categories...')}
+            {select('itemType', 'Item Type', ITEM_TYPE_OPTIONS, { required: true })}
+            {text('totalOutstanding', 'Total Outstanding Amount', { type: 'number' })}
+            {select('bankName', 'Bank Name', BANK_OPTIONS, { required: true })}
+            {select('paymentMode', 'Payment Mode', PAYMENT_MODE_OPTIONS, { required: true })}
+            {select('priority', 'Urgency Level', PRIORITY_OPTIONS, { required: true })}
+            {select('payAgainst', 'Pay Against', PAY_AGAINST_OPTIONS, { required: true })}
+            {text('amount', 'Payment Amount', { type: 'number', required: true })}
+            <TextField
+              label="Balance Amount"
+              size="small"
+              fullWidth
+              value={balance}
+              disabled
+              sx={labelSx}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            {userSelect('priceCheckBy', 'Price Check Guaranteed By', true)}
+            {userSelect('quantityCheckedBy', 'Quantity Checked By')}
+            {userSelect('qualityCheckedBy', 'Quality Checked By')}
+            {userSelect('purchaseOwner', 'Purchase Owner')}
           </Box>
-          {combo('vendor', 'Vendor')}
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-            {combo('category', 'Category')}
-            {combo('subcategory', 'Subcategory')}
-          </Box>
-          {select('itemType', 'Item Type', ITEM_TYPE_OPTIONS)}
-          {text('description', 'Item Description', { multiline: true, minRows: 2 })}
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, pt: 1 }}>Bill & Payment</Typography>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-            {text('billNumber', 'Bill Number')}
-            {text('billDate', 'Bill Date', { type: 'date', slotProps: { inputLabel: { shrink: true } } })}
-            {text('totalOutstanding', 'Total Outstanding (₹)', { type: 'number' })}
-            {text('amount', 'Payment Amount (₹)', { type: 'number' })}
-            {select('payAgainst', 'Pay Against', PAY_AGAINST_OPTIONS)}
-            {select('paymentMode', 'Payment Mode', PAYMENT_MODE_OPTIONS)}
-            {text('bankName', 'Bank Name')}
-            {select('priority', 'Priority', PRIORITY_OPTIONS)}
+          {text('description', 'Item Description', { required: true, multiline: true, minRows: 2 })}
+
+          <Box sx={grid}>
+            {text('department', 'Department', { placeholder: 'Enter department' })}
+            {text('endUse', 'End Use', { placeholder: 'Enter end use' })}
+            {text('lpr', 'LPR (Last Purchase Rate)', { placeholder: 'Enter last purchase rate' })}
+            {text('ioa', 'IOA (Internal Order Accounting)', { placeholder: 'Enter internal order accounting' })}
+            {text('cpp', 'CPP (Credit Payment Period)', { type: 'number', placeholder: 'Enter credit payment period (days)' })}
           </Box>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, pt: 1 }}>Price Check Guaranteed By</Typography>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr 1fr' }}>
-            {text('priceCheckName', 'Name')}
-            {text('priceCheckEmail', 'Email')}
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              Bills <span style={{ color: '#d32f2f' }}>*</span>
+            </Typography>
+            <Stack spacing={1.5}>
+              {billFields.map((bill, i) => (
+                <Box key={bill.id} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, position: 'relative' }}>
+                  <Box sx={grid}>
+                    {text(`bills.${i}.billNumber`, 'Bill Number', { required: true })}
+                    {text(`bills.${i}.billDate`, 'Bill Date', { type: 'date', required: true })}
+                  </Box>
+                  {billFields.length > 1 && (
+                    <IconButton
+                      size="small"
+                      aria-label="Remove bill"
+                      onClick={() => remove(i)}
+                      sx={{ position: 'absolute', top: 4, right: 4, color: 'error.main' }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              ))}
+            </Stack>
+            <Button startIcon={<AddIcon />} variant="outlined" color="inherit" sx={{ mt: 1.5, fontWeight: 600 }} onClick={() => append({ ...EMPTY_BILL })}>
+              Add Another Bill
+            </Button>
+          </Box>
+
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              Attachments
+            </Typography>
+            {files.length > 0 && (
+              <Stack spacing={0.5} sx={{ mb: 1.5 }}>
+                {files.map((f, i) => (
+                  <Stack key={`${f.name}-${i}`} direction="row" alignItems="center" justifyContent="space-between" sx={{ bgcolor: 'action.hover', borderRadius: 1.5, pl: 1.5 }}>
+                    <Typography variant="body2" noWrap sx={{ maxWidth: '85%' }}>
+                      {f.name}
+                    </Typography>
+                    <IconButton size="small" aria-label="Remove attachment" onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+            <input ref={fileInput} type="file" hidden multiple accept={ACCEPTED_FILES} onChange={addFiles} />
+            <Button startIcon={<AddIcon />} variant="outlined" color="inherit" sx={{ fontWeight: 600 }} onClick={() => fileInput.current?.click()}>
+              Add Attachment
+            </Button>
           </Box>
         </Stack>
-      </Box>
-      <Divider />
-      <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={submit} disabled={submitting}>
-          {submitting ? 'Saving…' : 'Create Request'}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button variant="contained" color="error" disableElevation onClick={onClose} disabled={busy} sx={{ fontWeight: 600 }}>
+          Cancel
         </Button>
-      </Stack>
+        <Button variant="contained" disableElevation onClick={submit} disabled={busy} sx={{ fontWeight: 600 }}>
+          {busy ? (uploading ? 'Uploading…' : 'Submitting…') : 'Submit Request'}
+        </Button>
+      </DialogActions>
     </Drawer>
   );
 }

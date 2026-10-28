@@ -11,7 +11,7 @@ export default function PermissionGate({ permission, roles = [], children }) {
 
   if (!isAdmin && roles.includes(user?.role)) {
     const allowed =
-      permission === 'atlantaPayments'
+      permission === 'atlantaPayments' || permission === 'payflowUser'
         ? Boolean(permissions?.[permission])
         : permissions
         ? permissions[permission] !== false

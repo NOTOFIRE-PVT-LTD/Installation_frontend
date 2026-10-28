@@ -16,7 +16,7 @@ import { REQUEST_STATUS_FILTERS, formatInr } from './payflowRequestConfig';
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB') : '—');
 
-export default function PayflowRequestsTab({ initialStatus = 'All', openForm = false, onChanged }) {
+export default function PayflowRequestsTab({ initialStatus = 'All', openForm = false, onChanged, title = 'Total Payment Requests' }) {
   const dispatch = useAppDispatch();
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
     useTableQueryParams({});
@@ -86,7 +86,7 @@ export default function PayflowRequestsTab({ initialStatus = 'All', openForm = f
   return (
     <>
       <PageHeader
-        title="Total Payment Requests"
+        title={title}
         subtitle={`${total} payment${total === 1 ? '' : 's'} found`}
         actions={
           <Button startIcon={<AddIcon />} variant="contained" onClick={() => setFormOpen(true)}>

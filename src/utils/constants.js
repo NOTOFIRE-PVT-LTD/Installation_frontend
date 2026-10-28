@@ -74,6 +74,7 @@ export const PERMISSION_KEYS = [
   'atlantaPaymentsOwnOnly',
   'auditLogs',
   'payflow',
+  'payflowUser',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

@@ -33,5 +33,17 @@ export const PAY_AGAINST_OPTIONS = ['Tax Invoice', 'Proforma Invoice', 'Advance'
 export const PAYMENT_MODE_OPTIONS = ['Net Banking', 'NEFT', 'RTGS', 'UPI', 'Cheque', 'Cash'];
 export const ITEM_TYPE_OPTIONS = ['Raw Materials', 'Consumable', 'Service', 'Capital Goods'];
 export const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
+export const BANK_OPTIONS = [
+  'HDFC Bank',
+  'ICICI Bank',
+  'State Bank of India',
+  'Axis Bank',
+  'Kotak Mahindra Bank',
+  'Punjab National Bank',
+  'Bank of Baroda',
+  'Yes Bank',
+  'IDFC First Bank',
+  'Other',
+];
 
 export const formatInr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;

@@ -115,7 +115,14 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
   if (!request) return null;
 
   const priority = PRIORITY_STYLES[request.priority] || PRIORITY_STYLES.Medium;
-  const balance = Math.max((request.totalOutstanding || 0) - (request.amount || 0), 0);
+  const balance = request.balanceAmount ?? Math.max((request.totalOutstanding || 0) - (request.amount || 0), 0);
+  const bills = request.bills?.length ? request.bills : request.billNumber ? [{ billNumber: request.billNumber, billDate: request.billDate }] : [];
+  const people = [
+    ['Price Check Guaranteed By', request.priceCheckBy],
+    ['Quantity Checked By', request.quantityCheckedBy],
+    ['Quality Checked By', request.qualityCheckedBy],
+    ['Purchase Owner', request.purchaseOwner],
+  ].filter(([, p]) => p?.name);
   const actions = ACTION_ORDER.filter((s) => request.allowedStatuses?.includes(s));
   const pendingAction = pendingStatus ? STATUS_ACTIONS[pendingStatus] : null;
 
@@ -163,6 +170,8 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
             <SectionTitle>Payment Details</SectionTitle>
             <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, px: 2, py: 1.5 }}>
               <Row label="Vendor Name:" value={request.vendor} />
+              <Row label="Account Number:" value={request.vendorAccountNumber} />
+              <Row label="IFSC Code:" value={request.vendorIfsc} />
               <Row label="Category:" value={request.category} />
               <Row label="Subcategory:" value={request.subcategory} />
               <Row label="Item Type:" value={request.itemType} />
@@ -179,26 +188,59 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
           <Box>
             <SectionTitle>Bill Information</SectionTitle>
             <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, px: 2, py: 1.5 }}>
-              <Row label="Bill Number:" value={request.billNumber} />
-              <Row label="Bill Date:" value={request.billDate ? fmtDate(request.billDate) : '—'} />
+              {bills.length === 0 && <Row label="Bills:" value="" />}
+              {bills.map((b, i) => (
+                <Box key={i}>
+                  {i > 0 && <Divider sx={{ my: 0.75 }} />}
+                  <Row label={`Bill Number${bills.length > 1 ? ` ${i + 1}` : ''}:`} value={b.billNumber} />
+                  <Row label="Bill Date:" value={b.billDate ? fmtDate(b.billDate) : '—'} />
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ mt: 3 }}>
+              <SectionTitle>Other Details</SectionTitle>
+              <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, px: 2, py: 1.5 }}>
+                <Row label="Department:" value={request.department} />
+                <Row label="End Use:" value={request.endUse} />
+                <Row label="LPR:" value={request.lpr} />
+                <Row label="IOA:" value={request.ioa} />
+                <Row label="CPP (days):" value={request.cpp != null ? String(request.cpp) : ''} />
+              </Box>
             </Box>
           </Box>
         </Box>
 
-        {request.priceCheckBy?.name && (
+        {people.length > 0 && (
           <Box sx={{ mt: 3 }}>
             <SectionTitle>Additional Details</SectionTitle>
-            <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5 }}>
-              <Paper sx={{ p: 2, borderRadius: 2, maxWidth: 320 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Price Check Guaranteed By
-                </Typography>
-                <Typography sx={{ fontWeight: 700 }}>{request.priceCheckBy.name}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {request.priceCheckBy.email}
-                </Typography>
-              </Paper>
+            <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              {people.map(([label, p]) => (
+                <Paper key={label} sx={{ p: 2, borderRadius: 2, minWidth: 220 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    {label}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700 }}>{p.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {p.email}
+                  </Typography>
+                </Paper>
+              ))}
             </Box>
+          </Box>
+        )}
+
+        {request.attachments?.length > 0 && (
+          <Box sx={{ mt: 3 }}>
+            <SectionTitle>Attachments</SectionTitle>
+            <Stack spacing={0.5}>
+              {request.attachments.map((a, i) => (
+                <Typography key={i} variant="body2">
+                  <a href={a.url} target="_blank" rel="noreferrer">
+                    {a.name || `Attachment ${i + 1}`}
+                  </a>
+                </Typography>
+              ))}
+            </Stack>
           </Box>
         )}
 

@@ -90,6 +90,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [atlantaAccess, setAtlantaAccess] = useState('none');
+  const [payflowAccess, setPayflowAccess] = useState('none');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
@@ -112,6 +113,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       } else {
         setAtlantaAccess('none');
       }
+      setPayflowAccess(user?.permissions?.payflowUser ? 'user' : 'none');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
@@ -134,23 +136,20 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
     }
     if (imageFile) formData.append('profileImage', imageFile);
 
+    const perms = {};
     if (atlantaAccess !== 'none') {
-      formData.append(
-        'permissions',
-        JSON.stringify({
-          atlantaPayments: true,
-          atlantaPaymentsOwnOnly: atlantaAccess === 'own',
-        })
-      );
+      perms.atlantaPayments = true;
+      perms.atlantaPaymentsOwnOnly = atlantaAccess === 'own';
     } else if (isEdit) {
-      formData.append(
-        'permissions',
-        JSON.stringify({
-          atlantaPayments: false,
-          atlantaPaymentsOwnOnly: false,
-        })
-      );
+      perms.atlantaPayments = false;
+      perms.atlantaPaymentsOwnOnly = false;
     }
+    if (payflowAccess === 'user') {
+      perms.payflowUser = true;
+    } else if (isEdit) {
+      perms.payflowUser = false;
+    }
+    if (Object.keys(perms).length) formData.append('permissions', JSON.stringify(perms));
 
     onSubmit(formData);
   };
@@ -274,6 +273,11 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 }
               />
               <DetailRow
+                icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
+                label="Payflow"
+                value={user?.permissions?.payflowUser ? 'Payflow User (Own requests)' : 'No Access'}
+              />
+              <DetailRow
                 icon={<CalendarMonthOutlinedIcon sx={{ fontSize: 15 }} />}
                 label="Created"
                 value={user?.createdAt ? formatDate(user.createdAt) : '—'}
@@ -345,6 +349,39 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                     </Select>
                   </FormControl>
                 </Box>
+
+                {(
+                  <Box
+                    sx={{
+                      p: 1.75,
+                      borderRadius: '10px',
+                      bgcolor: '#fbfbfe',
+                      border: '1px solid',
+                      borderColor: '#e9e8f4',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
+                      Payflow Access
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
+                      Payflow users can submit payment requests and see only their own. Admins see all requests.
+                    </Typography>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={payflowAccess}
+                        onChange={(e) => setPayflowAccess(e.target.value)}
+                        sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
+                      >
+                        <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
+                          No Access
+                        </MenuItem>
+                        <MenuItem value="user" sx={{ fontSize: '0.8125rem' }}>
+                          Payflow User (Submit & view own requests)
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                )}
               </Stack>
             </FormProvider>
           )}
