@@ -19,7 +19,7 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPen, faUserPlus, faMoneyBillWave, faPlaneDeparture } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import { ROLES, USER_STATUS } from '../../utils/constants';
@@ -91,6 +91,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
   const [imagePreview, setImagePreview] = useState('');
   const [atlantaAccess, setAtlantaAccess] = useState('none');
   const [payflowAccess, setPayflowAccess] = useState('none');
+  const [salesTravelAccess, setSalesTravelAccess] = useState('own');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
@@ -114,6 +115,13 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
         setAtlantaAccess('none');
       }
       setPayflowAccess(user?.permissions?.payflowUser ? 'user' : 'none');
+      if (user?.permissions?.salesTravelRequests === false) {
+        setSalesTravelAccess('none');
+      } else if (user?.role === ROLES.ADMIN && !user?.permissions?.salesTravelRequestsOwnOnly) {
+        setSalesTravelAccess('all');
+      } else {
+        setSalesTravelAccess('own');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
@@ -148,6 +156,13 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       perms.payflowUser = true;
     } else if (isEdit) {
       perms.payflowUser = false;
+    }
+    if (salesTravelAccess !== 'none') {
+      perms.salesTravelRequests = true;
+      perms.salesTravelRequestsOwnOnly = salesTravelAccess === 'own';
+    } else {
+      perms.salesTravelRequests = false;
+      perms.salesTravelRequestsOwnOnly = false;
     }
     if (Object.keys(perms).length) formData.append('permissions', JSON.stringify(perms));
 
@@ -278,6 +293,17 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 value={user?.permissions?.payflowUser ? 'Payflow User (Own requests)' : 'No Access'}
               />
               <DetailRow
+                icon={<FontAwesomeIcon icon={faPlaneDeparture} style={{ fontSize: 13 }} />}
+                label="Sales Travel Request"
+                value={
+                  user?.permissions?.salesTravelRequests === false
+                    ? 'No Access'
+                    : user?.role === ROLES.ADMIN && !user?.permissions?.salesTravelRequestsOwnOnly
+                    ? 'Admin Flow (All requests)'
+                    : 'User Flow (Own requests)'
+                }
+              />
+              <DetailRow
                 icon={<CalendarMonthOutlinedIcon sx={{ fontSize: 15 }} />}
                 label="Created"
                 value={user?.createdAt ? formatDate(user.createdAt) : '—'}
@@ -382,6 +408,40 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                     </FormControl>
                   </Box>
                 )}
+
+                <Box
+                  sx={{
+                    p: 1.75,
+                    borderRadius: '10px',
+                    bgcolor: '#fbfbfe',
+                    border: '1px solid',
+                    borderColor: '#e9e8f4',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
+                    Sales Travel Request Access
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
+                    Users can create and view their own travel requests. Admins can view and manage all travel requests.
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={salesTravelAccess}
+                      onChange={(e) => setSalesTravelAccess(e.target.value)}
+                      sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
+                    >
+                      <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
+                        No Access
+                      </MenuItem>
+                      <MenuItem value="own" sx={{ fontSize: '0.8125rem' }}>
+                        User Flow (Own Requests Only)
+                      </MenuItem>
+                      <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>
+                        Admin Flow (All Requests)
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Stack>
             </FormProvider>
           )}

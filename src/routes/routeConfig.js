@@ -19,6 +19,7 @@ import {
   faMoneyBillWave,
   faClockRotateLeft,
   faWallet,
+  faPlaneDeparture,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -192,6 +193,14 @@ export const NAV_ITEMS = [
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#2563eb', bg: '#eff6ff' },
   },
+  {
+    label: 'Sales Travel Request',
+    path: '/sales-travel-requests',
+    icon: faPlaneDeparture,
+    permission: 'salesTravelRequests',
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#0d6efd', bg: '#eff6ff' },
+  },
 ];
 
 // Admins are gated by their permission flag. Installers default to allowed (no Permission doc =
@@ -200,6 +209,9 @@ export function isNavItemAllowed(item, user, permissions) {
   if (!item.roles.includes(user?.role)) return false;
   // A Payflow user only gets the restricted Payment Requests page, not the full Payflow module.
   if (item.permission === 'payflow' && permissions?.payflowUser) return false;
+  if (item.permission === 'salesTravelRequests') {
+    return permissions ? permissions.salesTravelRequests !== false : true;
+  }
   if (user?.role === ROLES.ADMIN) return Boolean(permissions?.[item.permission]);
   if (['atlantaPayments', 'payflowUser'].includes(item.permission)) return Boolean(permissions?.[item.permission]);
   return permissions ? permissions[item.permission] !== false : true;

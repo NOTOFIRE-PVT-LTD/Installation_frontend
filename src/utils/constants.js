@@ -75,6 +75,8 @@ export const PERMISSION_KEYS = [
   'auditLogs',
   'payflow',
   'payflowUser',
+  'salesTravelRequests',
+  'salesTravelRequestsOwnOnly',
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

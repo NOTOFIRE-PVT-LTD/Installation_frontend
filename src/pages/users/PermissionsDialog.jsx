@@ -39,11 +39,22 @@ const LABELS = {
   auditLogs: 'Audit Logs',
   payflow: 'Payflow (Vendors, Categories, Companies, Branches)',
   payflowUser: 'Payflow user (submit & view own payment requests)',
+  salesTravelRequests: 'Sales Travel Request',
+  salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
 };
 
-const INSTALLER_PERMISSION_KEYS = ['projects', 'reports', 'cadDrawing', 'atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser'];
+const INSTALLER_PERMISSION_KEYS = [
+  'projects',
+  'reports',
+  'cadDrawing',
+  'atlantaPayments',
+  'atlantaPaymentsOwnOnly',
+  'payflowUser',
+  'salesTravelRequests',
+  'salesTravelRequestsOwnOnly',
+];
 // Opt-in modules: off unless an Admin explicitly grants them.
-const OPT_IN_KEYS = ['atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser'];
+const OPT_IN_KEYS = ['atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser', 'salesTravelRequestsOwnOnly'];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -60,6 +71,8 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
             } else {
               acc[key] = user?.permissions ? user.permissions[key] !== false : true;
             }
+          } else if (key === 'salesTravelRequests') {
+            acc[key] = user?.permissions ? user.permissions[key] !== false : true;
           } else {
             acc[key] = Boolean(user?.permissions?.[key]);
           }
@@ -78,6 +91,12 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       }
       if (key === 'atlantaPayments' && !checked) {
         next.atlantaPaymentsOwnOnly = false;
+      }
+      if (key === 'salesTravelRequestsOwnOnly' && checked) {
+        next.salesTravelRequests = true;
+      }
+      if (key === 'salesTravelRequests' && !checked) {
+        next.salesTravelRequestsOwnOnly = false;
       }
       return next;
     });

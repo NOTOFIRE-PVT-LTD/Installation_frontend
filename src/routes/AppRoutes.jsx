@@ -35,6 +35,7 @@ import AtlantaPaymentsPage from '../pages/atlantaPayments/AtlantaPaymentsPage';
 import AuditLogsPage from '../pages/auditLogs/AuditLogsPage';
 import PayflowPage from '../pages/payflow/PayflowPage';
 import PayflowUserPage from '../pages/payflow/PayflowUserPage';
+import SalesTravelRequestsPage from '../pages/salesTravelRequests/SalesTravelRequestsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -322,6 +323,14 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="payflowUser" roles={[ROLES.USER]}>
                 <PayflowUserPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/sales-travel-requests"
+            element={
+              <PermissionGate permission="salesTravelRequests" roles={[ROLES.USER]}>
+                <SalesTravelRequestsPage />
               </PermissionGate>
             }
           />
