@@ -122,7 +122,13 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
     ['Quantity Checked By', request.quantityCheckedBy],
     ['Quality Checked By', request.qualityCheckedBy],
     ['Purchase Owner', request.purchaseOwner],
-  ].filter(([, p]) => p?.name);
+  ].map(([label, person]) => [
+    label,
+    {
+      name: person?.user?.name || person?.name || '',
+      email: person?.user?.email || person?.email || '',
+    },
+  ]).filter(([, person]) => person.name || person.email);
   const actions = ACTION_ORDER.filter((s) => request.allowedStatuses?.includes(s));
   const pendingAction = pendingStatus ? STATUS_ACTIONS[pendingStatus] : null;
 
