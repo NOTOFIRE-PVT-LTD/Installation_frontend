@@ -209,11 +209,10 @@ export function isNavItemAllowed(item, user, permissions) {
   if (!item.roles.includes(user?.role)) return false;
   // A Payflow user only gets the restricted Payment Requests page, not the full Payflow module.
   if (item.permission === 'payflow' && permissions?.payflowUser) return false;
-  if (item.permission === 'salesTravelRequests') {
-    return permissions ? permissions.salesTravelRequests !== false : true;
-  }
   if (user?.role === ROLES.ADMIN) return Boolean(permissions?.[item.permission]);
-  if (['atlantaPayments', 'payflowUser'].includes(item.permission)) return Boolean(permissions?.[item.permission]);
+  if (['atlantaPayments', 'payflowUser', 'salesTravelRequests'].includes(item.permission)) {
+    return Boolean(permissions?.[item.permission]);
+  }
   return permissions ? permissions[item.permission] !== false : true;
 }
 

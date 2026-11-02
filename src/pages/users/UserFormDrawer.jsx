@@ -91,7 +91,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
   const [imagePreview, setImagePreview] = useState('');
   const [atlantaAccess, setAtlantaAccess] = useState('none');
   const [payflowAccess, setPayflowAccess] = useState('none');
-  const [salesTravelAccess, setSalesTravelAccess] = useState('own');
+  const [salesTravelAccess, setSalesTravelAccess] = useState('none');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
@@ -115,12 +115,10 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
         setAtlantaAccess('none');
       }
       setPayflowAccess(user?.permissions?.payflowUser ? 'user' : 'none');
-      if (user?.permissions?.salesTravelRequests === false) {
-        setSalesTravelAccess('none');
-      } else if (user?.role === ROLES.ADMIN && !user?.permissions?.salesTravelRequestsOwnOnly) {
-        setSalesTravelAccess('all');
+      if (user?.permissions?.salesTravelRequests) {
+        setSalesTravelAccess(user?.permissions?.salesTravelRequestsOwnOnly ? 'own' : 'all');
       } else {
-        setSalesTravelAccess('own');
+        setSalesTravelAccess('none');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,7 +158,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
     if (salesTravelAccess !== 'none') {
       perms.salesTravelRequests = true;
       perms.salesTravelRequestsOwnOnly = salesTravelAccess === 'own';
-    } else {
+    } else if (isEdit) {
       perms.salesTravelRequests = false;
       perms.salesTravelRequestsOwnOnly = false;
     }
@@ -296,11 +294,11 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 icon={<FontAwesomeIcon icon={faPlaneDeparture} style={{ fontSize: 13 }} />}
                 label="Sales Travel Request"
                 value={
-                  user?.permissions?.salesTravelRequests === false
-                    ? 'No Access'
-                    : user?.role === ROLES.ADMIN && !user?.permissions?.salesTravelRequestsOwnOnly
-                    ? 'Admin Flow (All requests)'
-                    : 'User Flow (Own requests)'
+                  user?.permissions?.salesTravelRequests
+                    ? user?.permissions?.salesTravelRequestsOwnOnly
+                      ? 'User Flow (Own requests)'
+                      : 'Admin Flow (All requests)'
+                    : 'No Access'
                 }
               />
               <DetailRow

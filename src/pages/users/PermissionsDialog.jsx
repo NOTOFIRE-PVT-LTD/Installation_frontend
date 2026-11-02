@@ -54,7 +54,13 @@ const INSTALLER_PERMISSION_KEYS = [
   'salesTravelRequestsOwnOnly',
 ];
 // Opt-in modules: off unless an Admin explicitly grants them.
-const OPT_IN_KEYS = ['atlantaPayments', 'atlantaPaymentsOwnOnly', 'payflowUser', 'salesTravelRequestsOwnOnly'];
+const OPT_IN_KEYS = [
+  'atlantaPayments',
+  'atlantaPaymentsOwnOnly',
+  'payflowUser',
+  'salesTravelRequests',
+  'salesTravelRequestsOwnOnly',
+];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -71,8 +77,6 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
             } else {
               acc[key] = user?.permissions ? user.permissions[key] !== false : true;
             }
-          } else if (key === 'salesTravelRequests') {
-            acc[key] = user?.permissions ? user.permissions[key] !== false : true;
           } else {
             acc[key] = Boolean(user?.permissions?.[key]);
           }
