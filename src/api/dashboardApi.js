@@ -8,4 +8,5 @@ export const dashboardApi = {
   dailyFeed: (limit = 8) => axiosInstance.get('/dashboard/daily-feed', { params: { limit } }),
   recentReports: (limit = 5) => axiosInstance.get('/dashboard/recent-reports', { params: { limit } }),
   recentActivity: (limit = 10) => axiosInstance.get('/dashboard/recent-activity', { params: { limit } }),
+  modulesOverview: () => axiosInstance.get('/dashboard/modules-overview'),
 };

@@ -13,6 +13,10 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import RestoreFromTrashOutlinedIcon from '@mui/icons-material/RestoreFromTrashOutlined';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { payflowRequestApi } from '../../api/payflowApi';
 import { useAppDispatch } from '../../app/hooks';
 import { showSnackbar } from '../../features/ui/uiSlice';
@@ -59,13 +63,16 @@ function SectionTitle({ children }) {
   );
 }
 
-export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
+export default function PayflowRequestDetail({ requestId, isAdmin = false, onBack, onChanged }) {
   const dispatch = useAppDispatch();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [remark, setRemark] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmTrash, setConfirmTrash] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const [trashBusy, setTrashBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,6 +112,50 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
     }
   };
 
+  const handleMoveToTrash = async () => {
+    setTrashBusy(true);
+    try {
+      await payflowRequestApi.moveToTrash(requestId);
+      dispatch(showSnackbar({ message: 'Payment request moved to trash' }));
+      setConfirmTrash(false);
+      onChanged?.();
+      onBack();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err.response?.data?.message || 'Failed to move request to trash', severity: 'error' }));
+    } finally {
+      setTrashBusy(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setTrashBusy(true);
+    try {
+      const { data } = await payflowRequestApi.restore(requestId);
+      setRequest(data.data);
+      dispatch(showSnackbar({ message: 'Payment request restored from trash' }));
+      onChanged?.();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err.response?.data?.message || 'Failed to restore request', severity: 'error' }));
+    } finally {
+      setTrashBusy(false);
+    }
+  };
+
+  const handleDeletePermanently = async () => {
+    setTrashBusy(true);
+    try {
+      await payflowRequestApi.deletePermanently(requestId);
+      dispatch(showSnackbar({ message: 'Payment request permanently deleted' }));
+      setConfirmPurge(false);
+      onChanged?.();
+      onBack();
+    } catch (err) {
+      dispatch(showSnackbar({ message: err.response?.data?.message || 'Failed to permanently delete request', severity: 'error' }));
+    } finally {
+      setTrashBusy(false);
+    }
+  };
+
   if (loading && !request) {
     return (
       <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
@@ -134,13 +185,56 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
-        <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={onBack} sx={{ fontWeight: 600 }}>
-          Back
-        </Button>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Payment Details
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5} sx={{ mb: 2.5, maxWidth: 900 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={onBack} sx={{ fontWeight: 600 }}>
+            Back
+          </Button>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Payment Details
+          </Typography>
+          {request.isDeleted && (
+            <Chip label="In Trash" color="error" size="small" sx={{ fontWeight: 700 }} />
+          )}
+        </Stack>
+
+        {isAdmin && (
+          request.isDeleted ? (
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<RestoreFromTrashOutlinedIcon />}
+                disabled={trashBusy}
+                onClick={handleRestore}
+                sx={{ fontWeight: 600 }}
+              >
+                Restore from Trash
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteForeverOutlinedIcon />}
+                disabled={trashBusy}
+                onClick={() => setConfirmPurge(true)}
+                sx={{ fontWeight: 600 }}
+              >
+                Delete Permanently
+              </Button>
+            </Stack>
+          ) : (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteOutlineIcon />}
+              disabled={trashBusy}
+              onClick={() => setConfirmTrash(true)}
+              sx={{ fontWeight: 600 }}
+            >
+              Delete (Move to Trash)
+            </Button>
+          )
+        )}
       </Stack>
 
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, maxWidth: 900 }}>
@@ -333,6 +427,28 @@ export default function PayflowRequestDetail({ requestId, onBack, onChanged }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmTrash}
+        title={`Move Request #${request.srNo} to Trash?`}
+        message={`This payment request (${request.vendor} — ${formatInr(request.amount)}) will be moved to Trash and will not be permanently deleted. You can restore it anytime from Trash.`}
+        confirmLabel="Move to Trash"
+        confirmColor="error"
+        loading={trashBusy}
+        onConfirm={handleMoveToTrash}
+        onClose={() => !trashBusy && setConfirmTrash(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmPurge}
+        title={`Delete Request #${request.srNo} Permanently?`}
+        message={`This payment request (${request.vendor} — ${formatInr(request.amount)}) will be permanently deleted from the database. This action cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        confirmColor="error"
+        loading={trashBusy}
+        onConfirm={handleDeletePermanently}
+        onClose={() => !trashBusy && setConfirmPurge(false)}
+      />
     </Box>
   );
 }

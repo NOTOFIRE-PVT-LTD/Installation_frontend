@@ -17,4 +17,7 @@ export const payflowRequestApi = {
   get: (id) => axiosInstance.get(`/payflow/payment-requests/${id}`),
   create: (payload) => axiosInstance.post('/payflow/payment-requests', payload),
   changeStatus: (id, payload) => axiosInstance.patch(`/payflow/payment-requests/${id}/status`, payload),
+  moveToTrash: (id) => axiosInstance.delete(`/payflow/payment-requests/${id}`),
+  restore: (id) => axiosInstance.post(`/payflow/payment-requests/${id}/restore`),
+  deletePermanently: (id) => axiosInstance.delete(`/payflow/payment-requests/${id}/permanent`),
 };

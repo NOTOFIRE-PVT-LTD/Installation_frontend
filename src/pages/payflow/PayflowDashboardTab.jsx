@@ -84,7 +84,7 @@ function FundCard({ title, titleAction, value, valueColor, icon, iconColor, icon
 const fmtShort = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '');
 
 // `stats` comes from /payflow/payment-requests/stats.
-export default function PayflowDashboardTab({ stats = {}, onOpenRequests, onNewRequest, onFundAdded }) {
+export default function PayflowDashboardTab({ stats = {}, onOpenRequests, onFundAdded }) {
   const dispatch = useAppDispatch();
   const [fundOpen, setFundOpen] = useState(false);
   const [fundAmount, setFundAmount] = useState('');
@@ -125,12 +125,6 @@ export default function PayflowDashboardTab({ stats = {}, onOpenRequests, onNewR
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2.5 }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => onNewRequest?.()}>
-          New Request
-        </Button>
-      </Box>
-
       {advanceFollowUp > 0 && (
         <Chip
           icon={<ErrorOutlineIcon />}
