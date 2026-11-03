@@ -7,19 +7,24 @@ import { getDefaultLandingPath } from '../../routes/routeConfig';
 // Permission doc = full access) but respect an explicit false once an Admin restricts that
 // module for them (mirrors the backend's requirePermissionOrRole rule).
 export default function PermissionGate({ permission, userPermission, roles = [], jobRole, children }) {
-  const { user, isAdmin, permissions } = useAuth();
-  const hasPermission = usePermission(permission);
+  const { user, isAdmin, isSuperAdmin, permissions } = useAuth();
+  const hasPermission = usePermission(permission) || usePermission(userPermission);
   const home = getDefaultLandingPath(user, permissions);
 
-  if (!isAdmin && roles.includes(user?.role)) {
-    if (jobRole && user?.jobRole !== jobRole) return <Navigate to={home} replace />;
-    const key = userPermission || permission;
-    const allowed =
-      key === 'atlantaPayments'
-        ? Boolean(permissions?.[key])
-        : permissions
-        ? permissions[key] !== false
-        : true;
+  // Super Admin can access all modules and subpages without restriction
+  if (isSuperAdmin) return children;
+
+  if (!isAdmin && (roles.length === 0 || roles.includes(user?.role))) {
+    if (jobRole && user?.jobRole !== jobRole && !permissions?.[userPermission || permission]) {
+      return <Navigate to={home} replace />;
+    }
+    const keys = [permission, userPermission].filter(Boolean);
+    if (!keys.length) return children;
+    const allowed = !permissions
+      ? true
+      : keys.some((key) =>
+          key === 'atlantaPayments' ? Boolean(permissions[key]) : permissions[key] !== false
+        );
     return allowed ? children : <Navigate to={home} replace />;
   }
   if (isAdmin && hasPermission) return children;

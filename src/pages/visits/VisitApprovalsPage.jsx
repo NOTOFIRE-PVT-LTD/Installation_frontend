@@ -20,13 +20,13 @@ import { formatPlanTime } from '../../utils/readLocation';
 import { formatIstDateTime } from '../../utils/attendanceFormat';
 import { ROLES } from '../../utils/constants';
 
-export default function VisitApprovalsPage({ embedded = false }) {
+export default function VisitApprovalsPage({ embedded = false, toolbarStart }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === ROLES.ADMIN;
   const [items, setItems] = useState([]);
-  const [approveId, setApproveId] = useState(null);
+  const [approveRow, setApproveRow] = useState(null);
   const [rejectRow, setRejectRow] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -51,8 +51,17 @@ export default function VisitApprovalsPage({ embedded = false }) {
     setBusy(true);
     try {
       await visitApi.review(id, { decision, rejectionReason: reason });
-      dispatch(showSnackbar({ message: decision === 'APPROVED' ? 'Approved as missed' : 'Rejected' }));
-      setApproveId(null);
+      dispatch(
+        showSnackbar({
+          message:
+            decision === 'APPROVED'
+              ? approveRow?.kind === 'OUT_OF_RANGE'
+                ? 'Out-of-range visit approved'
+                : 'Approved as missed'
+              : 'Rejected',
+        })
+      );
+      setApproveRow(null);
       setRejectRow(null);
       setRejectionReason('');
       load();
@@ -75,6 +84,22 @@ export default function VisitApprovalsPage({ embedded = false }) {
       headerName: 'Customer',
       minWidth: 160,
       valueGetter: (_v, row) => row.visit?.customer?.companyName || '—',
+    },
+    {
+      field: 'kind',
+      headerName: 'Type',
+      minWidth: 130,
+      renderCell: (params) => {
+        const isOutOfRange = params.value === 'OUT_OF_RANGE';
+        return (
+          <Chip
+            size="small"
+            label={isOutOfRange ? 'OUT OF RANGE' : params.value || 'MISSED'}
+            color={isOutOfRange ? 'warning' : 'default'}
+            sx={{ fontWeight: 700 }}
+          />
+        );
+      },
     },
     {
       field: 'requestedAt',
@@ -102,10 +127,30 @@ export default function VisitApprovalsPage({ embedded = false }) {
     },
     {
       field: 'reason',
-      headerName: 'Reason',
-      minWidth: 200,
+      headerName: 'Reason / Details',
+      minWidth: 230,
       flex: 1,
-      valueGetter: (_v, row) => [row.missedReason, row.missedExplanation].filter(Boolean).join(' — ') || '—',
+      renderCell: (params) => {
+        const row = params.row;
+        const dist = row.visit?.checkInDistanceM;
+        return (
+          <Stack spacing={0.25} sx={{ py: 0.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {row.missedReason || (row.kind === 'OUT_OF_RANGE' ? 'Outside Location Exception' : 'Missed Visit')}
+            </Typography>
+            {dist != null && dist > 0 && (
+              <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
+                📍 {dist} meters away from customer
+              </Typography>
+            )}
+            {row.missedExplanation && (
+              <Typography variant="caption" color="text.secondary">
+                {row.missedExplanation}
+              </Typography>
+            )}
+          </Stack>
+        );
+      },
     },
     {
       field: 'decision',
@@ -130,17 +175,29 @@ export default function VisitApprovalsPage({ embedded = false }) {
     { field: 'rejectionReason', headerName: 'Admin comment', minWidth: 160 },
     {
       field: 'view',
-      headerName: 'Visit',
-      minWidth: 100,
+      headerName: 'Photo & Details',
+      minWidth: 130,
       sortable: false,
-      renderCell: (params) =>
-        params.row.visit?._id ? (
-          <Button size="small" onClick={() => navigate(`/visits/${params.row.visit._id}`)}>
-            View
-          </Button>
-        ) : (
-          <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>—</Typography>
-        ),
+      renderCell: (params) => {
+        const v = params.row.visit;
+        return (
+          <Stack direction="row" spacing={1} alignItems="center">
+            {v?.checkInPhotoUrl && (
+              <Box
+                component="img"
+                src={v.checkInPhotoUrl}
+                alt="Selfie"
+                sx={{ width: 32, height: 32, borderRadius: '4px', objectFit: 'cover' }}
+              />
+            )}
+            {v?._id && (
+              <Button size="small" onClick={() => navigate(`/visits/${v._id}`)}>
+                View
+              </Button>
+            )}
+          </Stack>
+        );
+      },
     },
     ...(isAdmin
       ? [
@@ -152,7 +209,7 @@ export default function VisitApprovalsPage({ embedded = false }) {
             renderCell: (params) =>
               params.row.decision === 'PENDING' ? (
                 <Stack direction="row" spacing={0.75} onClick={(e) => e.stopPropagation()}>
-                  <Button size="small" variant="contained" onClick={() => setApproveId(params.row._id)}>
+                  <Button size="small" variant="contained" onClick={() => setApproveRow(params.row)}>
                     Approve
                   </Button>
                   <Button size="small" color="error" variant="outlined" onClick={() => setRejectRow(params.row)}>
@@ -167,9 +224,11 @@ export default function VisitApprovalsPage({ embedded = false }) {
       : []),
   ];
 
+  const isApproveOutOfRange = approveRow?.kind === 'OUT_OF_RANGE';
+
   return (
     <>
-      {!embedded && <PageHeader title="Visit Approvals" subtitle="Missed and incomplete visits waiting for review" />}
+      {!embedded && <PageHeader title="Visit Approvals" subtitle="Missed visits and out-of-range location requests waiting for review" />}
       <DataTable
         columns={columns}
         rows={items}
@@ -179,20 +238,25 @@ export default function VisitApprovalsPage({ embedded = false }) {
         onPageChange={() => {}}
         onPageSizeChange={() => {}}
         onSortChange={() => {}}
+        toolbarStart={toolbarStart}
         emptyMessage="No visit requests."
       />
 
       <ConfirmDialog
-        open={Boolean(approveId)}
-        title="Approve missed visit"
-        message="This keeps the original plan and records the missed reason. It will not mark the visit completed."
+        open={Boolean(approveRow)}
+        title={isApproveOutOfRange ? 'Approve Out-of-Range Visit' : 'Approve Missed Visit'}
+        message={
+          isApproveOutOfRange
+            ? 'This approves the location exception for this visit. The visit will be verified and marked as Completed.'
+            : 'This keeps the original plan and records the missed reason. It will not mark the visit completed.'
+        }
         confirmLabel="Approve"
-        onClose={() => setApproveId(null)}
-        onConfirm={() => review(approveId, 'APPROVED')}
+        onClose={() => setApproveRow(null)}
+        onConfirm={() => review(approveRow._id, 'APPROVED')}
         loading={busy}
       />
       <Dialog open={Boolean(rejectRow)} onClose={() => setRejectRow(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Reject missed visit</DialogTitle>
+        <DialogTitle>Reject visit request</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth

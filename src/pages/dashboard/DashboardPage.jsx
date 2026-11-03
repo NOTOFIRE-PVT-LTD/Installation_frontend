@@ -45,14 +45,14 @@ const SUMMARY_CARDS = [
     key: 'totalProjects',
     label: 'Projects',
     icon: faFolderOpen,
-    ...TONE.red,
+    ...TONE.brown,
     format: (v) => v ?? 0,
   },
   {
     key: 'stationsTracked',
     label: 'Stations',
     icon: faLocationDot,
-    ...TONE.cream,
+    ...TONE.amber,
     format: (v) => v ?? 0,
   },
   {
@@ -66,40 +66,55 @@ const SUMMARY_CARDS = [
     key: 'delayFlags',
     label: 'Delays',
     icon: faBolt,
-    ...TONE.flame,
+    ...TONE.bronze,
     format: (v) => v ?? 0,
   },
   {
     key: 'bonusAwarded',
     label: 'Bonus',
     icon: faGift,
-    ...TONE.red,
+    ...TONE.brown,
     format: (v) => formatCurrency(v || 0),
   },
 ];
 
 const FIELD_SALES_CARDS = [
-  { key: 'fieldCustomers', label: 'Customers', icon: faHandshake, ...TONE.red, format: (v) => v ?? 0 },
-  { key: 'fieldSalespeople', label: 'Salespeople', icon: faUsers, ...TONE.flame, format: (v) => v ?? 0 },
+  { key: 'fieldCustomers', label: 'Customers', icon: faHandshake, ...TONE.brown, format: (v) => v ?? 0 },
+  { key: 'fieldSalespeople', label: 'Salespeople', icon: faUsers, ...TONE.bronze, format: (v) => v ?? 0 },
   { key: 'fieldPunchedIn', label: 'Punched in today', icon: faClock, ...TONE.gold, format: (v) => v ?? 0 },
-  { key: 'fieldPunchedOut', label: 'Closed attendance', icon: faCheckDouble, ...TONE.cream, format: (v) => v ?? 0 },
+  { key: 'fieldPunchedOut', label: 'Closed attendance', icon: faCheckDouble, ...TONE.amber, format: (v) => v ?? 0 },
 ];
 
 function SummaryStat({ label, value, icon, color, bg }) {
   return (
+    <Box
+      sx={{
+        height: '100%',
+        transform: 'translate3d(0, 0, 0)',
+        transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+        willChange: 'transform',
+        '&:hover': { transform: 'translate3d(0, -12px, 0)' },
+        '&:hover .summary-stat-paper': {
+          boxShadow: '0 16px 32px rgba(88, 55, 20, 0.16)',
+          borderColor: '#D4A34E',
+        },
+      }}
+    >
     <Paper
       elevation={0}
+      className="summary-stat-paper"
       sx={{
         p: 1.25,
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: '8px',
+        borderRadius: '16px',
         bgcolor: 'background.paper',
         height: '100%',
         minWidth: 0,
         display: 'flex',
         alignItems: 'center',
         gap: 1.25,
+        transition: 'box-shadow 0.32s ease, border-color 0.2s ease',
       }}
     >
       <Box
@@ -150,6 +165,7 @@ function SummaryStat({ label, value, icon, color, bg }) {
         </Typography>
       </Box>
     </Paper>
+    </Box>
   );
 }
 
@@ -258,7 +274,7 @@ export default function DashboardPage() {
           p: 1.5,
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: '8px',
+          borderRadius: '16px',
           bgcolor: 'background.paper',
         }}
       >

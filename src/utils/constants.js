@@ -7,12 +7,44 @@ export const ADMIN_TYPES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   SALES_COORDINATOR: 'SALES_COORDINATOR',
   TENDER_COORDINATOR: 'TENDER_COORDINATOR',
+  COMPLAINT_COORDINATOR: 'COMPLAINT_COORDINATOR',
+  GENERAL_ADMIN: 'GENERAL_ADMIN',
 };
 
 export const ADMIN_TYPE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
-  SALES_COORDINATOR: 'Sales Coordinator',
+  SALES_COORDINATOR: 'Attendance / Sales Coordinator',
   TENDER_COORDINATOR: 'Tender Coordinator',
+  COMPLAINT_COORDINATOR: 'Complaint Resolution Admin',
+  GENERAL_ADMIN: 'General Admin',
+};
+
+export const PLATFORM_OWNER_EMAILS = [
+  'gauravjain@atlantatelecables.com',
+  'gauravjain@gmail.com',
+  'mansi@gmail.com',
+];
+/** @deprecated use PLATFORM_OWNER_EMAILS */
+export const PLATFORM_OWNER_EMAIL = PLATFORM_OWNER_EMAILS[0];
+
+export const APP_ACCESS_OPTIONS = [
+  { value: 'complaints', label: 'Complaint Resolution' },
+  { value: 'attendance', label: 'Attendance & Visits' },
+  { value: 'projects', label: 'Projects' },
+  { value: 'tenders', label: 'Tenders' },
+  { value: 'billing', label: 'Billing' },
+  { value: 'financialDocuments', label: 'Finance Docs' },
+  { value: 'inspections', label: 'Inspections' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'atlantaPayments', label: 'Atlanta Payments' },
+  { value: 'shipping', label: 'Shipping Control' },
+  { value: 'importControl', label: 'Import Control' },
+];
+
+export const ACCOUNT_LEVEL = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
 };
 
 export const JOB_ROLES = {
@@ -158,6 +190,37 @@ export const PERMISSION_KEYS = [
   'atlantaPayments',
   'atlantaPaymentsOwnOnly',
   'auditLogs',
+  'complaints',
+  'shipping',
+  'importControl',
+];
+
+export const COMPLAINT_STATUS = {
+  OPEN: 'Open',
+  IN_PROGRESS: 'In Progress',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
+};
+
+export const COMPLAINT_PRIORITY = {
+  LOW: 'Low',
+  MEDIUM: 'Medium',
+  HIGH: 'High',
+  CRITICAL: 'Critical',
+};
+
+export const COMPLAINT_CATEGORY = {
+  INSTALLATION: 'Installation',
+  PRODUCT_QUALITY: 'Product Quality',
+  SERVICE_DELAY: 'Service Delay',
+  BILLING: 'Billing',
+  OTHER: 'Other',
+};
+
+export const COMPLAINT_PUBLIC_PRIORITIES = [
+  COMPLAINT_PRIORITY.LOW,
+  COMPLAINT_PRIORITY.MEDIUM,
+  COMPLAINT_PRIORITY.HIGH,
 ];
 
 export const STOCK_MOVEMENT_TYPES = {

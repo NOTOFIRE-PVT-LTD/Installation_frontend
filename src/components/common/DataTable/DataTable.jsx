@@ -18,8 +18,8 @@ import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import TablePagination from '@mui/material/TablePagination';
 import SearchIcon from '@mui/icons-material/Search';
-import DownloadIcon from '@mui/icons-material/Download';
 import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
+import AnimatedActionButton from '../AnimatedActionButton';
 import FilterListIcon from '@mui/icons-material/FilterListOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -263,11 +263,25 @@ export default function DataTable({
         direction="row"
         spacing={1.25}
         useFlexGap
-        flexWrap="wrap"
-        sx={{ mb: 2 }}
+        flexWrap={{ xs: onSearchChange ? 'wrap' : 'nowrap', md: 'nowrap' }}
+        sx={{ mb: 2, minWidth: 0 }}
         alignItems="center"
       >
-        {toolbarStart}
+        {toolbarStart ? (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.25,
+              flex: onSearchChange ? { xs: '1 1 100%', md: '0 0 auto' } : '1 1 0%',
+              flexWrap: onSearchChange ? 'wrap' : 'nowrap',
+              minWidth: 0,
+              overflow: 'hidden',
+            }}
+          >
+            {toolbarStart}
+          </Box>
+        ) : null}
         {onSearchChange ? (
           <TextField
             size="small"
@@ -275,11 +289,10 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              flex: '1 1 180px',
-              minWidth: 160,
-              maxWidth: toolbarStart ? 280 : 360,
+              flex: '1 1 160px',
+              minWidth: 140,
               '& .MuiOutlinedInput-root': {
-                borderRadius: '8px',
+                borderRadius: 999,
                 minHeight: 40,
                 '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
@@ -287,17 +300,17 @@ export default function DataTable({
               },
             }}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
+              endAdornment: (
+                <InputAdornment position="end">
                   <SearchIcon fontSize="small" sx={{ color: 'primary.main' }} />
                 </InputAdornment>
               ),
             }}
           />
-        ) : (
+        ) : toolbarStart ? null : (
           <Box sx={{ flex: 1 }} />
         )}
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ ml: { sm: 'auto' } }}>
+        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="nowrap" useFlexGap sx={{ flex: '0 0 auto' }}>
           {checkboxSelection && selectedCount > 0 && onBulkDelete && (
             <Button
               size="small"
@@ -323,7 +336,7 @@ export default function DataTable({
                     color: 'primary.main',
                     border: '1px solid',
                     borderColor: 'divider',
-                    '&:hover': { bgcolor: '#FFD6DA', color: 'primary.dark' },
+                    '&:hover': { bgcolor: 'rgba(212, 163, 78, 0.28)', borderColor: '#D4A34E', color: '#3A230B' },
                   }}
                 >
                   <Badge
@@ -351,7 +364,7 @@ export default function DataTable({
                 slotProps={{
                   paper: {
                     sx: {
-                      borderRadius: '8px',
+                      borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
                       border: '1px solid',
                       borderColor: 'divider',
                       boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
@@ -366,7 +379,7 @@ export default function DataTable({
                       sx={{
                         width: 24,
                         height: 24,
-                        borderRadius: '8px',
+                        borderRadius: (theme) => `${Math.max(4, (theme.shape?.borderRadius ?? 10) - 2)}px`,
                         bgcolor: 'primary.light',
                         color: 'primary.main',
                         display: 'flex',
@@ -378,31 +391,59 @@ export default function DataTable({
                     </Box>
                     <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem' }}>Filters</Typography>
                   </Stack>
-                  {filters.map((filter) => (
+                  {filters.map((filter) => {
+                    const selectedApps = filter.multiple
+                      ? String(filterValues[filter.field] || '')
+                          .split(',')
+                          .filter(Boolean)
+                      : null;
+                    return (
                     <TextField
                       key={filter.field}
                       size="small"
                       select
                       label={filter.label}
-                      value={filterValues[filter.field] || ''}
-                      onChange={(e) => onFilterChange(filter.field, e.target.value)}
+                      value={filter.multiple ? selectedApps : filterValues[filter.field] || ''}
+                      onChange={(e) => {
+                        if (!filter.multiple) {
+                          onFilterChange(filter.field, e.target.value);
+                          return;
+                        }
+                        const next = e.target.value;
+                        onFilterChange(filter.field, (Array.isArray(next) ? next : [next]).filter(Boolean).join(','));
+                      }}
                       fullWidth
+                      SelectProps={
+                        filter.multiple
+                          ? {
+                              multiple: true,
+                              renderValue: (selected) =>
+                                selected
+                                  .map((val) => filter.options.find((opt) => opt.value === val)?.label || val)
+                                  .join(', '),
+                            }
+                          : undefined
+                      }
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: '8px',
+                          borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
                           bgcolor: 'background.paper',
                           fontSize: '0.75rem',
                         },
                       }}
                     >
-                      <MenuItem value="">All</MenuItem>
+                      {!filter.multiple && <MenuItem value="">All</MenuItem>}
                       {filter.options.map((opt) => (
                         <MenuItem key={opt.value} value={opt.value}>
+                          {filter.multiple && (
+                            <Checkbox size="small" checked={selectedApps.includes(opt.value)} sx={{ p: 0.5, mr: 0.5 }} />
+                          )}
                           {opt.label}
                         </MenuItem>
                       ))}
                     </TextField>
-                  ))}
+                    );
+                  })}
                   {activeFilterCount > 0 && (
                     <Button
                       size="small"
@@ -427,7 +468,7 @@ export default function DataTable({
                 color: 'primary.main',
                 border: '1px solid',
                 borderColor: 'divider',
-                '&:hover': { bgcolor: '#FFD6DA', color: 'primary.dark' },
+                '&:hover': { bgcolor: 'rgba(212, 163, 78, 0.28)', borderColor: '#D4A34E', color: '#3A230B' },
               }}
             >
               <ViewColumnIcon sx={{ fontSize: 18 }} />
@@ -440,7 +481,7 @@ export default function DataTable({
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: '8px',
+                  borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
                   border: '1px solid',
                   borderColor: 'divider',
                   boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
@@ -502,24 +543,7 @@ export default function DataTable({
                 </MenuItem>
               ))}
           </Menu>
-          {onExportCsv && (
-            <Tooltip title="Export CSV">
-              <IconButton
-                onClick={onExportCsv}
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '999px',
-                  bgcolor: '#ecfdf5',
-                  color: '#059669',
-                  border: '1px solid #a7f3d0',
-                  '&:hover': { bgcolor: '#d1fae5', color: '#047857' },
-                }}
-              >
-                <DownloadIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+          {onExportCsv && <AnimatedActionButton kind="download" label="Download" onClick={onExportCsv} />}
           {toolbarEnd}
         </Stack>
       </Stack>
@@ -527,7 +551,7 @@ export default function DataTable({
       <Box
         sx={{
           bgcolor: 'background.paper',
-          borderRadius: '8px',
+          borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
           border: '1px solid',
           borderColor: 'divider',
           overflow: 'hidden',
@@ -536,6 +560,7 @@ export default function DataTable({
       >
         <DataGrid
           autoHeight
+          disableColumnMenu
           rows={rows}
           columns={finalColumns}
           getRowId={(row) => {

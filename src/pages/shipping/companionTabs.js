@@ -1,0 +1,33 @@
+export const SHIPPING_TABS = [
+  { id: 'home', label: 'Dashboard', path: '/' },
+  { id: 'dispatch', label: 'New dispatch', path: '/dispatch/new' },
+  { id: 'shipments', label: 'Shipments', path: '/shipments' },
+  { id: 'invoices', label: 'Courier bills', path: '/invoices' },
+  { id: 'products', label: 'Products', path: '/products' },
+  { id: 'cartons', label: 'Cartons', path: '/cartons' },
+  { id: 'locations', label: 'Locations', path: '/locations' },
+  { id: 'couriers', label: 'Couriers & rates', path: '/couriers' },
+  { id: 'reconciliation', label: 'Reconciliation', path: '/reconciliation' },
+  { id: 'discrepancies', label: 'Discrepancies', path: '/discrepancies' },
+  { id: 'reports', label: 'Reports', path: '/reports' },
+  { id: 'dispatches', label: 'Dispatch register', path: '/dispatches' },
+  { id: 'packing', label: 'Packing history', path: '/packing-history' },
+  { id: 'people', label: 'People', path: '/users' },
+  { id: 'settings', label: 'Settings', path: '/settings' },
+  { id: 'audit', label: 'Audit trail', path: '/audit-logs' },
+];
+
+export const IMPORT_TABS = [
+  { id: 'home', label: 'Dashboard', path: '/' },
+  { id: 'imports', label: 'Imports', path: '/imports' },
+  { id: 'inbox', label: 'Inbox', path: '/inbox' },
+  { id: 'tasks', label: 'Tasks', path: '/tasks' },
+  { id: 'review', label: 'Review', path: '/review' },
+  { id: 'payments', label: 'Payments', path: '/payments' },
+  { id: 'shipments', label: 'Shipments', path: '/shipments' },
+  { id: 'documents', label: 'Documents', path: '/documents' },
+  { id: 'suppliers', label: 'Suppliers', path: '/suppliers' },
+  { id: 'cha', label: 'CHA & Agents', path: '/cha' },
+  { id: 'reports', label: 'Reports', path: '/reports' },
+  { id: 'settings', label: 'Settings', path: '/settings' },
+];

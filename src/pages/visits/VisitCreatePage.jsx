@@ -22,7 +22,9 @@ import { customerApi } from '../../api/customerApi';
 import { visitApi } from '../../api/visitApi';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { useAppDispatch } from '../../app/hooks';
-import { VISIT_TYPE } from '../../utils/constants';
+import { VISIT_TYPE, ROLES } from '../../utils/constants';
+import { useAuth } from '../../hooks/useAuth';
+import { peopleApi } from '../../api/peopleApi';
 
 function computeDuration(start, end) {
   if (!start || !end) return '';
@@ -62,10 +64,13 @@ const WEEK_DAYS = [
 ];
 
 export default function VisitCreatePage() {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAdmin } = useAuth();
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  const [selectedSalesperson, setSelectedSalesperson] = useState('');
+  const [salespeople, setSalespeople] = useState([]);
   const [scope, setScope] = useState('day');
   const [planDate, setPlanDate] = useState(todayStr);
   const [weekStart, setWeekStart] = useState(getMondayOfCurrentWeek());
@@ -98,7 +103,13 @@ export default function VisitCreatePage() {
 
   useEffect(() => {
     loadCustomers();
-  }, []);
+    if (isAdmin) {
+      peopleApi
+        .list({ role: ROLES.USER, pageSize: 100 })
+        .then(({ data }) => setSalespeople(data?.data || []))
+        .catch(() => setSalespeople([]));
+    }
+  }, [isAdmin]);
 
   const handleScopeChange = (_e, newScope) => {
     if (!newScope) return;
@@ -124,48 +135,30 @@ export default function VisitCreatePage() {
       setVisits((prev) =>
         prev.map((v) => ({
           ...v,
-          date: addDays(newWeekStart, v.dayOffset || 0),
+          date: addDays(newWeekStart, v.dayOffset ?? 0),
         }))
       );
     }
   };
 
-  const updateVisit = (index, field, value) => {
-    setVisits((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], [field]: value };
-      if (field === 'dayOffset' && scope === 'week') {
-        copy[index].date = addDays(weekStart, Number(value));
-      }
-      return copy;
-    });
-  };
-
   const addVisitRow = () => {
-    const last = visits[visits.length - 1];
-    let nextStart = '14:00';
-    let nextEnd = '16:00';
-    let nextOffset = 0;
-
-    if (last?.endTime) {
-      const [h, m] = String(last.endTime).split(':').map(Number);
-      if (!Number.isNaN(h)) {
-        const startH = (h + 1) % 24;
-        const endH = (startH + 2) % 24;
-        nextStart = `${String(startH).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
-        nextEnd = `${String(endH).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
-      }
+    const nextId = visits.length ? Math.max(...visits.map((v) => v.id)) + 1 : 1;
+    const lastVisit = visits[visits.length - 1];
+    let nextStart = '12:00';
+    let nextEnd = '14:00';
+    if (lastVisit?.endTime) {
+      nextStart = lastVisit.endTime;
+      const [h, m] = lastVisit.endTime.split(':').map(Number);
+      const endH = Math.min(23, h + 2);
+      nextEnd = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
-    if (scope === 'week' && last) {
-      nextOffset = last.dayOffset || 0;
-    }
-
+    const defaultOffset = visits.length % 6;
     setVisits((prev) => [
       ...prev,
       {
-        id: Date.now(),
-        date: scope === 'day' ? planDate : addDays(weekStart, nextOffset),
-        dayOffset: nextOffset,
+        id: nextId,
+        date: scope === 'day' ? planDate : addDays(weekStart, defaultOffset),
+        dayOffset: defaultOffset,
         customer: '',
         plannedTime: nextStart,
         endTime: nextEnd,
@@ -178,6 +171,18 @@ export default function VisitCreatePage() {
   const removeVisitRow = (index) => {
     if (visits.length <= 1) return;
     setVisits((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateVisit = (index, field, value) => {
+    setVisits((prev) => {
+      const next = [...prev];
+      const target = { ...next[index], [field]: value };
+      if (field === 'dayOffset' && scope === 'week') {
+        target.date = addDays(weekStart, value);
+      }
+      next[index] = target;
+      return next;
+    });
   };
 
   const openCustomerModal = (index) => {
@@ -193,6 +198,10 @@ export default function VisitCreatePage() {
   };
 
   const handleSaveAll = async () => {
+    if (isAdmin && !selectedSalesperson) {
+      dispatch(showSnackbar({ message: 'Please select a salesperson to assign this visit plan', severity: 'error' }));
+      return;
+    }
     for (let i = 0; i < visits.length; i++) {
       const v = visits[i];
       if (!v.customer) {
@@ -213,6 +222,7 @@ export default function VisitCreatePage() {
     try {
       const promises = visits.map((v) =>
         visitApi.create({
+          salesperson: isAdmin ? selectedSalesperson : undefined,
           customer: v.customer,
           visitType: VISIT_TYPE.HOURLY,
           visitDate: v.date,
@@ -223,7 +233,7 @@ export default function VisitCreatePage() {
         })
       );
       await Promise.all(promises);
-      dispatch(showSnackbar({ message: `Saved ${visits.length} visit${visits.length > 1 ? 's' : ''} to your plan!` }));
+      dispatch(showSnackbar({ message: `Successfully planned ${visits.length} visit${visits.length > 1 ? 's' : ''}!` }));
       navigate('/visits');
     } catch (err) {
       dispatch(
@@ -243,29 +253,72 @@ export default function VisitCreatePage() {
         title="Plan Visits"
         subtitle="Plan a single day or whole week with multiple customer stops in a single form"
       />
-      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 840, mx: 'auto' }}>
         <Paper
           elevation={0}
           sx={{
             p: { xs: 2, sm: 3 },
-            borderRadius: '8px',
-            border: '1px solid',
-            borderColor: 'divider',
+            borderRadius: '20px',
+            border: '1.5px solid #D4A34E',
+            background: 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
+            boxShadow: '0 6px 24px rgba(36, 20, 4, 0.08)',
           }}
         >
+          {/* Admin Salesperson Assignment Dropdown */}
+          {isAdmin && (
+            <Box
+              sx={{
+                p: 2,
+                mb: 3,
+                borderRadius: '16px',
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #D4A34E',
+                boxShadow: '0 4px 14px rgba(56, 32, 10, 0.05)',
+              }}
+            >
+              <TextField
+                select
+                required
+                fullWidth
+                size="small"
+                label="Assign to Salesperson *"
+                value={selectedSalesperson}
+                onChange={(e) => setSelectedSalesperson(e.target.value)}
+                helperText="Select the salesperson who will execute these customer visits"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFDF8',
+                    borderRadius: '10px',
+                    '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.5)' },
+                  },
+                }}
+              >
+                <MenuItem value="" disabled>
+                  <em>Select Salesperson</em>
+                </MenuItem>
+                {salespeople.map((sp) => (
+                  <MenuItem key={sp._id} value={sp._id}>
+                    {sp.name} ({sp.email || sp.mobileNumber})
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          )}
+
           {/* Day vs Week Selector */}
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            alignItems={{ sm: 'center' }}
-            justifyContent="space-between"
+          <Box
             sx={{
               p: 2,
               mb: 3,
-              borderRadius: '8px',
-              bgcolor: 'background.default',
-              border: '1px solid',
-              borderColor: 'divider',
+              borderRadius: '16px',
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #D4A34E',
+              boxShadow: '0 4px 14px rgba(56, 32, 10, 0.05)',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
             }}
           >
             <ToggleButtonGroup
@@ -273,7 +326,26 @@ export default function VisitCreatePage() {
               value={scope}
               exclusive
               onChange={handleScopeChange}
-              sx={{ '& .MuiToggleButton-root': { px: 2.5, fontWeight: 700 } }}
+              sx={{
+                bgcolor: 'rgba(255, 233, 151, 0.22)',
+                borderRadius: '10px',
+                p: 0.5,
+                border: '1px solid rgba(212, 163, 78, 0.4)',
+                '& .MuiToggleButton-root': {
+                  border: 'none',
+                  borderRadius: '8px !important',
+                  px: 2.5,
+                  py: 0.75,
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  color: '#583714',
+                  '&.Mui-selected': {
+                    background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+                    color: '#3A230B',
+                    boxShadow: '0 2px 6px rgba(88, 55, 20, 0.15)',
+                  },
+                },
+              }}
             >
               <ToggleButton value="day">Single Day</ToggleButton>
               <ToggleButton value="week">Whole Week</ToggleButton>
@@ -287,7 +359,14 @@ export default function VisitCreatePage() {
                 value={planDate}
                 onChange={(e) => handlePlanDateChange(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                sx={{ width: { xs: '100%', sm: 180 } }}
+                sx={{
+                  width: { xs: '100%', sm: 180 },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFDF8',
+                    borderRadius: '10px',
+                    '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                  },
+                }}
               />
             ) : (
               <TextField
@@ -297,10 +376,17 @@ export default function VisitCreatePage() {
                 value={weekStart}
                 onChange={(e) => handleWeekStartChange(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                sx={{ width: { xs: '100%', sm: 200 } }}
+                sx={{
+                  width: { xs: '100%', sm: 200 },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFDF8',
+                    borderRadius: '10px',
+                    '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                  },
+                }}
               />
             )}
-          </Stack>
+          </Box>
 
           {/* Visits Cards */}
           <Stack spacing={2.5}>
@@ -309,12 +395,13 @@ export default function VisitCreatePage() {
               return (
                 <Card
                   key={item.id}
-                  variant="outlined"
+                  elevation={0}
                   sx={{
-                    borderRadius: '8px',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    borderRadius: '16px',
+                    border: '1.5px solid #D4A34E',
+                    bgcolor: '#FFFFFF',
+                    boxShadow: '0 4px 14px rgba(56, 32, 10, 0.05)',
+                    overflow: 'visible',
                   }}
                 >
                   <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
@@ -323,11 +410,18 @@ export default function VisitCreatePage() {
                         <Chip
                           label={`Visit ${index + 1}`}
                           size="small"
-                          color="primary"
-                          sx={{ fontWeight: 700, px: 0.5 }}
+                          sx={{
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+                            color: '#3A230B',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(163, 120, 54, 0.3)',
+                            boxShadow: '0 1px 4px rgba(88, 55, 20, 0.1)',
+                          }}
                         />
                         {scope === 'week' && (
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#6E4D27' }}>
                             {item.date}
                           </Typography>
                         )}
@@ -335,9 +429,15 @@ export default function VisitCreatePage() {
                       {visits.length > 1 && (
                         <IconButton
                           size="small"
-                          color="error"
                           onClick={() => removeVisitRow(index)}
                           title="Remove visit"
+                          sx={{
+                            color: '#b91c1c',
+                            borderRadius: '8px',
+                            bgcolor: '#fee2e2',
+                            p: 0.5,
+                            '&:hover': { bgcolor: '#fecaca' },
+                          }}
                         >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
@@ -351,10 +451,29 @@ export default function VisitCreatePage() {
                           exclusive
                           value={item.dayOffset}
                           onChange={(_e, val) => val !== null && updateVisit(index, 'dayOffset', val)}
-                          sx={{ flexWrap: 'wrap' }}
+                          sx={{
+                            flexWrap: 'wrap',
+                            bgcolor: 'rgba(255, 233, 151, 0.18)',
+                            borderRadius: '8px',
+                            p: 0.25,
+                            border: '1px solid rgba(212, 163, 78, 0.35)',
+                            '& .MuiToggleButton-root': {
+                              border: 'none',
+                              borderRadius: '6px !important',
+                              py: 0.35,
+                              px: 1.25,
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              color: '#583714',
+                              '&.Mui-selected': {
+                                background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+                                color: '#3A230B',
+                              },
+                            },
+                          }}
                         >
                           {WEEK_DAYS.map((d) => (
-                            <ToggleButton key={d.offset} value={d.offset} sx={{ py: 0.25, px: 1.5, fontSize: '0.8rem' }}>
+                            <ToggleButton key={d.offset} value={d.offset}>
                               {d.label}
                             </ToggleButton>
                           ))}
@@ -370,6 +489,13 @@ export default function VisitCreatePage() {
                           label="Customer"
                           value={item.customer}
                           onChange={(e) => updateVisit(index, 'customer', e.target.value)}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: '#FFFDF8',
+                              borderRadius: '10px',
+                              '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                            },
+                          }}
                         >
                           <MenuItem value="" disabled>
                             <em>Select Customer</em>
@@ -385,7 +511,19 @@ export default function VisitCreatePage() {
                           size="small"
                           startIcon={<PersonAddAlt1Icon />}
                           onClick={() => openCustomerModal(index)}
-                          sx={{ whiteSpace: 'nowrap', px: 1.5 }}
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            px: 1.75,
+                            borderRadius: '10px',
+                            borderColor: 'rgba(88, 55, 20, 0.35)',
+                            color: '#583714',
+                            fontWeight: 700,
+                            bgcolor: 'rgba(255, 233, 151, 0.15)',
+                            '&:hover': {
+                              bgcolor: 'rgba(255, 233, 151, 0.35)',
+                              borderColor: '#583714',
+                            },
+                          }}
                         >
                           New
                         </Button>
@@ -400,6 +538,13 @@ export default function VisitCreatePage() {
                           onChange={(e) => updateVisit(index, 'plannedTime', e.target.value)}
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: '#FFFDF8',
+                              borderRadius: '10px',
+                              '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                            },
+                          }}
                         />
                         <TextField
                           size="small"
@@ -409,14 +554,28 @@ export default function VisitCreatePage() {
                           onChange={(e) => updateVisit(index, 'endTime', e.target.value)}
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: '#FFFDF8',
+                              borderRadius: '10px',
+                              '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                            },
+                          }}
                         />
                         {duration && (
                           <Chip
                             size="small"
-                            variant="outlined"
-                            color={duration.includes('End must') ? 'error' : 'default'}
                             label={duration}
-                            sx={{ fontWeight: 600, height: 32, px: 0.5, whiteSpace: 'nowrap' }}
+                            sx={{
+                              fontWeight: 700,
+                              height: 34,
+                              px: 1,
+                              borderRadius: '8px',
+                              bgcolor: duration.includes('End must') ? '#fee2e2' : 'rgba(255, 233, 151, 0.3)',
+                              color: duration.includes('End must') ? '#b91c1c' : '#583714',
+                              border: duration.includes('End must') ? '1px solid #fca5a5' : '1px solid rgba(212, 163, 78, 0.4)',
+                              whiteSpace: 'nowrap',
+                            }}
                           />
                         )}
                       </Stack>
@@ -427,20 +586,41 @@ export default function VisitCreatePage() {
                         value={item.purpose}
                         onChange={(e) => updateVisit(index, 'purpose', e.target.value)}
                         fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#FFFDF8',
+                            borderRadius: '10px',
+                            '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                          },
+                        }}
                       />
                       <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                        {COMMON_PURPOSES.map((p) => (
-                          <Chip
-                            key={p}
-                            size="small"
-                            label={p}
-                            clickable
-                            variant={item.purpose === p ? 'filled' : 'outlined'}
-                            color={item.purpose === p ? 'primary' : 'default'}
-                            onClick={() => updateVisit(index, 'purpose', p)}
-                            sx={{ fontSize: '0.6875rem' }}
-                          />
-                        ))}
+                        {COMMON_PURPOSES.map((p) => {
+                          const isSel = item.purpose === p;
+                          return (
+                            <Chip
+                              key={p}
+                              size="small"
+                              label={p}
+                              clickable
+                              onClick={() => updateVisit(index, 'purpose', p)}
+                              sx={{
+                                fontSize: '0.6875rem',
+                                fontWeight: isSel ? 700 : 600,
+                                borderRadius: '999px',
+                                background: isSel
+                                  ? 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)'
+                                  : 'rgba(255, 233, 151, 0.15)',
+                                color: isSel ? '#3A230B' : '#583714',
+                                border: isSel ? '1px solid #A37836' : '1px solid rgba(212, 163, 78, 0.4)',
+                                boxShadow: isSel ? '0 1px 4px rgba(88, 55, 20, 0.15)' : 'none',
+                                '&:hover': {
+                                  bgcolor: isSel ? undefined : 'rgba(255, 233, 151, 0.35)',
+                                },
+                              }}
+                            />
+                          );
+                        })}
                       </Stack>
 
                       <TextField
@@ -452,6 +632,13 @@ export default function VisitCreatePage() {
                         fullWidth
                         multiline
                         minRows={1}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#FFFDF8',
+                            borderRadius: '10px',
+                            '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                          },
+                        }}
                       />
                     </Stack>
                   </CardContent>
@@ -465,20 +652,69 @@ export default function VisitCreatePage() {
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={addVisitRow}
-            sx={{ mt: 2.5, py: 1.25, borderStyle: 'dashed', borderRadius: 999 }}
+            sx={{
+              mt: 2.5,
+              py: 1.25,
+              border: '1.5px dashed #D4A34E',
+              bgcolor: 'rgba(255, 233, 151, 0.22)',
+              color: '#452A0E',
+              fontWeight: 700,
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                bgcolor: 'rgba(255, 233, 151, 0.4)',
+                borderColor: '#A37836',
+                transform: 'translateY(-1px)',
+              },
+            }}
           >
-            Add Another Visit (Visit {visits.length + 1})
+            + Add Another Visit (Visit {visits.length + 1})
           </Button>
 
-          <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Button onClick={() => navigate('/visits')} disabled={submitting}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            justifyContent="flex-end"
+            sx={{
+              mt: 3,
+              pt: 2,
+              borderTop: '1px solid rgba(212, 163, 78, 0.3)',
+            }}
+          >
+            <Button
+              onClick={() => navigate('/visits')}
+              disabled={submitting}
+              sx={{
+                color: '#583714',
+                fontWeight: 700,
+                px: 2.5,
+                borderRadius: '8px',
+                textTransform: 'none',
+                '&:hover': { bgcolor: 'rgba(255, 233, 151, 0.2)' },
+              }}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               onClick={handleSaveAll}
               disabled={submitting}
-              sx={{ px: 3, fontWeight: 700 }}
+              sx={{
+                px: 3.5,
+                py: 1,
+                fontWeight: 800,
+                borderRadius: '10px',
+                textTransform: 'none',
+                background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+                color: '#3A230B',
+                boxShadow: '0 4px 14px rgba(88, 55, 20, 0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
+                  boxShadow: '0 6px 18px rgba(88, 55, 20, 0.25)',
+                },
+              }}
             >
               {submitting ? 'Saving Plan…' : `Save Visit Plan (${visits.length})`}
             </Button>

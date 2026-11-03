@@ -18,8 +18,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import DownloadIcon from '@mui/icons-material/DownloadOutlined';
-import EmailIcon from '@mui/icons-material/EmailOutlined';
+import AnimatedActionButton from '../../components/common/AnimatedActionButton';
 import SaveIcon from '@mui/icons-material/SaveOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -405,12 +404,8 @@ export default function QuotationFormPage({ mode = 'create' }) {
           >
             {readOnly ? 'Back' : 'Cancel'}
           </Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleDownload}>
-            Download
-          </Button>
-          <Button variant="outlined" startIcon={<EmailIcon />} onClick={handleEmail}>
-            Email
-          </Button>
+          <AnimatedActionButton kind="download" label="Download" onClick={handleDownload} />
+          <AnimatedActionButton kind="send" label="Email" onClick={handleEmail} />
           {readOnly ? (
             quotation && !quotation.isDeleted && (
               <Button variant="contained" startIcon={<EditIcon />} onClick={() => navigate(`/quotations/${id}/edit`)}>

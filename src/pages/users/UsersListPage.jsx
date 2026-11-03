@@ -5,8 +5,11 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
@@ -24,6 +27,7 @@ import UserFormDrawer from './UserFormDrawer';
 import PermissionsDialog from './PermissionsDialog';
 import SetPasswordDialog from './SetPasswordDialog';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAuth } from '../../hooks/useAuth';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import {
   fetchUsers,
@@ -39,20 +43,137 @@ import { startImpersonation } from '../../features/auth/authSlice';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { exportToCsv } from '../../utils/csvExport';
 import { formatDate } from '../../utils/formatters';
-import { ROLES, USER_STATUS } from '../../utils/constants';
+import { ROLES, USER_STATUS, ADMIN_TYPES } from '../../utils/constants';
 import { getDefaultLandingPath } from '../../routes/routeConfig';
 
-const ROLE_STYLE = {
-  [ROLES.ADMIN]: { color: '#7c3aed', bg: '#f3e8ff' },
-  [ROLES.USER]: { color: '#0891b2', bg: '#e0f7fa' },
-};
 
-const AVATAR_COLORS = ['#DC1F2E', '#20b486', '#d97706', '#7c3aed', '#0891b2', '#ef4444'];
+const AVATAR_COLORS = ['#85581A', '#0369A1', '#15803D', '#7C3AED', '#B45309', '#0F766E', '#8A3B14'];
 
 function avatarColor(name = '') {
   let hash = 0;
-  for (let i = 0; i < name.length; i += 1) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < (name || '').length; i += 1) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getDesignationInfo(row) {
+  if (row?.adminType === 'SUPER_ADMIN' || row?.email === 'super.admin@demo.local' || row?.email === 'admin@nfsite.com') {
+    return {
+      label: 'Super Admin',
+      color: '#3A230B',
+      bg: 'linear-gradient(135deg, #FFE997 0%, #D4A34E 100%)',
+      border: '1px solid #C99846',
+      isSuper: true,
+    };
+  }
+  if (row?.appSuperAdmin) {
+    const app =
+      row.adminType === 'COMPLAINT_COORDINATOR'
+        ? 'Complaint Resolution'
+        : row.adminType === 'SALES_COORDINATOR'
+          ? 'Attendance'
+          : row.adminType === 'TENDER_COORDINATOR'
+            ? 'Tenders'
+            : 'App';
+    return {
+      label: `Super Admin · ${app}`,
+      color: '#3A230B',
+      bg: 'linear-gradient(135deg, #FFE997 0%, #D4A34E 100%)',
+      border: '1px solid #C99846',
+      isSuper: true,
+    };
+  }
+  if (row?.role === ROLES.ADMIN) {
+    if (row.adminType === 'COMPLAINT_COORDINATOR' || (row.permissions?.complaints && !row.permissions?.salespersonTracking)) {
+      return {
+        label: 'Admin · Complaint Resolution',
+        color: '#8A3B14',
+        bg: 'rgba(212, 163, 78, 0.22)',
+        border: '1px solid rgba(212, 163, 78, 0.5)',
+      };
+    }
+    if (row.adminType === 'SALES_COORDINATOR' || (row.permissions?.attendance && !row.permissions?.complaints)) {
+      return {
+        label: 'Admin · Attendance & Sales',
+        color: '#583714',
+        bg: 'rgba(88, 55, 20, 0.12)',
+        border: '1px solid rgba(88, 55, 20, 0.3)',
+      };
+    }
+    if (row.adminType === 'TENDER_COORDINATOR' || row.permissions?.tenders) {
+      return {
+        label: 'Admin · Tenders',
+        color: '#4338CA',
+        bg: '#EEF2FF',
+        border: '1px solid #C7D2FE',
+      };
+    }
+    return {
+      label: 'Admin',
+      color: '#583714',
+      bg: 'rgba(212, 163, 78, 0.18)',
+      border: '1px solid rgba(212, 163, 78, 0.35)',
+    };
+  }
+  if (row?.jobRole === 'SALESPERSON') {
+    return {
+      label: 'Salesperson',
+      color: '#15803D',
+      bg: '#DCFCE7',
+      border: '1px solid #BBF7D0',
+    };
+  }
+  return {
+    label: 'Field Engineer',
+    color: '#0369A1',
+    bg: '#E0F2FE',
+    border: '1px solid #BAE6FD',
+  };
+}
+
+function getUserAppAccess(row) {
+  if (row?.adminType === 'SUPER_ADMIN' || row?.email === 'super.admin@demo.local' || row?.email === 'admin@nfsite.com') {
+    return [{ label: 'All Apps (Full Access)', isSuper: true }];
+  }
+  const p = row?.permissions || {};
+  const apps = [];
+
+  if (p.attendance || p.salespersonTracking || row?.jobRole === 'SALESPERSON' || row?.adminType === 'SALES_COORDINATOR') {
+    apps.push({ label: 'Attendance', color: '#85581A', bg: 'rgba(212, 163, 78, 0.16)' });
+  }
+  if (p.complaints || row?.adminType === 'COMPLAINT_COORDINATOR') {
+    apps.push({ label: 'Complaint Resolution', color: '#8A3B14', bg: '#FDF3EC' });
+  }
+  if (p.salespersonTracking) {
+    apps.push({ label: 'Sales Tracking', color: '#15803D', bg: '#ECFDF5' });
+  }
+  if (p.projects || (row.role !== ROLES.ADMIN && p.projects !== false)) {
+    apps.push({ label: 'Projects', color: '#0369A1', bg: '#F0F9FF' });
+  }
+  if (p.tenders || row?.adminType === 'TENDER_COORDINATOR') {
+    apps.push({ label: 'Tenders', color: '#4338CA', bg: '#EEF2FF' });
+  }
+  if (p.billing) {
+    apps.push({ label: 'Billing', color: '#475569', bg: '#F1F5F9' });
+  }
+  if (p.financialDocuments) {
+    apps.push({ label: 'Finance Docs', color: '#0F766E', bg: '#F0FDFA' });
+  }
+  if (p.inspections) {
+    apps.push({ label: 'Inspections', color: '#B45309', bg: '#FEF3C7' });
+  }
+  if (p.accounts) {
+    apps.push({ label: 'Accounts', color: '#6B21A8', bg: '#FAF5FF' });
+  }
+  if (p.atlantaPayments) {
+    apps.push({ label: 'Atlanta Payments', color: '#047857', bg: '#ECFDF5' });
+  }
+
+  if (apps.length === 0) {
+    return [{ label: 'Standard Access', color: '#64748B', bg: '#F8FAFC' }];
+  }
+  return apps;
 }
 
 const COLUMNS = [
@@ -119,30 +240,92 @@ const COLUMNS = [
       </Typography>
     ),
   },
-  {
+    {
     field: 'role',
-    headerName: 'Role',
-    width: 120,
-    minWidth: 110,
+    headerName: 'Role / Designation',
+    width: 170,
+    minWidth: 150,
     flex: 0,
     valueGetter: (_value, row) => row?.role || '',
     renderCell: (params) => {
-      const role = params.row.role || params.value || '—';
-      const style = ROLE_STYLE[role] || { color: '#64748b', bg: '#f1f5f9' };
+      const info = getDesignationInfo(params.row);
       return (
         <Chip
           size="small"
-          label={role}
+          label={info.label}
           sx={{
-            bgcolor: style.bg,
-            color: style.color,
-            fontWeight: 600,
-            border: 'none',
+            background: info.bg,
+            color: info.color,
+            fontWeight: 700,
+            border: info.border,
             height: 22,
-            maxWidth: '100%',
+            boxShadow: info.isSuper ? '0 2px 6px rgba(88, 55, 20, 0.15)' : 'none',
             '& .MuiChip-label': { px: 0.85, fontSize: '0.6875rem' },
           }}
         />
+      );
+    },
+  },
+  {
+    field: 'appAccess',
+    headerName: 'App Access',
+    flex: 1.8,
+    minWidth: 240,
+    sortable: false,
+    renderCell: (params) => {
+      const apps = getUserAppAccess(params.row);
+      if (apps[0]?.isSuper) {
+        return (
+          <Chip
+            size="small"
+            label={apps[0].label}
+            sx={{
+              background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 100%)',
+              color: '#3A230B',
+              fontWeight: 800,
+              fontSize: '0.6875rem',
+              height: 22,
+              border: '1px solid #C99846',
+              boxShadow: '0 2px 6px rgba(88, 55, 20, 0.15)',
+            }}
+          />
+        );
+      }
+      return (
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ py: 0.5 }}>
+          {apps.slice(0, 4).map((app) => (
+            <Chip
+              key={app.label}
+              size="small"
+              label={app.label}
+              sx={{
+                height: 20,
+                fontSize: '0.625rem',
+                fontWeight: 700,
+                bgcolor: app.bg,
+                color: app.color,
+                border: `1px solid ${app.color}33`,
+                '& .MuiChip-label': { px: 0.7 },
+              }}
+            />
+          ))}
+          {apps.length > 4 && (
+            <Tooltip title={apps.slice(4).map((a) => a.label).join(', ')}>
+              <Chip
+                size="small"
+                label={`+${apps.length - 4}`}
+                sx={{
+                  height: 20,
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  bgcolor: 'rgba(212, 163, 78, 0.15)',
+                  color: '#583714',
+                  '& .MuiChip-label': { px: 0.5 },
+                }}
+              />
+            </Tooltip>
+          )}
+        </Stack>
       );
     },
   },
@@ -160,9 +343,10 @@ const COLUMNS = [
 export default function UsersListPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { user: currentUser, isPlatformOwner } = useAuth();
   const { items, total, status } = useAppSelector((state) => state.users);
   const { page, pageSize, search, sortField, sortOrder, filters, setPage, setPageSize, setSearch, setSort, setFilter, queryParams } =
-    useTableQueryParams({ filterKeys: ['role', 'status'] });
+    useTableQueryParams({ filterKeys: ['role', 'status', 'apps'] });
 
   const [dialogState, setDialogState] = useState({ open: false, mode: 'create', user: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -290,10 +474,21 @@ export default function UsersListPage() {
   const actions = [
     { label: 'View', icon: <VisibilityIcon fontSize="small" />, onClick: handleView },
     { label: 'Edit', icon: <EditIcon fontSize="small" />, onClick: handleEdit },
-    { label: 'Set Password', icon: <LockResetIcon fontSize="small" />, onClick: setSetPasswordUser },
+    {
+      label: 'Set Password',
+      icon: <LockResetIcon fontSize="small" />,
+      show: (row) => {
+        const targetSuper = row.adminType === ADMIN_TYPES.SUPER_ADMIN || row.appSuperAdmin;
+        if (!targetSuper) return true;
+        if (isPlatformOwner) return true;
+        return String(row._id) === String(currentUser?._id);
+      },
+      onClick: setSetPasswordUser,
+    },
     {
       label: 'Permissions',
       icon: <AdminPanelSettingsIcon fontSize="small" />,
+      show: (row) => row.adminType !== ADMIN_TYPES.SUPER_ADMIN,
       onClick: setPermissionsUser,
     },
     {
@@ -302,7 +497,13 @@ export default function UsersListPage() {
       show: (row) => row.status === USER_STATUS.ACTIVE,
       onClick: handleImpersonate,
     },
-    { label: 'Delete', icon: <DeleteIcon fontSize="small" color="error" />, onClick: setConfirmDelete, danger: true },
+    {
+      label: 'Delete',
+      icon: <DeleteIcon fontSize="small" color="error" />,
+      show: (row) => row.adminType !== ADMIN_TYPES.SUPER_ADMIN,
+      onClick: setConfirmDelete,
+      danger: true,
+    },
   ];
 
   return (
@@ -315,8 +516,7 @@ export default function UsersListPage() {
                 width: 28,
                 height: 28,
                 borderRadius: '8px',
-                bgcolor: '#f3e8ff',
-                color: '#7c3aed',
+                bgcolor: 'rgba(212, 163, 78, 0.2)', color: '#583714',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -335,12 +535,20 @@ export default function UsersListPage() {
             variant="contained"
             onClick={handleCreate}
             sx={{
-              bgcolor: '#7c3aed',
-              borderRadius: '8px',
-              '&:hover': { bgcolor: '#6d28d9' },
+              background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+              color: '#3A230B',
+              borderRadius: '10px',
+              fontWeight: 800,
+              textTransform: 'none',
+              px: { xs: 1.5, sm: 2.5 },
+              minHeight: 36,
+              boxShadow: '0 2px 8px rgba(88, 55, 20, 0.2)',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
+              },
             }}
           >
-            Add User
+            + Add User
           </Button>
         }
       />
@@ -357,9 +565,55 @@ export default function UsersListPage() {
         onSortChange={(model) => model && setSort(model.field, model.sort)}
         searchValue={search}
         onSearchChange={setSearch}
+        toolbarStart={
+          <TextField
+            select
+            size="small"
+            label="Staff"
+            value={filters.role || ''}
+            onChange={(e) => setFilter('role', e.target.value)}
+            sx={{
+              minWidth: 210,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FFFDF8',
+                borderRadius: '10px',
+                '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+              },
+            }}
+          >
+            <MenuItem value="">All Staff</MenuItem>
+            <MenuItem value={ADMIN_TYPES.SUPER_ADMIN}>Super Admins</MenuItem>
+            <MenuItem value={ROLES.USER}>Salespeople & Field Staff</MenuItem>
+            <MenuItem value={ROLES.ADMIN}>Admins & Coordinators</MenuItem>
+          </TextField>
+        }
         filters={[
-          { field: 'role', label: 'Role', options: [{ value: ROLES.ADMIN, label: 'Admin' }, { value: ROLES.USER, label: 'User' }] },
+          {
+            field: 'role',
+            label: 'Role',
+            options: [
+              { value: ADMIN_TYPES.SUPER_ADMIN, label: 'Super Admin' },
+              { value: ROLES.ADMIN, label: 'Admin' },
+              { value: ROLES.USER, label: 'User' },
+            ],
+          },
           { field: 'status', label: 'Status', options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] },
+          {
+            field: 'apps',
+            label: 'Apps',
+            multiple: true,
+            options: [
+              { value: 'complaints', label: 'Complaint Resolution' },
+              { value: 'attendance', label: 'Attendance & Visits' },
+              { value: 'projects', label: 'Projects' },
+              { value: 'tenders', label: 'Tenders' },
+              { value: 'billing', label: 'Billing' },
+              { value: 'financialDocuments', label: 'Finance Docs' },
+              { value: 'inspections', label: 'Inspections' },
+              { value: 'accounts', label: 'Accounts' },
+              { value: 'atlantaPayments', label: 'Atlanta Payments' },
+            ],
+          },
         ]}
         filterValues={filters}
         onFilterChange={setFilter}

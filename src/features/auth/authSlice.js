@@ -19,6 +19,10 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.permissions = action.payload.permissions;
       state.accessToken = action.payload.accessToken;
+      state.impersonatorAdmin = null;
+      state.bootstrapped = true;
+      state.status = 'succeeded';
+      state.error = null;
     },
     sessionExpired(state) {
       state.user = null;
@@ -62,9 +66,23 @@ const authSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
+        // Stale refresh can finish after Central SSO — don't overwrite the newer session.
+        const incomingEmail = String(action.payload?.user?.email || '').toLowerCase();
+        const currentEmail = String(state.user?.email || '').toLowerCase();
+        if (
+          state.accessToken &&
+          currentEmail &&
+          incomingEmail &&
+          currentEmail !== incomingEmail
+        ) {
+          state.bootstrapped = true;
+          state.status = 'succeeded';
+          return;
+        }
         state.status = 'succeeded';
         state.user = action.payload.user;
         state.permissions = action.payload.permissions;
+        if (action.payload.accessToken) state.accessToken = action.payload.accessToken;
         state.bootstrapped = true;
       })
       .addCase(fetchMe.rejected, (state) => {

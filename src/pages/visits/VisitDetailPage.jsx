@@ -34,6 +34,7 @@ export default function VisitDetailPage() {
   const [remark, setRemark] = useState('');
   const [busy, setBusy] = useState(false);
   const [missOpen, setMissOpen] = useState(false);
+  const [outOfRangeReason, setOutOfRangeReason] = useState('');
   const [readingLoc, setReadingLoc] = useState(false);
 
   const load = useCallback(async () => {
@@ -70,7 +71,7 @@ export default function VisitDetailPage() {
     return () => clearInterval(timer);
   }, [visit, isSalesperson, refreshProximity]);
 
-  const handleCheckInWithPhoto = async (photoFile) => {
+  const handleCheckInWithPhoto = async (photoFile, options = {}) => {
     if (!photoFile) return;
     setBusy(true);
     setReadingLoc(true);
@@ -82,10 +83,23 @@ export default function VisitDetailPage() {
       form.append('lng', String(loc.lng));
       if (loc.address) form.append('address', loc.address);
       form.append('photo', photoFile);
+      if (options.proceedAnyway) {
+        form.append('proceedAnyway', 'true');
+        if (options.explanation) form.append('explanation', options.explanation);
+      }
 
       const { data } = await visitApi.checkIn(id, form);
       setVisit(data.data);
-      dispatch(showSnackbar({ message: 'Checked in successfully!' }));
+      if (data.data?.status === VISIT_STATUS.PENDING_APPROVAL) {
+        dispatch(
+          showSnackbar({
+            message: 'Checked in outside location. Submitted to Admin for approval.',
+            severity: 'warning',
+          })
+        );
+      } else {
+        dispatch(showSnackbar({ message: 'Checked in successfully!' }));
+      }
       if (isSalesperson) {
         navigate('/visits/today');
         return;
@@ -123,10 +137,22 @@ export default function VisitDetailPage() {
       if (loc.address) form.append('address', loc.address);
       form.append('photo', photoFile);
       form.append('outcomeNotes', cleanRemark);
+      if (!within && !isInitial) {
+        form.append('proceedAnyway', 'true');
+      }
 
       const { data } = await visitApi.checkOut(id, form);
       setVisit(data.data);
-      dispatch(showSnackbar({ message: 'Checked out successfully!' }));
+      if (data.data?.status === VISIT_STATUS.PENDING_APPROVAL) {
+        dispatch(
+          showSnackbar({
+            message: 'Checked out. Visit is Pending Admin Approval for location exception.',
+            severity: 'warning',
+          })
+        );
+      } else {
+        dispatch(showSnackbar({ message: 'Checked out successfully!' }));
+      }
       if (isSalesperson) {
         navigate('/visits/today');
         return;
@@ -167,11 +193,20 @@ export default function VisitDetailPage() {
   const within = proximity?.withinGeofence ?? true;
   const isInitial = proximity?.isInitialSetup;
   const radius = visit.allowedRadiusMeters || 100;
-  const canCheckIn = isSalesperson && (status === VISIT_STATUS.PLANNED || status === VISIT_STATUS.REJECTED) && !visit.checkInAt;
-  const canCheckOut = isSalesperson && status === VISIT_STATUS.IN_PROGRESS;
+  const isOutOfRange = !isInitial && distance != null && !within;
+  const canCheckIn =
+    isSalesperson &&
+    (status === VISIT_STATUS.PLANNED || status === VISIT_STATUS.REJECTED) &&
+    !visit.checkInAt;
+  const canCheckOut =
+    isSalesperson &&
+    !visit.checkOutAt &&
+    (status === VISIT_STATUS.IN_PROGRESS ||
+      (status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkInAt)));
   const canMiss =
     isSalesperson &&
-    [VISIT_STATUS.PLANNED, VISIT_STATUS.IN_PROGRESS, VISIT_STATUS.REJECTED].includes(status);
+    [VISIT_STATUS.PLANNED, VISIT_STATUS.IN_PROGRESS, VISIT_STATUS.REJECTED, VISIT_STATUS.PENDING_APPROVAL].includes(status) &&
+    !visit.checkOutAt;
 
   return (
     <>
@@ -195,8 +230,20 @@ export default function VisitDetailPage() {
             {/* Status & Timing */}
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Chip
-                label={status.replaceAll('_', ' ')}
-                color={status === VISIT_STATUS.COMPLETED ? 'success' : status === VISIT_STATUS.IN_PROGRESS ? 'info' : 'default'}
+                label={
+                  status === VISIT_STATUS.PENDING_APPROVAL
+                    ? 'PENDING ADMIN APPROVAL'
+                    : status.replaceAll('_', ' ')
+                }
+                color={
+                  status === VISIT_STATUS.COMPLETED
+                    ? 'success'
+                    : status === VISIT_STATUS.IN_PROGRESS
+                    ? 'info'
+                    : status === VISIT_STATUS.PENDING_APPROVAL
+                    ? 'warning'
+                    : 'default'
+                }
                 sx={{ fontWeight: 700 }}
               />
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
@@ -224,6 +271,7 @@ export default function VisitDetailPage() {
               <Box sx={{ p: 1.5, borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
                   ✓ Checked In: {new Date(visit.checkInAt).toLocaleTimeString()}
+                  {visit.checkInDistanceM != null && visit.checkInDistanceM > radius ? ` (${visit.checkInDistanceM}m away)` : ''}
                 </Typography>
                 {visit.checkInAddress && (
                   <Typography variant="caption" color="text.secondary">
@@ -268,52 +316,118 @@ export default function VisitDetailPage() {
               </Box>
             )}
 
+            {/* Out of range / Pending Admin Approval Notice */}
+            {status === VISIT_STATUS.PENDING_APPROVAL && (
+              <Alert severity="warning" sx={{ borderRadius: '8px' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  ⏳ Pending Admin Approval
+                </Typography>
+                <Typography variant="body2">
+                  {visit.checkOutAt
+                    ? 'Visit is completed and submitted for Admin approval due to location exception.'
+                    : 'Check-in was recorded outside the allowed customer location. It has been submitted to your Admin for approval. You can proceed with your meeting and check out below when done.'}
+                </Typography>
+                {visit.missedExplanation && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                    Note: {visit.missedExplanation}
+                  </Typography>
+                )}
+              </Alert>
+            )}
+
             {/* Proximity / GPS distance alerts */}
             {isSalesperson && canCheckIn && (
               <>
                 {proximity?.error ? (
-                  <Alert severity="warning">{proximity.error}</Alert>
+                  <Alert severity="warning" sx={{ borderRadius: '8px' }}>{proximity.error}</Alert>
                 ) : isInitial ? (
-                  <Alert severity="info">
+                  <Alert severity="info" sx={{ borderRadius: '8px' }}>
                     <strong>First Visit:</strong> Customer coordinates will be registered at your current GPS location upon check-in.
                   </Alert>
                 ) : distance != null ? (
                   within ? (
-                    <Alert severity="success" icon={<CheckCircleOutlineIcon fontSize="inherit" />}>
+                    <Alert severity="success" icon={<CheckCircleOutlineIcon fontSize="inherit" />} sx={{ borderRadius: '8px' }}>
                       You are within the allowed location (<strong>{Math.round(distance)} meters</strong> away).
                     </Alert>
                   ) : (
-                    <Alert severity="warning">
-                      You are outside the allowed customer location (<strong>{Math.round(distance)} meters</strong> away). Move within {radius} meters to check in.
+                    <Alert severity="warning" sx={{ borderRadius: '8px' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                        📍 Outside Customer Location ({Math.round(distance)} meters away)
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Allowed radius is {radius} meters. If you are meeting nearby (e.g. coffee shop, client gate) or experiencing GPS drift, you can <strong>Proceed Anyway</strong>.
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Your exact GPS coordinates and photo will be logged, and this visit will be submitted as <strong>Pending Admin Approval</strong>.
+                      </Typography>
                     </Alert>
                   )
                 ) : null}
               </>
             )}
 
-            {/* Actions for Salesperson */}
+            {/* Actions for Salesperson Check-In */}
             {canCheckIn && (
               <Stack spacing={1.5}>
-                <Button
-                  component="label"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  disabled={busy || (!within && !isInitial)}
-                  startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
-                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
-                >
-                  {busy ? (readingLoc ? 'Reading GPS…' : 'Checking in…') : 'Click Picture & Check In'}
-                  <CameraFileInput capture="environment" onFile={handleCheckInWithPhoto} />
-                </Button>
+                {!isOutOfRange ? (
+                  <Button
+                    component="label"
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    disabled={busy}
+                    startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
+                    sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
+                  >
+                    {busy ? (readingLoc ? 'Reading GPS…' : 'Checking in…') : 'Click Picture & Check In'}
+                    <CameraFileInput capture="environment" onFile={(file) => handleCheckInWithPhoto(file)} />
+                  </Button>
+                ) : (
+                  <Stack spacing={1.5}>
+                    <TextField
+                      size="small"
+                      label="Reason for out-of-location visit (optional)"
+                      placeholder="e.g. Met client at nearby cafe / GPS signal drift"
+                      value={outOfRangeReason}
+                      onChange={(e) => setOutOfRangeReason(e.target.value)}
+                      fullWidth
+                    />
+                    <Button
+                      component="label"
+                      variant="contained"
+                      color="warning"
+                      size="large"
+                      disabled={busy}
+                      startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
+                      sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
+                    >
+                      {busy ? (readingLoc ? 'Reading GPS…' : 'Submitting…') : 'Proceed Anyway & Check In (Admin Approval)'}
+                      <CameraFileInput
+                        capture="environment"
+                        onFile={(file) =>
+                          handleCheckInWithPhoto(file, {
+                            proceedAnyway: true,
+                            explanation: outOfRangeReason,
+                          })
+                        }
+                      />
+                    </Button>
+                  </Stack>
+                )}
                 <Typography variant="caption" color="text.secondary" align="center">
                   Takes a picture of the customer/site and automatically records GPS and time
                 </Typography>
               </Stack>
             )}
 
+            {/* Actions for Salesperson Check-Out */}
             {canCheckOut && (
               <Stack spacing={2}>
+                {isOutOfRange && (
+                  <Alert severity="warning" sx={{ borderRadius: '8px' }}>
+                    📍 You are currently {Math.round(distance)}m away from customer site. Checking out will record your live coordinates for admin review.
+                  </Alert>
+                )}
                 <TextField
                   required
                   autoFocus
@@ -330,7 +444,7 @@ export default function VisitDetailPage() {
                 <Button
                   component="label"
                   variant="contained"
-                  color="success"
+                  color={status === VISIT_STATUS.PENDING_APPROVAL ? 'warning' : 'success'}
                   size="large"
                   disabled={busy || !remark.trim()}
                   startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
@@ -361,10 +475,10 @@ export default function VisitDetailPage() {
             )}
 
             {status === VISIT_STATUS.COMPLETED && (
-              <Alert severity="success">Visit completed successfully!</Alert>
+              <Alert severity="success" sx={{ borderRadius: '8px' }}>Visit completed successfully!</Alert>
             )}
             {status === VISIT_STATUS.APPROVED_MISSED && (
-              <Alert severity="info">Visit approved as missed ({visit.missedReason}).</Alert>
+              <Alert severity="info" sx={{ borderRadius: '8px' }}>Visit approved as missed ({visit.missedReason}).</Alert>
             )}
           </Stack>
         </CardContent>

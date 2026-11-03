@@ -14,4 +14,5 @@ export const visitApi = {
   reportMissed: (id, payload) => axiosInstance.post(`/visits/${id}/miss`, payload),
   approvals: (params) => axiosInstance.get('/visits/approvals', { params }),
   review: (id, payload) => axiosInstance.post(`/visits/approvals/${id}/review`, payload),
+  dailySummary: (params) => axiosInstance.get('/visits/daily-summary', { params }),
 };

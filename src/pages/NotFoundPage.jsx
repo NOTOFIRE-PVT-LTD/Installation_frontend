@@ -4,11 +4,11 @@ import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getDefaultLandingPath } from '../routes/routeConfig';
+import { goToCentralLogin } from '../utils/centralAuth';
 
 export default function NotFoundPage({ code = 404, message = 'Page not found' }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, permissions } = useAuth();
-  const homePath = isAuthenticated ? getDefaultLandingPath(user, permissions) : '/login';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', gap: 2 }}>
@@ -18,7 +18,13 @@ export default function NotFoundPage({ code = 404, message = 'Page not found' })
       <Typography variant="h6" color="text.secondary">
         {message}
       </Typography>
-      <Button variant="contained" onClick={() => navigate(homePath, { replace: true })}>
+      <Button
+        variant="contained"
+        onClick={() => {
+          if (isAuthenticated) navigate(getDefaultLandingPath(user, permissions), { replace: true });
+          else goToCentralLogin();
+        }}
+      >
         Go Home
       </Button>
     </Box>

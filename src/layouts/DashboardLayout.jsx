@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListSubheader from '@mui/material/ListSubheader';
@@ -27,13 +26,14 @@ import { useTheme } from '@mui/material/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { useAuth } from '../hooks/useAuth';
-import { NAV_ITEMS, getDefaultLandingPath, isNavItemAllowed } from '../routes/routeConfig';
+import { NAV_ITEMS, flattenNavItems, getDefaultLandingPath, isNavItemAllowed } from '../routes/routeConfig';
 import { logout } from '../features/auth/authThunks';
 import { stopImpersonation } from '../features/auth/authSlice';
 import { hideSnackbar } from '../features/ui/uiSlice';
-import { APP_NAME } from '../utils/constants';
 import logo from '../assets/logo.png';
 import GlobalSearchBar from '../components/common/GlobalSearchBar';
+import SidebarNavList from './SidebarNavList';
+import { goToCentralLogin } from '../utils/centralAuth';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 76;
@@ -57,7 +57,7 @@ function isSidebarItemActive(pathname, item) {
 
 function useVisibleNavItems() {
   const { user, permissions } = useAuth();
-  return NAV_ITEMS.filter((item) => isNavItemAllowed(item, user, permissions));
+  return flattenNavItems(NAV_ITEMS).filter((item) => isNavItemAllowed(item, user, permissions));
 }
 
 export default function DashboardLayout() {
@@ -77,7 +77,7 @@ export default function DashboardLayout() {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, permissions } = useAuth();
+  const { user, permissions, isSuperAdmin } = useAuth();
   const impersonatorAdmin = useAppSelector((state) => state.auth.impersonatorAdmin);
   const snackbar = useAppSelector((state) => state.ui.snackbar);
   const navItems = useVisibleNavItems();
@@ -102,7 +102,7 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     await dispatch(logout());
-    navigate('/login', { replace: true });
+    goToCentralLogin();
   };
 
   const handleExitImpersonation = () => {
@@ -111,84 +111,23 @@ export default function DashboardLayout() {
     navigate(restoredPath, { replace: true });
   };
 
-  const renderDrawerContent = ({ forceExpanded = false } = {}) => {
-    const isCollapsed = forceExpanded ? false : collapsed;
-    return (
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <List sx={{ flex: 1, px: 1, pt: 1, overflowY: 'auto' }}>
-          {navItems.map((item, index) => {
-            const prev = navItems[index - 1];
-            const showSection = item.section && item.section !== prev?.section && !isCollapsed;
-            const active = isSidebarItemActive(location.pathname, item);
-            return (
-              <Box key={item.path}>
-                {showSection ? (
-                  <ListSubheader disableSticky sx={{ bgcolor: 'transparent', lineHeight: 2, fontSize: '0.7rem', letterSpacing: '0.04em' }}>
-                    {item.section}
-                  </ListSubheader>
-                ) : null}
-                <Tooltip title={isCollapsed ? item.label : ''} placement="right">
-                  <ListItemButton
-                    component={NavLink}
-                    to={item.path}
-                    selected={active}
-                    onClick={() => setMobileOpen(false)}
-                    sx={{
-                      borderRadius: 999,
-                      mb: 0.5,
-                      justifyContent: isCollapsed ? 'center' : 'flex-start',
-                      px: isCollapsed ? 1.5 : 2,
-                      '&.Mui-selected': {
-                        background: (t) => `${t.palette.primary.gradient} !important`,
-                        color: 'primary.contrastText',
-                        '& .MuiListItemIcon-root': { color: 'inherit' },
-                        '& .MuiListItemText-primary': { color: 'inherit', fontWeight: 600 },
-                      },
-                      '&.Mui-selected:hover': {
-                        background: (t) => `${t.palette.primary.gradientHover} !important`,
-                      },
-                      '&:hover': {
-                        bgcolor: 'primary.light',
-                        color: 'primary.dark',
-                        '& .MuiListItemIcon-root': { color: 'inherit' },
-                      },
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: isCollapsed ? 0 : 40,
-                        justifyContent: 'center',
-                        color: active ? '#fff' : 'primary.main',
-                      }}
-                    >
-                      <FontAwesomeIcon icon={item.icon} fixedWidth style={{ color: 'currentColor' }} />
-                    </ListItemIcon>
-                    {!isCollapsed && <ListItemText primary={item.label} />}
-                  </ListItemButton>
-                </Tooltip>
-              </Box>
-            );
-          })}
-        </List>
-      </Box>
-    );
-  };
+
 
   return (
     <Box sx={{ display: 'flex', width: '100%', overflowX: 'hidden' }}>
       <AppBar
         position="fixed"
-        color="inherit"
         elevation={0}
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
           width: '100%',
           left: 0,
           borderRadius: 0,
-          boxShadow: 'none',
+          boxShadow: '0 2px 10px rgba(26, 17, 7, 0.25)',
           border: 'none',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          borderBottom: '1px solid rgba(212, 167, 85, 0.35)',
+          background: 'linear-gradient(90deg, #E5B85C 0%, #C99846 15%, #8C591D 45%, #543310 70%, #2A1705 100%)',
+          color: '#FFFFFF',
         }}
       >
         <Toolbar sx={{ gap: 0, px: { xs: 1, sm: 0 }, minWidth: 0 }}>
@@ -206,9 +145,8 @@ export default function DashboardLayout() {
             }}
           >
             <IconButton
-              color="primary"
               onClick={() => (isMobile ? setMobileOpen(true) : toggleCollapsed())}
-              sx={{ color: 'primary.main' }}
+              sx={{ color: '#241404', '&:hover': { bgcolor: 'rgba(36, 20, 4, 0.12)' } }}
             >
               {collapsed && !isMobile ? <MenuOpenIcon /> : <MenuIcon />}
             </IconButton>
@@ -228,48 +166,35 @@ export default function DashboardLayout() {
             sx={{
               flex: 1,
               minWidth: 0,
-              position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-end',
-              pr: { xs: 0, sm: 2 },
+              gap: 1,
+              pr: { xs: 0.5, sm: 2 },
             }}
           >
-            <Box
-              sx={{
-                display: { xs: 'none', sm: 'flex' },
-                justifyContent: 'center',
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                px: 2,
-                pointerEvents: 'none',
-                '& > *': { pointerEvents: 'auto', width: '100%', maxWidth: 520 },
-              }}
-            >
-              <GlobalSearchBar />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'flex', sm: 'none' }, alignItems: 'center', mr: 1 }}>
-              <Typography variant="subtitle2" fontWeight={700} noWrap>
-                {APP_NAME}
-              </Typography>
-            </Box>
+            {isSuperAdmin ? (
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: { xs: 'stretch', sm: 'center' } }}>
+                <GlobalSearchBar placeholder={isMobile ? 'Search…' : 'Search projects, users, stations...'} />
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, minWidth: 0 }} />
+            )}
             <IconButton
               onClick={(e) => setAnchorEl(e.currentTarget)}
-              sx={{ p: 0, position: 'relative', zIndex: 1, '&:hover': { bgcolor: 'transparent' } }}
+              sx={{ p: 0, flexShrink: 0, '&:hover': { bgcolor: 'transparent' } }}
             >
               <Avatar
                 src={user?.profileImage?.url}
                 sx={{
                   width: 36,
                   height: 36,
-                  border: 0,
-                  color: '#fff',
+                  border: '1.5px solid #FAE2B4',
+                  color: '#241404',
                   fontSize: '0.8125rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   bgcolor: 'transparent',
-                  background: (t) =>
-                    `${Boolean(anchorEl) ? t.palette.primary.gradientHover : t.palette.primary.gradient60} !important`,
+                  background: 'linear-gradient(135deg, #FAE2B4 0%, #E5B85C 50%, #D4A34E 100%) !important',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                 }}
               >
                 {user?.name?.[0]?.toUpperCase()}
@@ -310,15 +235,15 @@ export default function DashboardLayout() {
               width: DRAWER_WIDTH,
               borderRadius: 0,
               border: 'none',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              boxShadow: 'none',
+              borderRight: '1px solid rgba(212, 167, 85, 0.25)',
+              boxShadow: '4px 0 20px rgba(26, 17, 7, 0.35)',
+              background: 'linear-gradient(180deg, #201204 0%, #341D08 25%, #563310 50%, #82521B 72%, #B57F2F 88%, #D4A34E 100%)',
               top: 52,
               height: 'calc(100% - 52px)',
             },
           }}
         >
-          {renderDrawerContent({ forceExpanded: true })}
+          <SidebarNavList isCollapsed={false} onNavigate={() => setMobileOpen(false)} />
         </Drawer>
         <Drawer
           variant="permanent"
@@ -332,16 +257,16 @@ export default function DashboardLayout() {
               transition: 'width 0.2s',
               borderRadius: 0,
               border: 'none',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              boxShadow: 'none',
+              borderRight: '1px solid rgba(212, 167, 85, 0.25)',
+              boxShadow: '2px 0 14px rgba(26, 17, 7, 0.25)',
+              background: 'linear-gradient(180deg, #201204 0%, #341D08 25%, #563310 50%, #82521B 72%, #B57F2F 88%, #D4A34E 100%)',
               top: 52,
               height: 'calc(100% - 52px)',
             },
           }}
           open
         >
-          {renderDrawerContent()}
+          <SidebarNavList isCollapsed={collapsed} onNavigate={() => {}} />
         </Drawer>
       </Box>
 
@@ -354,6 +279,8 @@ export default function DashboardLayout() {
           p: { xs: 1, sm: 2 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           transition: 'width 0.2s',
+          bgcolor: '#F8F6F1',
+          minHeight: '100vh',
         }}
       >
         <Toolbar />

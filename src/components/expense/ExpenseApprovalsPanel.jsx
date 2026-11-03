@@ -15,7 +15,7 @@ import { showSnackbar } from '../../features/ui/uiSlice';
 import { visitExpenseApi } from '../../api/visitExpenseApi';
 import { ROLES, VISIT_EXPENSE_STATUS } from '../../utils/constants';
 
-export default function ExpenseApprovalsPanel() {
+export default function ExpenseApprovalsPanel({ toolbarStart }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -116,6 +116,7 @@ export default function ExpenseApprovalsPanel() {
         onPageChange={() => {}}
         onPageSizeChange={() => {}}
         onRowClick={(row) => navigate(`/expenses/${row._id}`)}
+        toolbarStart={toolbarStart}
       />
       <ConfirmDialog
         open={Boolean(approveId)}

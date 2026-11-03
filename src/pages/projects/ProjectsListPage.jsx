@@ -115,8 +115,7 @@ export default function ProjectsListPage() {
                 width: 28,
                 height: 28,
                 borderRadius: '8px',
-                bgcolor: '#e6fffb',
-                color: '#0f766e',
+                bgcolor: 'rgba(229, 184, 92, 0.22)', color: '#543310', border: '1px solid rgba(212, 163, 78, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -136,9 +135,15 @@ export default function ProjectsListPage() {
               variant="contained"
               onClick={handleAdd}
               sx={{
-                bgcolor: '#0f766e',
-                borderRadius: '8px',
-                '&:hover': { bgcolor: '#0d9488' },
+                background: 'linear-gradient(90deg, #FAE2B4 0%, #E5B85C 25%, #C99846 60%, #7D511E 85%, #38200A 100%) !important',
+                color: '#241404 !important',
+                borderRadius: 999,
+                fontWeight: 800,
+                boxShadow: '0 4px 14px rgba(32, 18, 4, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #FFF3BD 0%, #E5B85C 30%, #A37836 70%, #583714 100%) !important',
+                  boxShadow: '0 6px 18px rgba(32, 18, 4, 0.4)',
+                },
               }}
             >
               Add Project

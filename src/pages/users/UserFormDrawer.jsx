@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -19,12 +19,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
-import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS, GENDER } from '../../utils/constants';
+import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS, GENDER, APP_ACCESS_OPTIONS, ACCOUNT_LEVEL } from '../../utils/constants';
 import { formatDate } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
 
-const ROLE_OPTIONS = [
-  { value: ROLES.ADMIN, label: 'Admin' },
-  { value: ROLES.USER, label: 'User (Installer)' },
+const ACCOUNT_LEVEL_OPTIONS = [
+  { value: ACCOUNT_LEVEL.USER, label: 'User (Field Engineer / Salesperson)' },
+  { value: ACCOUNT_LEVEL.ADMIN, label: 'Admin' },
+  { value: ACCOUNT_LEVEL.SUPER_ADMIN, label: 'Super Admin' },
 ];
 
 const ROLE_STYLE = {
@@ -39,11 +41,11 @@ function buildSchema(isEdit) {
     password: isEdit ? yup.string().notRequired() : yup.string().min(8, 'Must be at least 8 characters').required('Password is required'),
     mobileNumber: yup.string().required('Mobile number is required'),
     gender: yup.string().oneOf([GENDER.MALE, GENDER.FEMALE]).required('Gender is required'),
-    role: yup.string().required('Role is required'),
-    adminType: yup.string().when('role', {
-      is: ROLES.ADMIN,
-      then: (schema) => (isEdit ? schema.notRequired() : schema.required('Admin type is required')),
-      otherwise: (schema) => schema.notRequired(),
+    accountLevel: yup.string().required('Select User, Admin, or Super Admin'),
+    appAccess: yup.string().when('accountLevel', {
+      is: ACCOUNT_LEVEL.USER,
+      then: (schema) => schema.required('Select an app'),
+      otherwise: (schema) => schema.required('Select an app'),
     }),
   });
 }
@@ -51,11 +53,6 @@ function buildSchema(isEdit) {
 const GENDER_OPTIONS = [
   { value: GENDER.MALE, label: 'Male (10:00–7:00 · 9 hours)' },
   { value: GENDER.FEMALE, label: 'Female (10:00–6:30 · 8:30 hours)' },
-];
-
-const ADMIN_TYPE_OPTIONS = [
-  { value: ADMIN_TYPES.SALES_COORDINATOR, label: ADMIN_TYPE_LABELS.SALES_COORDINATOR },
-  { value: ADMIN_TYPES.TENDER_COORDINATOR, label: ADMIN_TYPE_LABELS.TENDER_COORDINATOR },
 ];
 
 function DetailRow({ icon, label, value }) {
@@ -97,14 +94,45 @@ function DetailRow({ icon, label, value }) {
   );
 }
 
+function accountLevelFromUser(user) {
+  if (!user) return ACCOUNT_LEVEL.USER;
+  if (user.adminType === ADMIN_TYPES.SUPER_ADMIN) return ACCOUNT_LEVEL.SUPER_ADMIN;
+  if (user.appSuperAdmin) return ACCOUNT_LEVEL.SUPER_ADMIN;
+  if (user.role === ROLES.ADMIN) return ACCOUNT_LEVEL.ADMIN;
+  return ACCOUNT_LEVEL.USER;
+}
+
+function appAccessFromUser(user) {
+  if (user?.adminType === ADMIN_TYPES.SUPER_ADMIN) return 'ALL';
+  if (user?.adminType === ADMIN_TYPES.COMPLAINT_COORDINATOR || user?.permissions?.complaints) return 'complaints';
+  if (user?.adminType === ADMIN_TYPES.SALES_COORDINATOR || user?.jobRole === 'SALESPERSON') return 'attendance';
+  if (user?.adminType === ADMIN_TYPES.TENDER_COORDINATOR || user?.permissions?.tenders) return 'tenders';
+  if (user?.permissions?.projects) return 'projects';
+  if (user?.permissions?.billing) return 'billing';
+  if (user?.permissions?.accounts) return 'accounts';
+  if (user?.permissions?.inspections) return 'inspections';
+  if (user?.permissions?.financialDocuments) return 'financialDocuments';
+  if (user?.permissions?.atlantaPayments) return 'atlantaPayments';
+  return 'complaints';
+}
+
 export default function UserFormDrawer({ open, mode = 'create', user, onClose, onSubmit, submitting }) {
   const isEdit = mode === 'edit';
   const readOnly = mode === 'view';
+  const { isPlatformOwner, isSuperAdmin, permissions } = useAuth();
   const [imagePreview, setImagePreview] = useState('');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
-    defaultValues: { name: '', email: '', password: '', mobileNumber: '', gender: GENDER.MALE, role: ROLES.USER, adminType: '' },
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      mobileNumber: '',
+      gender: GENDER.MALE,
+      accountLevel: ACCOUNT_LEVEL.USER,
+      appAccess: 'COMPLAINTS',
+    },
   });
 
   useEffect(() => {
@@ -115,24 +143,68 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
         password: '',
         mobileNumber: user?.mobileNumber || '',
         gender: user?.gender || GENDER.MALE,
-        role: user?.role || ROLES.USER,
-        adminType:
-          user?.adminType && user.adminType !== ADMIN_TYPES.SUPER_ADMIN
-            ? user.adminType
-            : '',
+        accountLevel: accountLevelFromUser(user),
+        appAccess: user ? appAccessFromUser(user) : 'COMPLAINTS',
       });
       setImagePreview(user?.profileImage?.url || '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
+  const accountLevel = methods.watch('accountLevel');
+
+  const adminAppOptions = useMemo(() => {
+    const allowed =
+      isPlatformOwner || isSuperAdmin
+        ? APP_ACCESS_OPTIONS
+        : APP_ACCESS_OPTIONS.filter((opt) => permissions?.[opt.value]);
+    return allowed.length ? allowed : APP_ACCESS_OPTIONS.filter((opt) => opt.value === 'complaints');
+  }, [isPlatformOwner, isSuperAdmin, permissions]);
+
+  useEffect(() => {
+    const app = methods.getValues('appAccess');
+    if (accountLevel === ACCOUNT_LEVEL.USER && !['COMPLAINTS', 'ATTENDANCE', 'PROJECTS'].includes(app)) {
+      methods.setValue('appAccess', 'COMPLAINTS');
+      return;
+    }
+    if (accountLevel === ACCOUNT_LEVEL.USER) return;
+    if (accountLevel === ACCOUNT_LEVEL.SUPER_ADMIN && isPlatformOwner && app === 'ALL') return;
+    const mapped =
+      app === 'ATTENDANCE' ? 'attendance' : app === 'PROJECTS' ? 'projects' : app === 'COMPLAINTS' || app === 'ALL' ? 'complaints' : app;
+    const allowed = adminAppOptions.map((opt) => opt.value);
+    if (!allowed.includes(mapped)) {
+      methods.setValue('appAccess', allowed[0] || 'complaints');
+    } else if (mapped !== app) {
+      methods.setValue('appAccess', mapped);
+    }
+  }, [accountLevel, adminAppOptions, isPlatformOwner, methods]);
+
+  const appOptions =
+    accountLevel === ACCOUNT_LEVEL.SUPER_ADMIN && isPlatformOwner
+      ? [{ value: 'ALL', label: 'All Apps' }, ...APP_ACCESS_OPTIONS]
+      : accountLevel === ACCOUNT_LEVEL.USER
+        ? [
+            { value: 'COMPLAINTS', label: 'Complaint Resolution (Field Engineer)' },
+            { value: 'ATTENDANCE', label: 'Attendance System (Field Salesperson)' },
+            { value: 'PROJECTS', label: 'Projects & Installation (Site Installer)' },
+          ]
+        : adminAppOptions;
+
   const submit = (values) => {
     const formData = new FormData();
     formData.append('name', values.name);
     formData.append('mobileNumber', values.mobileNumber);
     formData.append('gender', values.gender);
-    formData.append('role', values.role);
-    if (values.role === ROLES.ADMIN && values.adminType) formData.append('adminType', values.adminType);
+    formData.append('accountLevel', values.accountLevel);
+    formData.append('appAccess', values.appAccess);
+    if (values.accountLevel === ACCOUNT_LEVEL.USER) {
+      formData.append('role', ROLES.USER);
+      const app = String(values.appAccess || 'COMPLAINTS').toUpperCase();
+      formData.append('appAccess', app);
+      formData.append('jobRole', app === 'ATTENDANCE' ? 'SALESPERSON' : 'INSTALLER');
+    } else {
+      formData.append('role', ROLES.ADMIN);
+    }
     if (!isEdit) {
       formData.append('email', values.email);
       formData.append('password', values.password);
@@ -140,7 +212,11 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
     onSubmit(formData);
   };
 
-  const titleMap = { create: 'Add User', edit: 'Edit User', view: 'User Details' };
+  const titleMap = {
+    create: user?.role === ROLES.ADMIN ? 'Add Admin / Coordinator' : 'Add Salesperson / User',
+    edit: user?.role === ROLES.ADMIN ? 'Edit Admin / Coordinator' : 'Edit User',
+    view: 'User Details',
+  };
   const iconMap = { create: faUserPlus, edit: faUserPen, view: faUser };
   const roleStyle = ROLE_STYLE[user?.role] || { color: '#64748b', bg: '#f1f5f9' };
   const isActive = user?.status === USER_STATUS.ACTIVE;
@@ -150,6 +226,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       anchor="right"
       open={open}
       onClose={onClose}
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
       PaperProps={{
         sx: {
           borderRadius: 0,
@@ -163,7 +240,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
             px: 2,
             pt: 2,
             pb: readOnly ? 0 : 1.5,
-            background: 'linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)',
+            background: 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
             borderBottom: readOnly ? 'none' : '1px solid',
             borderColor: 'divider',
           }}
@@ -280,10 +357,16 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 {!isEdit && <RHFTextField name="password" label="Password" type="password" />}
                 <RHFTextField name="mobileNumber" label="Mobile Number" />
                 <RHFSelect name="gender" label="Gender" options={GENDER_OPTIONS} />
-                <RHFSelect name="role" label="Role" options={ROLE_OPTIONS} />
-                {methods.watch('role') === ROLES.ADMIN && user?.adminType !== ADMIN_TYPES.SUPER_ADMIN && (
-                  <RHFSelect name="adminType" label="Admin type" options={ADMIN_TYPE_OPTIONS} />
-                )}
+                <RHFSelect
+                  name="accountLevel"
+                  label="Access"
+                  options={
+                    isSuperAdmin
+                      ? ACCOUNT_LEVEL_OPTIONS
+                      : ACCOUNT_LEVEL_OPTIONS.filter((opt) => opt.value !== ACCOUNT_LEVEL.SUPER_ADMIN)
+                  }
+                />
+                <RHFSelect name="appAccess" label="App" options={appOptions} />
               </Stack>
             </FormProvider>
           )}

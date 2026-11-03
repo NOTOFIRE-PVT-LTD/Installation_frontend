@@ -3,9 +3,9 @@ import ProtectedRoute from '../components/common/ProtectedRoute';
 import PermissionGate from '../components/common/PermissionGate';
 import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
-import LoginPage from '../pages/auth/LoginPage';
-import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+import CentralLoginRedirect from '../pages/auth/CentralLoginRedirect';
+import CentralSsoPage from '../pages/auth/CentralSsoPage';
+import WorkspaceHomePage from '../pages/home/WorkspaceHomePage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import UsersListPage from '../pages/users/UsersListPage';
 import SalespersonTrackingPage from '../pages/salespersonTracking/SalespersonTrackingPage';
@@ -43,6 +43,13 @@ import ProformaInvoicesPage from '../pages/proformaInvoices/ProformaInvoicesPage
 import DeliveryChallansPage from '../pages/deliveryChallans/DeliveryChallansPage';
 import AtlantaPaymentsPage from '../pages/atlantaPayments/AtlantaPaymentsPage';
 import AuditLogsPage from '../pages/auditLogs/AuditLogsPage';
+import ShippingControlPage, { ImportControlPage } from '../pages/shipping/ShippingControlPage';
+import ComplaintsPage from '../pages/complaints/ComplaintsPage';
+import ComplaintRegisterPage from '../pages/complaints/ComplaintRegisterPage';
+import PublicTrackPage from '../pages/complaints/PublicTrackPage';
+import ComplaintDashboardPage from '../pages/complaints/ComplaintDashboardPage';
+import ComplaintIntakePage from '../pages/complaints/ComplaintIntakePage';
+import ComplaintDetailPage from '../pages/complaints/ComplaintDetailPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
@@ -60,14 +67,27 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        {/* Staff auth is Centralisation only — no Workspace login UI */}
+        <Route path="/login" element={<CentralLoginRedirect />} />
+        <Route path="/central-sso" element={<CentralSsoPage />} />
+        <Route path="/forgot-password" element={<CentralLoginRedirect />} />
+        <Route path="/reset-password/:token" element={<CentralLoginRedirect />} />
       </Route>
+
+      {/* Public Customer Self-Service & Support URLs */}
+      <Route path="/submit" element={<ComplaintRegisterPage />} />
+      <Route path="/track" element={<PublicTrackPage />} />
+      <Route path="/support" element={<ComplaintRegisterPage />} />
+      <Route path="/support/track" element={<PublicTrackPage />} />
+      <Route path="/help" element={<ComplaintRegisterPage />} />
+      <Route path="/complaint/register" element={<ComplaintRegisterPage />} />
+      <Route path="/complaint/track" element={<PublicTrackPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/" element={<DefaultLandingRedirect />} />
+
+          <Route path="/home" element={<WorkspaceHomePage />} />
 
           <Route
             path="/dashboard"
@@ -79,6 +99,54 @@ export default function AppRoutes() {
           />
 
           <Route
+            path="/complaints/dashboard"
+            element={
+              <PermissionGate permission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ComplaintDashboardPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/complaints/new"
+            element={
+              <PermissionGate permission="complaints" userPermission="attendance" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ComplaintIntakePage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/complaints/track"
+            element={
+              <PermissionGate permission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <PublicTrackPage embedded />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/complaints/desk"
+            element={
+              <PermissionGate permission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ComplaintsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/complaints/:id"
+            element={
+              <PermissionGate permission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ComplaintDetailPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/complaints"
+            element={
+              <PermissionGate permission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ComplaintsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
             path="/users"
             element={
               <PermissionGate permission="users" roles={[]}>
@@ -88,22 +156,17 @@ export default function AppRoutes() {
           />
           <Route
             path="/salesperson-tracking"
-            element={
-              <PermissionGate permission="salespersonTracking" roles={[]}>
-                <SalespersonTrackingPage />
-              </PermissionGate>
-            }
+            element={<Navigate to="/attendance" replace />}
           />
           <Route
             path="/attendance"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
-                <AttendancePage />
+                <SalespersonTrackingPage />
               </PermissionGate>
             }
           />
@@ -111,10 +174,9 @@ export default function AppRoutes() {
             path="/visits/new"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <VisitCreatePage />
               </PermissionGate>
@@ -124,10 +186,9 @@ export default function AppRoutes() {
             path="/visits/today"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <VisitDayPage />
               </PermissionGate>
@@ -137,10 +198,9 @@ export default function AppRoutes() {
             path="/visits/:id"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <VisitDetailPage />
               </PermissionGate>
@@ -150,10 +210,9 @@ export default function AppRoutes() {
             path="/visits"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <VisitsHomePage />
               </PermissionGate>
@@ -163,10 +222,9 @@ export default function AppRoutes() {
             path="/expenses"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <MyExpensesPage />
               </PermissionGate>
@@ -176,10 +234,9 @@ export default function AppRoutes() {
             path="/expenses/:id"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <ExpenseDayPage />
               </PermissionGate>
@@ -189,10 +246,9 @@ export default function AppRoutes() {
             path="/leave"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <LeavePage />
               </PermissionGate>
@@ -202,14 +258,13 @@ export default function AppRoutes() {
             path="/my-approvals"
             element={
               <PermissionGate
-                permission="salespersonTracking"
-                roles={[ROLES.USER]}
+                permission="attendance"
+                roles={[ROLES.ADMIN, ROLES.USER]}
                 userPermission="attendance"
-                jobRole="SALESPERSON"
               >
                 <TrackingApprovalsPage
-                  title="My Requests"
-                  subtitle="See whether your attendance, visit, expense, and leave requests were approved"
+                  title="Approvals"
+                  subtitle="Track attendance, visit, expense, and leave approval status"
                 />
               </PermissionGate>
             }
@@ -443,8 +498,24 @@ export default function AppRoutes() {
           <Route
             path="/audit-logs"
             element={
-              <PermissionGate permission="auditLogs" roles={[]}>
+              <PermissionGate permission="auditLogs" userPermission="complaints" roles={[ROLES.USER]}>
                 <AuditLogsPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/shipping"
+            element={
+              <PermissionGate permission="shipping" userPermission="shipping" roles={[ROLES.USER]}>
+                <ShippingControlPage />
+              </PermissionGate>
+            }
+          />
+          <Route
+            path="/import-control"
+            element={
+              <PermissionGate permission="importControl" userPermission="importControl" roles={[ROLES.USER]}>
+                <ImportControlPage />
               </PermissionGate>
             }
           />

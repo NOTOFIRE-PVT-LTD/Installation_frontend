@@ -11,13 +11,12 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import DownloadIcon from '@mui/icons-material/Download';
+import AnimatedActionButton from '../../components/common/AnimatedActionButton';
 import SearchIcon from '@mui/icons-material/Search';
 import GridViewIcon from '@mui/icons-material/GridViewOutlined';
 import TableRowsIcon from '@mui/icons-material/TableRowsOutlined';
@@ -198,22 +197,7 @@ function CardsToolbar({ search, onSearchChange, filterOptions, filterValues, onF
             ))}
           </TextField>
         ))}
-        <Tooltip title="Export CSV">
-          <IconButton
-            onClick={onExportCsv}
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: '8px',
-              bgcolor: '#ecfdf5',
-              color: '#059669',   
-              border: '1px solid #a7f3d0',
-              '&:hover': { bgcolor: '#d1fae5', color: '#047857' },
-            }}
-          >
-            <DownloadIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Tooltip>
+        <AnimatedActionButton kind="download" label="Download" onClick={onExportCsv} />
       </Stack>
     </Stack>
   );

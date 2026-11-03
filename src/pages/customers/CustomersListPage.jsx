@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
@@ -116,12 +117,22 @@ export default function CustomersListPage({ embedded = false }) {
     <Button
       startIcon={<AddIcon />}
       variant="contained"
+      aria-label="New customer"
       onClick={() => {
         setMatches(null);
         setDrawer({ open: true, mode: 'create', customer: null });
       }}
+      sx={{
+        minWidth: { xs: 36, sm: 'auto' },
+        px: { xs: 1, sm: 2 },
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        '& .MuiButton-startIcon': { m: { xs: 0, sm: '0 8px 0 -4px' } },
+      }}
     >
-      New customer
+      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+        New customer
+      </Box>
     </Button>
   ) : null;
 

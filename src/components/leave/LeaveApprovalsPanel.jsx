@@ -29,7 +29,7 @@ function formatReviewedAt(value) {
   }).format(new Date(value));
 }
 
-export default function LeaveApprovalsPanel({ title }) {
+export default function LeaveApprovalsPanel({ title, toolbarStart }) {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -160,6 +160,7 @@ export default function LeaveApprovalsPanel({ title }) {
         onPageChange={() => {}}
         onPageSizeChange={() => {}}
         onSortChange={() => {}}
+        toolbarStart={toolbarStart}
         emptyMessage="No leave requests."
       />
       <ConfirmDialog

@@ -24,6 +24,13 @@ const COLOR_MAP = {
   Rejected: 'error',
   'Claim Rejected': 'error',
   Delayed: 'error',
+  Open: 'warning',
+  Resolved: 'success',
+  Closed: 'default',
+  Low: 'default',
+  Medium: 'warning',
+  High: 'error',
+  Critical: 'error',
 };
 
 export default function StatusBadge({ status }) {

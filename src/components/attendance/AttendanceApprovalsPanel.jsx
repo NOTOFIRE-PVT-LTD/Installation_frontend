@@ -43,7 +43,7 @@ function TimeCell({ value, highlight = false }) {
   );
 }
 
-export default function AttendanceApprovalsPanel({ title = 'Attendance approvals' }) {
+export default function AttendanceApprovalsPanel({ title = 'Attendance approvals', toolbarStart }) {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -206,6 +206,7 @@ export default function AttendanceApprovalsPanel({ title = 'Attendance approvals
         onPageSizeChange={() => {}}
         onSortChange={() => {}}
         loading={false}
+        toolbarStart={toolbarStart}
         emptyMessage="No correction requests."
       />
 

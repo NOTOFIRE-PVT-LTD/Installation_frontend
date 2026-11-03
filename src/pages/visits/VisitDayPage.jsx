@@ -31,7 +31,9 @@ function stateLabel(visit) {
   if (visit.status === VISIT_STATUS.COMPLETED) return 'Completed';
   if (visit.status === VISIT_STATUS.IN_PROGRESS) return 'In Progress';
   if (visit.status === VISIT_STATUS.APPROVED_MISSED) return 'Missed (approved)';
-  if (visit.status === VISIT_STATUS.PENDING_APPROVAL) return 'Missed (pending)';
+  if (visit.status === VISIT_STATUS.PENDING_APPROVAL) {
+    return visit.checkOutAt ? 'Pending Approval (Done)' : 'Pending Approval (Out of range)';
+  }
   return 'Upcoming';
 }
 
@@ -118,7 +120,8 @@ export default function VisitDayPage() {
     (visit) =>
       visit.status === VISIT_STATUS.IN_PROGRESS ||
       visit.status === VISIT_STATUS.COMPLETED ||
-      visit.status === VISIT_STATUS.APPROVED_MISSED
+      visit.status === VISIT_STATUS.APPROVED_MISSED ||
+      visit.status === VISIT_STATUS.PENDING_APPROVAL
   );
 
   return (
@@ -241,7 +244,13 @@ export default function VisitDayPage() {
       {/* Selected Visits Queue */}
       <Stack spacing={2}>
         {selected.map((visit, index) => {
-          const isDone = visit.status === VISIT_STATUS.COMPLETED || visit.status === VISIT_STATUS.APPROVED_MISSED;
+          const isDone =
+            visit.status === VISIT_STATUS.COMPLETED ||
+            visit.status === VISIT_STATUS.APPROVED_MISSED ||
+            (visit.status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkOutAt));
+          const needsCheckOut =
+            visit.status === VISIT_STATUS.IN_PROGRESS ||
+            (visit.status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkInAt) && !visit.checkOutAt);
           return (
             <Card
               key={visit._id}
@@ -296,12 +305,12 @@ export default function VisitDayPage() {
                     <Chip size="small" color={stateColor(visit)} label={stateLabel(visit)} sx={{ fontWeight: 600 }} />
                     {!submitted && (
                       <Button
-                        variant={visit.status === VISIT_STATUS.IN_PROGRESS ? 'contained' : isDone ? 'outlined' : 'contained'}
-                        color={visit.status === VISIT_STATUS.IN_PROGRESS ? 'warning' : 'primary'}
+                        variant={needsCheckOut ? 'contained' : isDone ? 'outlined' : 'contained'}
+                        color={needsCheckOut ? 'warning' : 'primary'}
                         onClick={() => navigate(`/visits/${visit._id}`)}
                         sx={{ fontWeight: 700 }}
                       >
-                        {visit.status === VISIT_STATUS.IN_PROGRESS ? 'Check Out →' : isDone ? 'View Details' : 'Check In →'}
+                        {needsCheckOut ? 'Check Out →' : isDone ? 'View Details' : 'Check In →'}
                       </Button>
                     )}
                   </Stack>

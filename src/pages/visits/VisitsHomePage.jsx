@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 import AddIcon from '@mui/icons-material/Add';
 import RouteIcon from '@mui/icons-material/Route';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
+import SlidingPills from '../../components/common/SlidingPills';
+import { buildCsvColumns } from '../../components/common/DataTable/DataTable.helpers';
+import { exportToCsv } from '../../utils/csvExport';
 import MultiVisitPlanDrawer from './MultiVisitPlanDrawer';
+import DailyVisitsSummary from './DailyVisitsSummary';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
@@ -57,6 +65,7 @@ export default function VisitsHomePage({ embedded = false }) {
   const navigate = useNavigate();
   const { user, isSalesperson } = useAuth();
   const isAdmin = user?.role === ROLES.ADMIN;
+  const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'all'
   const { page, pageSize, search, sortField, sortOrder, setPage, setPageSize, setSearch, setSort, queryParams } =
     useTableQueryParams({});
 
@@ -79,22 +88,52 @@ export default function VisitsHomePage({ embedded = false }) {
   };
 
   useEffect(() => {
-    load();
+    if (viewMode === 'all') {
+      load();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(queryParams)]);
+  }, [JSON.stringify(queryParams), viewMode]);
+
+  const tableColumns = isAdmin ? COLUMNS : COLUMNS.filter((c) => c.field !== 'salesperson');
+  const viewPills = (
+    <SlidingPills
+      value={viewMode}
+      onChange={setViewMode}
+      items={[
+        {
+          id: 'daily',
+          label: (
+            <Stack direction="row" spacing={0.75} alignItems="center">
+              <CalendarMonthIcon sx={{ fontSize: 16 }} />
+              <span>Daily Summary (Visits & Expenses)</span>
+            </Stack>
+          ),
+        },
+        {
+          id: 'all',
+          label: (
+            <Stack direction="row" spacing={0.75} alignItems="center">
+              <TableRowsIcon sx={{ fontSize: 16 }} />
+              <span>All Visits List</span>
+            </Stack>
+          ),
+        },
+      ]}
+    />
+  );
 
   return (
     <>
       {!embedded && (
         <PageHeader
-          title="Visit Plan"
+          title="All Visits & Daily Summary"
           subtitle={
             isSalesperson
-              ? 'Plan your customer visits for the day or week, and track past visits'
+              ? 'View all your customer visits grouped by date with check-in/out details and expenses, or manage your schedule'
               : 'Monitor planned visits across all salespeople'
           }
           actions={
-            <>
+            <Stack direction="row" spacing={1}>
               {isSalesperson && (
                 <Button
                   variant="outlined"
@@ -111,38 +150,54 @@ export default function VisitsHomePage({ embedded = false }) {
               >
                 Plan Visits
               </Button>
-            </>
+            </Stack>
           }
         />
       )}
 
-      <DataTable
-        columns={isAdmin ? COLUMNS : COLUMNS.filter((c) => c.field !== 'salesperson')}
-        rows={rows}
-        totalCount={total}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-        sortModel={sortField ? { field: sortField, sort: sortOrder } : null}
-        onSortChange={(model) => model && setSort(model.field, model.sort)}
-        searchValue={search}
-        onSearchChange={setSearch}
-        loading={loading}
-        onRowClick={(row) => navigate(`/visits/${row._id}`)}
-        toolbarEnd={
-          embedded ? (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setPlanDrawer(true)}>
-              Plan Visits
-            </Button>
-          ) : null
-        }
-      />
+      {viewMode === 'daily' ? (
+        <>
+          <Box sx={{ mb: 2 }}>{viewPills}</Box>
+          <DailyVisitsSummary onPlanVisit={() => setPlanDrawer(true)} />
+        </>
+      ) : (
+        <DataTable
+          columns={tableColumns}
+          rows={rows}
+          totalCount={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          sortModel={sortField ? { field: sortField, sort: sortOrder } : null}
+          onSortChange={(model) => model && setSort(model.field, model.sort)}
+          searchValue={search}
+          onSearchChange={setSearch}
+          loading={loading}
+          onRowClick={(row) => navigate(`/visits/${row._id}`)}
+          onExportCsv={() => exportToCsv('visits', rows, buildCsvColumns(tableColumns))}
+          toolbarStart={viewPills}
+          toolbarEnd={
+            embedded ? (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setPlanDrawer(true)}
+                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                Plan Visits
+              </Button>
+            ) : null
+          }
+        />
+      )}
 
       <MultiVisitPlanDrawer
         open={planDrawer}
         onClose={() => setPlanDrawer(false)}
-        onCreated={() => load()}
+        onCreated={() => {
+          if (viewMode === 'all') load();
+        }}
       />
     </>
   );

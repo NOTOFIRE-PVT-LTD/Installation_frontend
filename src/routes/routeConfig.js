@@ -24,11 +24,25 @@ import {
   faCalendarPlus,
   faUmbrella,
   faWallet,
+  faHeadset,
+  faHouse,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
+import { IMPORT_TABS, SHIPPING_TABS } from '../pages/shipping/companionTabs';
 
-// permission: null means "no admin permission required" (e.g. always visible to Admins, or role-gated instead)
+// permission: null means "no admin permission required"
+// superAdminOnly: true means only visible on Super Admin's sidebar
+// Attendance is a full workspace app visible to Super Admin and any user/admin with attendance access
 export const NAV_ITEMS = [
+  {
+    label: 'Home',
+    path: '/home',
+    icon: faHouse,
+    permission: null,
+    roles: [ROLES.ADMIN],
+    superAdminOnly: true,
+    accent: { color: '#563310', bg: '#FAE2B4' },
+  },
   {
     label: 'Dashboard',
     path: '/dashboard',
@@ -36,6 +50,42 @@ export const NAV_ITEMS = [
     permission: 'dashboard',
     roles: [ROLES.ADMIN],
     accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Dashboard',
+    path: '/complaints/dashboard',
+    icon: faChartLine,
+    permission: 'complaints',
+    userPermission: 'complaints',
+    roles: [ROLES.USER],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
+  },
+  {
+    label: 'Complaints',
+    path: '/complaints/desk',
+    icon: faHeadset,
+    permission: 'complaints',
+    userPermission: 'complaints',
+    roles: [ROLES.USER],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
+  },
+  {
+    label: 'Complaint Resolution',
+    path: '/complaints/dashboard',
+    icon: faHeadset,
+    permission: 'complaints',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
+    children: [
+      {
+        label: 'Complaints',
+        path: '/complaints',
+        icon: faClipboardList,
+        permission: 'complaints',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+    ],
   },
   {
     label: 'Users',
@@ -46,29 +96,56 @@ export const NAV_ITEMS = [
     accent: { color: '#8b5cf6', bg: '#f3e8ff' },
   },
   {
-    label: 'Salesperson Tracking',
-    path: '/salesperson-tracking',
-    icon: faRoute,
-    permission: 'salespersonTracking',
-    userPermission: 'attendance',
-    jobRole: 'SALESPERSON',
-    roles: [ROLES.ADMIN],
-    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
-  },
-  {
     label: 'Attendance',
     path: '/attendance',
     icon: faClock,
     permission: 'attendance',
     userPermission: 'attendance',
-    jobRole: 'SALESPERSON',
-    roles: [ROLES.USER],
-    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
   },
   {
-    label: 'Visit Plan',
-    path: '/visits',
-    icon: faCalendarDay,
+    label: 'Shipping Control',
+    path: '/shipping',
+    icon: faTruck,
+    permission: 'shipping',
+    expandChildrenInSidebar: true,
+    roles: [ROLES.ADMIN, ROLES.USER],
+    userPermission: 'shipping',
+    accent: { color: '#0f766e', bg: '#ccfbf1' },
+    children: SHIPPING_TABS.map((tab) => ({
+      label: tab.label,
+      path: `/shipping?tab=${tab.id}`,
+      icon: faTruck,
+      permission: 'shipping',
+      userPermission: 'shipping',
+      roles: [ROLES.ADMIN, ROLES.USER],
+      accent: { color: '#0f766e', bg: '#ccfbf1' },
+    })),
+  },
+  {
+    label: 'Import Control',
+    path: '/import-control',
+    icon: faBoxOpen,
+    permission: 'importControl',
+    expandChildrenInSidebar: true,
+    roles: [ROLES.ADMIN, ROLES.USER],
+    userPermission: 'importControl',
+    accent: { color: '#0369a1', bg: '#e0f2fe' },
+    children: IMPORT_TABS.map((tab) => ({
+      label: tab.label,
+      path: `/import-control?tab=${tab.id}`,
+      icon: faBoxOpen,
+      permission: 'importControl',
+      userPermission: 'importControl',
+      roles: [ROLES.ADMIN, ROLES.USER],
+      accent: { color: '#0369a1', bg: '#e0f2fe' },
+    })),
+  },
+  {
+    label: 'Today’s visits',
+    path: '/visits/today',
+    icon: faRoute,
     permission: 'attendance',
     userPermission: 'attendance',
     jobRole: 'SALESPERSON',
@@ -76,9 +153,29 @@ export const NAV_ITEMS = [
     accent: { color: '#DC1F2E', bg: '#FFE8EA' },
   },
   {
-    label: 'Today’s visits',
-    path: '/visits/today',
-    icon: faRoute,
+    label: 'Plan Visits',
+    path: '/visits/new',
+    icon: faCalendarPlus,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
+  },
+  {
+    label: 'Phone Intake',
+    path: '/complaints/new',
+    icon: faHeadset,
+    permission: 'attendance',
+    userPermission: 'attendance',
+    jobRole: 'SALESPERSON',
+    roles: [ROLES.USER],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
+  },
+  {
+    label: 'All Visits',
+    path: '/visits',
+    icon: faCalendarDay,
     permission: 'attendance',
     userPermission: 'attendance',
     jobRole: 'SALESPERSON',
@@ -99,16 +196,6 @@ export const NAV_ITEMS = [
     label: 'My Expenses',
     path: '/expenses',
     icon: faWallet,
-    permission: 'attendance',
-    userPermission: 'attendance',
-    jobRole: 'SALESPERSON',
-    roles: [ROLES.USER],
-    accent: { color: '#DC1F2E', bg: '#FFE8EA' },
-  },
-  {
-    label: 'Approvals',
-    path: '/my-approvals',
-    icon: faClipboardCheck,
     permission: 'attendance',
     userPermission: 'attendance',
     jobRole: 'SALESPERSON',
@@ -248,27 +335,92 @@ export const NAV_ITEMS = [
     path: '/audit-logs',
     icon: faClockRotateLeft,
     permission: 'auditLogs',
-    roles: [ROLES.ADMIN],
+    userPermission: 'complaints',
+    roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#6366f1', bg: '#eef2ff' },
   },
 ];
 
-// Admins are gated by their permission flag. Installers default to allowed (no Permission doc =
-// full access) but respect an explicit false once an Admin has restricted that module for them.
-export function isNavItemAllowed(item, user, permissions) {
-  if (!item.roles.includes(user?.role)) return false;
-  if (item.jobRole && user?.role !== ROLES.ADMIN && user?.jobRole !== item.jobRole) return false;
-  if (user?.role === ROLES.ADMIN) return Boolean(permissions?.[item.permission]);
-  const key = item.userPermission || item.permission;
-  if (key === 'atlantaPayments') return Boolean(permissions?.[key]);
-  return permissions ? permissions[key] !== false : true;
+export function isSuperAdminUser(user) {
+  return (
+    user?.adminType === 'SUPER_ADMIN' ||
+    user?.email === 'admin@nfsite.com' ||
+    user?.email === 'super.admin@demo.local'
+  );
 }
 
-// Where to land a user right after they log in (or an admin impersonates them) —
-// the first nav item their role/permissions actually grant access to.
+export function expandNavItems(items, user, permissions) {
+  const superAdmin = isSuperAdminUser(user);
+  return items.flatMap((item) => {
+    if (!isNavItemAllowed(item, user, permissions)) return [];
+    if (!superAdmin && item.expandChildrenInSidebar && item.children?.length) {
+      return item.children.filter((child) => isNavItemAllowed(child, user, permissions));
+    }
+    return [item];
+  });
+}
+
+// Admins are gated strictly by their permission flag. If an admin has 2 apps granted, they only see those 2 apps.
+export function isNavItemAllowed(item, user, permissions) {
+  if (!user) return false;
+
+  const isSuperAdmin = isSuperAdminUser(user);
+
+  // Regular Admins & Users: hide Super-Admin-only centralized hubs
+  if (!isSuperAdmin && item.superAdminOnly) return false;
+
+  // Role check
+  if (!item.roles.includes(user?.role)) return false;
+
+  // JobRole check: if item is scoped to a specific jobRole (e.g. SALESPERSON), user must match that jobRole
+  if (item.jobRole && user?.jobRole !== item.jobRole) return false;
+
+  // Admin permission evaluation:
+  // Super Admin gets access to all top-level apps.
+  // Particular admin login only sees the apps they have explicit access to.
+  if (user?.role === ROLES.ADMIN) {
+    if (isSuperAdmin) return true;
+    if (item.permission == null) return !item.superAdminOnly;
+    if (item.permission === 'attendance' || item.permission === 'salespersonTracking') {
+      return Boolean(permissions?.attendance || permissions?.salespersonTracking);
+    }
+    if (item.permission === 'complaints') {
+      return Boolean(permissions?.complaints);
+    }
+    return Boolean(permissions?.[item.permission]);
+  }
+
+  // Non-Admin (User) permission evaluation:
+  // User only sees the apps they have explicit permission for.
+  const key = item.userPermission || item.permission;
+  if (!key) return true;
+  // Salespeople already create/see tickets via Phone Intake — no extra Complaints nav.
+  if (user?.jobRole === 'SALESPERSON' && key === 'complaints') return false;
+  if (key === 'attendance' || key === 'salespersonTracking') {
+    return Boolean(permissions?.attendance || permissions?.salespersonTracking);
+  }
+  if (key === 'complaints') return Boolean(permissions?.complaints);
+  return Boolean(permissions?.[key]);
+}
+
+export function flattenNavItems(items = NAV_ITEMS) {
+  return items.flatMap((item) => [item, ...(item.children || [])]);
+}
+
+// Where to land a user right after they log in: first permitted nav item
 export function getDefaultLandingPath(user, permissions) {
-  if (!user) return '/login';
+  // Unauthenticated callers should use goToCentralLogin() — keep a safe internal fallback.
+  if (!user) return '/central-sso';
+  // Portal / Workspace SUPER_ADMIN — never the field-engineer complaints home
+  // (jobRole still defaults to INSTALLER on Admin rows in Mongo).
+  if (isSuperAdminUser(user)) {
+    return '/home';
+  }
   if (user.jobRole === 'SALESPERSON') return '/attendance';
+  if (user.jobRole === 'INSTALLER' || (user.role === 'User' && permissions?.complaints)) {
+    return '/complaints/dashboard';
+  }
+  if (user.adminType === 'COMPLAINT_COORDINATOR') return '/complaints/dashboard';
   const eligible = NAV_ITEMS.find((item) => isNavItemAllowed(item, user, permissions));
   return eligible ? eligible.path : '/profile';
 }
@@ -276,8 +428,16 @@ export function getDefaultLandingPath(user, permissions) {
 export function canOpenPath(pathname, user, permissions) {
   if (!pathname || pathname === '/login' || pathname === '/403' || pathname === '/404') return false;
   if (pathname === '/' || pathname === '/profile') return true;
-  const match = NAV_ITEMS.filter(
+
+  const isSuperAdmin =
+    user?.adminType === 'SUPER_ADMIN' ||
+    user?.email === 'admin@nfsite.com' ||
+    user?.email === 'super.admin@demo.local';
+  if (isSuperAdmin) return true;
+
+  const match = flattenNavItems().filter(
     (item) => pathname === item.path || pathname.startsWith(`${item.path}/`)
   ).sort((a, b) => b.path.length - a.path.length)[0];
+
   return match ? isNavItemAllowed(match, user, permissions) : false;
 }

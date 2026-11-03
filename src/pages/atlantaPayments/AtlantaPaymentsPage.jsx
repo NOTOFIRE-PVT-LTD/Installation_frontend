@@ -170,7 +170,7 @@ export default function AtlantaPaymentsPage() {
         <TableContainer>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.50', '& th': { fontWeight: 700, fontSize: '0.8125rem' } }}>
+              <TableRow sx={{ background: 'linear-gradient(90deg, #FFFDF8 0%, #FDF7EB 40%, #FAF1DC 100%)', borderBottom: '1.5px solid rgba(212, 163, 78, 0.35)', '& th': { fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3A230B' } }}>
                 <TableCell>File / Record Name</TableCell>
                 <TableCell>Consignee</TableCell>
                 <TableCell>Employee</TableCell>
@@ -214,7 +214,7 @@ export default function AtlantaPaymentsPage() {
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.paymentDate ? formatDate(row.paymentDate) : '-'}</TableCell>
                       <TableCell align="right">{inr(grandExpense)}</TableCell>
                       <TableCell align="right">{inr(row.totalReceivedAmount)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: row.amountToGive > 0 ? 'error.main' : 'success.main' }}>
+                      <TableCell align="right" sx={{ fontWeight: 700, color: row.amountToGive > 0 ? '#b91c1c' : '#7D511E' }}>
                         {inr(row.amountToGive)}
                       </TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
