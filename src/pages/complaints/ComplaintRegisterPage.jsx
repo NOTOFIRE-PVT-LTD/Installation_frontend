@@ -55,6 +55,11 @@ const schema = yup.object({
     .trim()
     .required('Phone number is required')
     .matches(PHONE_RE, 'Enter a valid phone number'),
+  whatsappNumber: yup
+    .string()
+    .trim()
+    .required('WhatsApp number is required so you can receive ticket updates')
+    .matches(PHONE_RE, 'Enter a valid WhatsApp number'),
   email: yup
     .string()
     .trim()
@@ -80,6 +85,7 @@ const schema = yup.object({
 const defaultValues = {
   customerName: '',
   contactNumber: '',
+  whatsappNumber: '',
   email: '',
   companyName: '',
   siteName: '',
@@ -328,7 +334,15 @@ export default function ComplaintRegisterPage({ embedded = false }) {
                     <RHFTextField name="contactNumber" label="Phone / Mobile Number *" autoComplete="tel" />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <RHFTextField name="email" label="Email Address (for resolution alert)" type="email" autoComplete="email" />
+                    <RHFTextField
+                      name="whatsappNumber"
+                      label="WhatsApp Number *"
+                      autoComplete="tel"
+                      helperText="Required — ticket create, assign, and resolve updates are sent on WhatsApp only"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <RHFTextField name="email" label="Email Address (optional)" type="email" autoComplete="email" />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <RHFTextField name="companyName" label="Company / Railway Division (optional)" autoComplete="organization" />

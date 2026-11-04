@@ -82,12 +82,11 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
     if (open) {
       setValues(
         keys.reduce((acc, key) => {
-          if (!isAdmin) {
-            acc[key] = Boolean(user?.permissions?.[key]);
-          } else if (key === 'complaints') {
-            acc[key] = isSuperAdmin ? true : Boolean(user?.permissions?.[key]);
+          // Admin + User: missing flag = off (opt-in RBAC). Super Admin account is all-on.
+          if (isAdmin && isSuperAdmin) {
+            acc[key] = true;
           } else {
-            acc[key] = user?.permissions?.[key] == null ? true : Boolean(user.permissions[key]);
+            acc[key] = Boolean(user?.permissions?.[key]);
           }
           return acc;
         }, {})
@@ -146,7 +145,9 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       </DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
         <Typography variant="caption" sx={{ color: '#7C6752', display: 'block', mb: 1.5, fontWeight: 600 }}>
-          {isAdmin ? 'Select administrative modules this Admin can manage:' : 'Select workspace apps this User can access:'}
+          {isAdmin
+            ? 'Opt-in only — grant the modules for this Admin’s app. Leave other apps unchecked so access stays unmixed.'
+            : 'Select workspace apps this User can access:'}
         </Typography>
 
         <FormGroup sx={{ gap: 0.5 }}>

@@ -55,6 +55,7 @@ export default function ComplaintIntakePage() {
   const [panelSerialNo, setPanelSerialNo] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [mobileNo, setMobileNo] = useState('');
+  const [whatsappNo, setWhatsappNo] = useState('');
   const [complaintReceiver, setComplaintReceiver] = useState('');
   const [problem, setProblem] = useState('');
   const [solutions, setSolutions] = useState('');
@@ -71,7 +72,6 @@ export default function ComplaintIntakePage() {
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('Product Quality');
   const [priority, setPriority] = useState('MEDIUM');
-  const [notifyChannel, setNotifyChannel] = useState('whatsapp');
 
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -127,6 +127,7 @@ export default function ComplaintIntakePage() {
       setCustomerId(selectedCust._id || selectedCust.id);
       setCustomerName(selectedCust.contactPerson || selectedCust.companyName || '');
       setMobileNo(selectedCust.phone || '');
+      setWhatsappNo(selectedCust.phone || '');
       setEmail(selectedCust.email || '');
       setCustomerOrganization(selectedCust.companyName || '');
       setStationName(selectedCust.city || selectedCust.address || '');
@@ -140,8 +141,8 @@ export default function ComplaintIntakePage() {
     e.preventDefault();
     setError(null);
 
-    if (!customerName.trim() || !mobileNo.trim() || !problem.trim()) {
-      setError('Customer Name, Mobile No, and Problem are mandatory.');
+    if (!customerName.trim() || !mobileNo.trim() || !whatsappNo.trim() || !problem.trim()) {
+      setError('Customer Name, Mobile No, WhatsApp No, and Problem are mandatory.');
       return;
     }
 
@@ -152,6 +153,7 @@ export default function ComplaintIntakePage() {
         customerId,
         customerName: customerName.trim(),
         contactNumber: mobileNo.trim(),
+        whatsappNumber: whatsappNo.trim(),
         email: email.trim(),
         customerOrganization: customerOrganization.trim(),
         siteName: stationName.trim(),
@@ -174,7 +176,7 @@ export default function ComplaintIntakePage() {
         pendingReason: pendingReason.trim(),
         deliveryStatus: deliveryStatus.trim(),
         warrantyStatus,
-        notifyChannel,
+        notifyChannel: 'whatsapp',
         assignedTo: isAdmin ? visitPersonId || null : user?._id || null,
       };
 
@@ -411,8 +413,20 @@ export default function ComplaintIntakePage() {
               value={mobileNo}
               onChange={(e) => {
                 setMobileNo(e.target.value);
+                if (!whatsappNo || whatsappNo === mobileNo) setWhatsappNo(e.target.value);
                 triggerDuplicateCheck(e.target.value, panelSerialNo);
               }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              size="small"
+              label="7. WhatsApp No *"
+              value={whatsappNo}
+              onChange={(e) => setWhatsappNo(e.target.value)}
+              helperText="Ask the customer for a WhatsApp number so they get ticket create / assign / resolve updates"
             />
           </Grid>
 
@@ -420,7 +434,7 @@ export default function ComplaintIntakePage() {
             <TextField
               fullWidth
               size="small"
-              label="7. Complaint Receiver"
+              label="8. Complaint Receiver"
               value={complaintReceiver}
               onChange={(e) => setComplaintReceiver(e.target.value)}
               helperText="Staff who took / registered the complaint"
@@ -450,7 +464,7 @@ export default function ComplaintIntakePage() {
               multiline
               minRows={3}
               size="small"
-              label="8. Problem *"
+              label="9. Problem *"
               value={problem}
               onChange={(e) => setProblem(e.target.value)}
               placeholder="What the customer reported"
@@ -463,7 +477,7 @@ export default function ComplaintIntakePage() {
               multiline
               minRows={2}
               size="small"
-              label="9. Solutions"
+              label="10. Solutions"
               value={solutions}
               onChange={(e) => setSolutions(e.target.value)}
               placeholder="Solution given or planned (can update later)"
@@ -476,7 +490,7 @@ export default function ComplaintIntakePage() {
                 select
                 fullWidth
                 size="small"
-                label="10. Visit Person Name"
+                label="11. Visit Person Name"
                 value={visitPersonId}
                 onChange={(e) => setVisitPersonId(e.target.value)}
               >
@@ -493,7 +507,7 @@ export default function ComplaintIntakePage() {
               <TextField
                 fullWidth
                 size="small"
-                label="10. Visit Person Name"
+                label="11. Visit Person Name"
                 value={user?.name || ''}
                 disabled
               />
@@ -503,7 +517,7 @@ export default function ComplaintIntakePage() {
             <TextField
               fullWidth
               size="small"
-              label="11. Taken Time"
+              label="12. Taken Time"
               value={takenTime}
               onChange={(e) => setTakenTime(e.target.value)}
               placeholder="e.g. 2 hrs / 45 min"
@@ -515,7 +529,7 @@ export default function ComplaintIntakePage() {
               select
               fullWidth
               size="small"
-              label="12. Status"
+              label="13. Status"
               value={statusNote}
               onChange={(e) => setStatusNote(e.target.value)}
               helperText="Starts as New; assigning a visit person moves it to Assigned"
@@ -530,7 +544,7 @@ export default function ComplaintIntakePage() {
               select
               fullWidth
               size="small"
-              label="13. Warranty"
+              label="14. Warranty"
               value={warrantyStatus}
               onChange={(e) => setWarrantyStatus(e.target.value)}
             >
@@ -547,7 +561,7 @@ export default function ComplaintIntakePage() {
               fullWidth
               size="small"
               type="number"
-              label="14. Attempt"
+              label="15. Attempt"
               value={attempt}
               onChange={(e) => setAttempt(e.target.value)}
               inputProps={{ min: 1 }}
@@ -557,7 +571,7 @@ export default function ComplaintIntakePage() {
             <TextField
               fullWidth
               size="small"
-              label="15. Pending Reason"
+              label="16. Pending Reason"
               value={pendingReason}
               onChange={(e) => setPendingReason(e.target.value)}
               placeholder="If pending, why"
@@ -568,7 +582,7 @@ export default function ComplaintIntakePage() {
               select
               fullWidth
               size="small"
-              label="16. Delivery Status"
+              label="17. Delivery Status"
               value={deliveryStatus}
               onChange={(e) => setDeliveryStatus(e.target.value)}
             >
@@ -612,21 +626,6 @@ export default function ComplaintIntakePage() {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              size="small"
-              label="Notify customer via"
-              value={notifyChannel}
-              onChange={(e) => setNotifyChannel(e.target.value)}
-              helperText="WhatsApp first; if number has no WhatsApp, SMS is used automatically"
-            >
-              <MenuItem value="whatsapp">WhatsApp (SMS if no WhatsApp)</MenuItem>
-              <MenuItem value="sms">SMS only</MenuItem>
-              <MenuItem value="both">WhatsApp + SMS always</MenuItem>
-            </TextField>
-          </Grid>
         </Grid>
 
         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ pt: 3 }}>

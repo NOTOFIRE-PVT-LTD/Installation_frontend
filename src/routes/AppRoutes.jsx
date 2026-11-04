@@ -109,7 +109,7 @@ export default function AppRoutes() {
           <Route
             path="/complaints/new"
             element={
-              <PermissionGate permission="complaints" userPermission="attendance" roles={[ROLES.ADMIN, ROLES.USER]}>
+              <PermissionGate permission="complaints" userPermission="complaints" roles={[ROLES.ADMIN, ROLES.USER]}>
                 <ComplaintIntakePage />
               </PermissionGate>
             }
