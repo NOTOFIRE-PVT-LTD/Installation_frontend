@@ -68,8 +68,9 @@ function isSidebarItemActive(location, item) {
 
 export default function SidebarNavList({ isCollapsed = false, onNavigate }) {
   const location = useLocation();
-  const { user, permissions } = useAuth();
+  const { user, permissions, isSuperAdmin } = useAuth();
   const navItems = useMemo(() => expandNavItems(NAV_ITEMS, user, permissions), [user, permissions]);
+  const showAppSections = !isSuperAdmin && navItems.some((item) => item.section);
 
   const listRef = useRef(null);
   const itemRefs = useRef({});
@@ -185,7 +186,8 @@ export default function SidebarNavList({ isCollapsed = false, onNavigate }) {
 
         {navItems.map((item, index) => {
           const prev = navItems[index - 1];
-          const showSection = item.section && item.section !== prev?.section && !isCollapsed;
+          const showSection =
+            showAppSections && item.section && item.section !== prev?.section && !isCollapsed;
           const active = isSidebarItemActive(location, item);
           return (
             <Box key={item.path}>

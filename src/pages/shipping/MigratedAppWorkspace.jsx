@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -103,7 +101,6 @@ export default function MigratedAppWorkspace({
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
-  const [cacheNote, setCacheNote] = useState('');
 
   const allowed = isSuperAdmin || Boolean(permissions?.[permissionKey]);
   const isHome = current === 'home' || current === 'reports';
@@ -124,7 +121,6 @@ export default function MigratedAppWorkspace({
         const res = await fetchDashboard();
         const data = res.data?.data || res.data;
         setDashboard(data);
-        setCacheNote(data?.cachedForSeconds ? `Cached ~${data.cachedForSeconds}s` : '');
         setRows([]);
         setTotalCount(0);
       } else {
@@ -132,7 +128,6 @@ export default function MigratedAppWorkspace({
         const data = res.data?.data || res.data;
         setRows(data.items || []);
         setTotalCount(data.pagination?.total || 0);
-        setCacheNote(data?.cachedForSeconds ? `Mongo · cache ~${data.cachedForSeconds}s` : 'Mongo');
         setDashboard(null);
       }
     } catch (err) {
@@ -154,12 +149,7 @@ export default function MigratedAppWorkspace({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <PageHeader title={title} subtitle={`${subtitle} · Live from Workspace MongoDB`} />
-
-      <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-        <Chip size="small" label="No iframe / no Supabase SSO" sx={{ bgcolor: '#E8F5E9', color: '#1B5E20' }} />
-        {cacheNote ? <Chip size="small" label={cacheNote} sx={{ bgcolor: '#FFF8E7', color: '#583714' }} /> : null}
-      </Stack>
+      <PageHeader title={title} subtitle={subtitle} />
 
       <SlidingPills
         fullWidth

@@ -442,17 +442,66 @@ export function isSuperAdminUser(user) {
   );
 }
 
+/** Sidebar app heading for Admin/User multi-app menus (Super Admin stays flat). */
+const APP_SECTION_LABELS = {
+  attendance: 'Attendance',
+  salespersonTracking: 'Attendance',
+  complaints: 'Complaints',
+  shipping: 'Shipping Control',
+  importControl: 'Import Control',
+  dashboard: 'Dashboard',
+  users: 'Users',
+  projects: 'Projects',
+  tenders: 'Tender',
+  inspections: 'Inspection',
+  financialDocuments: 'Financial Document',
+  billing: 'Billing',
+  quotations: 'Quotations',
+  proformaInvoices: 'Proforma Invoices',
+  deliveryChallans: 'Delivery Challans',
+  atlantaPayments: 'Atlanta Payments',
+  itemsMaster: 'Items Master',
+  stockItems: 'Stock Items',
+  bom: 'BOM',
+  accounts: 'Accounts',
+  claimApprovals: 'Approvals',
+  numbers: 'Numbers',
+  auditLogs: 'Audit Logs',
+};
+
+export function navAppSection(item) {
+  if (item?.section) return item.section;
+  const owner = pathOwnerPermission(item?.path);
+  if (owner && APP_SECTION_LABELS[owner]) return APP_SECTION_LABELS[owner];
+  const key = item?.permission || item?.userPermission;
+  if (key && APP_SECTION_LABELS[key]) return APP_SECTION_LABELS[key];
+  return item?.label || null;
+}
+
 export function expandNavItems(items, user, permissions) {
   const superAdmin = isSuperAdminUser(user);
-  return items.flatMap((item) => {
+  const expanded = items.flatMap((item) => {
     if (!isNavItemAllowed(item, user, permissions)) return [];
     if (!superAdmin && item.expandChildrenInSidebar && item.children?.length) {
       const kids = item.children.filter((child) => isNavItemAllowed(child, user, permissions));
       // Salesperson Users have no admin children — keep the parent Attendance link.
-      if (kids.length) return kids;
+      if (kids.length) {
+        return kids.map((child) => ({ ...child, section: item.label }));
+      }
     }
-    return [item];
+    // Super Admin keeps the existing flat sidebar — no app section headers.
+    if (superAdmin) return [item];
+    return [{ ...item, section: navAppSection(item) }];
   });
+
+  if (superAdmin) return expanded;
+
+  // Only show "App name → options" headers when the person can open more than one app.
+  const sections = new Set(expanded.map((i) => i.section).filter(Boolean));
+  if (sections.size <= 1) {
+    return expanded.map(({ section: _section, ...rest }) => rest);
+  }
+  return expanded;
 }
 
 // Admins are gated strictly by their permission flag. If an admin has 2 apps granted, they only see those 2 apps.
