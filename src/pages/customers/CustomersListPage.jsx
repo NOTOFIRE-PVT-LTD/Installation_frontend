@@ -14,21 +14,24 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer } from '../../features/customers/customersThunks';
 import { showSnackbar } from '../../features/ui/uiSlice';
-import { peopleApi } from '../../api/peopleApi';
 import { ROLES } from '../../utils/constants';
 
 const COLUMNS = [
-  { field: 'companyName', headerName: 'Company', flex: 1, minWidth: 180 },
-  { field: 'contactPerson', headerName: 'Contact', minWidth: 140 },
-  { field: 'phone', headerName: 'Phone', minWidth: 130 },
-  { field: 'city', headerName: 'City', minWidth: 120 },
-  { field: 'gstin', headerName: 'GSTIN', minWidth: 160 },
+  { field: 'companyName', headerName: 'Company', flex: 1.2, minWidth: 180 },
+  { field: 'contactPerson', headerName: 'Contact Person', minWidth: 140, valueGetter: (_value, row) => row.contactPerson || '—' },
+  { field: 'phone', headerName: 'Phone', minWidth: 130, valueGetter: (_value, row) => row.phone || '—' },
+  { field: 'email', headerName: 'Email', minWidth: 160, valueGetter: (_value, row) => row.email || '—' },
   {
-    field: 'assignedSalesperson',
-    headerName: 'Salesperson',
-    minWidth: 160,
-    valueGetter: (_value, row) => row.assignedSalesperson?.name || 'Unassigned',
+    field: 'address',
+    headerName: 'Address',
+    flex: 1.5,
+    minWidth: 200,
+    valueGetter: (_value, row) => row.address || [row.city, row.state].filter(Boolean).join(', ') || '—',
   },
+  { field: 'city', headerName: 'City', minWidth: 120, valueGetter: (_value, row) => row.city || '—' },
+  { field: 'state', headerName: 'State', minWidth: 120, valueGetter: (_value, row) => row.state || '—' },
+  { field: 'pincode', headerName: 'Pincode', minWidth: 100, valueGetter: (_value, row) => row.pincode || '—' },
+  { field: 'gstin', headerName: 'GSTIN', minWidth: 150, valueGetter: (_value, row) => row.gstin || '—' },
 ];
 
 export default function CustomersListPage({ embedded = false }) {
@@ -43,20 +46,11 @@ export default function CustomersListPage({ embedded = false }) {
   const [matches, setMatches] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [salespersonOptions, setSalespersonOptions] = useState([]);
 
   useEffect(() => {
     dispatch(fetchCustomers(queryParams));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(queryParams)]);
-
-  useEffect(() => {
-    if (!canEdit) return;
-    peopleApi
-      .list({ pageSize: 100 })
-      .then(({ data }) => setSalespersonOptions((data.data || []).map((u) => ({ value: u._id, label: u.name }))))
-      .catch(() => setSalespersonOptions([]));
-  }, [canEdit]);
 
   const refresh = () => dispatch(fetchCustomers(queryParams));
 
@@ -166,7 +160,6 @@ export default function CustomersListPage({ embedded = false }) {
         open={drawer.open}
         mode={drawer.mode === 'view' ? 'edit' : drawer.mode}
         customer={drawer.customer}
-        salespersonOptions={salespersonOptions}
         matches={matches}
         onClose={() => setDrawer({ open: false, mode: 'create', customer: null })}
         onSubmit={handleSubmit}

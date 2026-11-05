@@ -72,7 +72,12 @@ function ProfileForm() {
 
   return (
     <FormProvider {...methods}>
-      <Stack component="form" spacing={2.5} onSubmit={methods.handleSubmit(onSubmit)}>
+      <Stack
+        component="form"
+        spacing={2.5}
+        onSubmit={methods.handleSubmit(onSubmit)}
+        sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+      >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Avatar src={imagePreview} sx={{ width: 72, height: 72 }}>
             {user?.name?.[0]?.toUpperCase()}
@@ -84,7 +89,7 @@ function ProfileForm() {
         </Stack>
         <RHFTextField name="name" label="Full Name" />
         <RHFTextField name="mobileNumber" label="Mobile Number" />
-        <Stack direction="row">
+        <Stack direction="row" sx={{ mt: 'auto', pt: 1 }}>
           <Button type="submit" variant="contained" disabled={saving}>
             {saving ? 'Saving…' : 'Save Changes'}
           </Button>
@@ -120,11 +125,16 @@ function ChangePasswordForm() {
 
   return (
     <FormProvider {...methods}>
-      <Stack component="form" spacing={2.5} onSubmit={methods.handleSubmit(onSubmit)}>
+      <Stack
+        component="form"
+        spacing={2.5}
+        onSubmit={methods.handleSubmit(onSubmit)}
+        sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+      >
         <RHFTextField name="currentPassword" label="Current Password" type="password" />
         <RHFTextField name="newPassword" label="New Password" type="password" />
         <RHFTextField name="confirmPassword" label="Confirm New Password" type="password" />
-        <Stack direction="row">
+        <Stack direction="row" sx={{ mt: 'auto', pt: 1 }}>
           <Button type="submit" variant="contained" disabled={saving}>
             {saving ? 'Updating…' : 'Change Password'}
           </Button>
@@ -138,9 +148,18 @@ export default function ProfilePage() {
   return (
     <>
       <PageHeader title="My Profile" subtitle="Manage your personal information and password" />
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+          <Paper
+            sx={{
+              p: { xs: 2, sm: 3 },
+              border: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Profile Information
             </Typography>
@@ -148,8 +167,17 @@ export default function ProfilePage() {
             <ProfileForm />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+          <Paper
+            sx={{
+              p: { xs: 2, sm: 3 },
+              border: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
               Change Password
             </Typography>
