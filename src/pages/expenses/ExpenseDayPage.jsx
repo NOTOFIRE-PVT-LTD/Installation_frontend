@@ -13,7 +13,13 @@ import { useAppDispatch } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { visitExpenseApi } from '../../api/visitExpenseApi';
-import { PRIVATE_KM_RATE, ROLES, TRANSPORT_MODE, VISIT_EXPENSE_STATUS } from '../../utils/constants';
+import {
+  PRIVATE_KM_RATE,
+  ROLES,
+  TRANSPORT_MODE,
+  VISIT_EXPENSE_CLAIM_MODE,
+  VISIT_EXPENSE_STATUS,
+} from '../../utils/constants';
 
 const MODES = Object.values(TRANSPORT_MODE);
 
@@ -56,7 +62,11 @@ export default function ExpenseDayPage() {
     }));
   };
 
+  const claimMode = expense?.claimMode || VISIT_EXPENSE_CLAIM_MODE.PER_VISIT;
+
   const payload = () => ({
+    claimMode,
+    dayTotalAmount: expense.dayTotalAmount || 0,
     items: items.map((row) => ({
       visit: row.visit?._id || row.visit,
       transportMode: row.transportMode,
@@ -121,7 +131,10 @@ export default function ExpenseDayPage() {
   const liveTotalKm = liveItems.reduce((sum, row) => sum + (Number(row.distanceKm) || 0), 0);
   const liveTravel = privateAmount + publicAmount;
   const gstAmount = Math.max(0, Number(expense.gstAmount) || 0);
-  const liveTotal = liveTravel + gstAmount;
+  const dayTotalAmount = Math.max(0, Number(expense.dayTotalAmount) || 0);
+  const liveTotal =
+    (claimMode === VISIT_EXPENSE_CLAIM_MODE.DAY_TOTAL ? dayTotalAmount : liveTravel) + gstAmount;
+  const perVisitMode = claimMode === VISIT_EXPENSE_CLAIM_MODE.PER_VISIT;
 
   return (
     <>
@@ -135,74 +148,121 @@ export default function ExpenseDayPage() {
           Admin: {expense.adminComment}
         </Typography>
       )}
-      <Stack spacing={1.5}>
-        {liveItems.map((row, index) => {
-          const visit = row.visit || {};
-          const privateMode = row.transportMode === TRANSPORT_MODE.PRIVATE;
-          return (
-            <Card key={row._id} sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <CardContent>
-                <Typography sx={{ fontWeight: 700 }}>
-                  Visit {index + 1} — {visit.customer?.companyName || 'Visit'}
-                </Typography>
-                <Typography color="text.secondary" sx={{ fontSize: '0.8125rem', mb: 1 }}>
-                  Travel {row.distanceKm || 0} km
-                  {privateMode ? ` · ₹${PRIVATE_KM_RATE}/km` : ''}
-                </Typography>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                  <TextField
-                    select
-                    size="small"
-                    label="Transport"
-                    value={row.transportMode}
-                    disabled={!draft}
-                    onChange={(e) => patchItem(row._id, 'transportMode', e.target.value)}
-                    sx={{ minWidth: 160 }}
-                  >
-                    {MODES.map((mode) => (
-                      <MenuItem key={mode} value={mode}>
-                        {mode}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  {!privateMode && (
+      {draft && !isAdmin && (
+        <TextField
+          select
+          size="small"
+          label="Claim type"
+          value={claimMode}
+          onChange={(e) => setExpense((prev) => ({ ...prev, claimMode: e.target.value }))}
+          sx={{ mb: 2, minWidth: 260 }}
+        >
+          <MenuItem value={VISIT_EXPENSE_CLAIM_MODE.PER_VISIT}>Per visit</MenuItem>
+          <MenuItem value={VISIT_EXPENSE_CLAIM_MODE.DAY_TOTAL}>Total for the day</MenuItem>
+        </TextField>
+      )}
+      {!draft && (
+        <Typography sx={{ mb: 2 }} color="text.secondary">
+          Claim type: {perVisitMode ? 'Per visit' : 'Total for the day'}
+        </Typography>
+      )}
+      {perVisitMode ? (
+        <Stack spacing={1.5}>
+          {liveItems.map((row, index) => {
+            const visit = row.visit || {};
+            const privateMode = row.transportMode === TRANSPORT_MODE.PRIVATE;
+            return (
+              <Card key={row._id} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                <CardContent>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    Visit {index + 1} — {visit.customer?.companyName || 'Visit'}
+                  </Typography>
+                  <Typography color="text.secondary" sx={{ fontSize: '0.8125rem', mb: 1 }}>
+                    Travel {row.distanceKm || 0} km
+                    {privateMode ? ` · ₹${PRIVATE_KM_RATE}/km` : ''}
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                     <TextField
+                      select
                       size="small"
-                      type="number"
-                      label="Fare ₹"
-                      value={row.fare || ''}
+                      label="Transport"
+                      value={row.transportMode}
                       disabled={!draft}
-                      onChange={(e) => patchItem(row._id, 'fare', e.target.value)}
-                    />
+                      onChange={(e) => patchItem(row._id, 'transportMode', e.target.value)}
+                      sx={{ minWidth: 160 }}
+                    >
+                      {MODES.map((mode) => (
+                        <MenuItem key={mode} value={mode}>
+                          {mode}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    {!privateMode && (
+                      <TextField
+                        size="small"
+                        type="number"
+                        label="Fare ₹"
+                        value={row.fare || ''}
+                        disabled={!draft}
+                        onChange={(e) => patchItem(row._id, 'fare', e.target.value)}
+                      />
+                    )}
+                    <Typography sx={{ fontWeight: 700, alignSelf: 'center' }}>₹{Number(row.amount || 0).toLocaleString('en-IN')}</Typography>
+                  </Stack>
+                  {!privateMode && draft && (
+                    <Button component="label" size="small" sx={{ mt: 1 }}>
+                      {row.ticketUrl ? 'Replace ticket' : 'Upload ticket (optional)'}
+                      <input hidden type="file" accept="image/*,application/pdf" onChange={(e) => uploadTicket(row._id, e.target.files?.[0])} />
+                    </Button>
                   )}
-                  <Typography sx={{ fontWeight: 700, alignSelf: 'center' }}>₹{Number(row.amount || 0).toLocaleString('en-IN')}</Typography>
-                </Stack>
-                {!privateMode && draft && (
-                  <Button component="label" size="small" sx={{ mt: 1 }}>
-                    {row.ticketUrl ? 'Replace ticket' : 'Upload ticket (optional)'}
-                    <input hidden type="file" accept="image/*,application/pdf" onChange={(e) => uploadTicket(row._id, e.target.files?.[0])} />
-                  </Button>
-                )}
-                {row.ticketUrl && (
-                  <Button size="small" href={row.ticketUrl} target="_blank" rel="noreferrer" sx={{ mt: 1 }}>
-                    View ticket
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </Stack>
+                  {row.ticketUrl && (
+                    <Button size="small" href={row.ticketUrl} target="_blank" rel="noreferrer" sx={{ mt: 1 }}>
+                      View ticket
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Stack>
+      ) : (
+        <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <CardContent>
+            <Typography sx={{ fontWeight: 700, mb: 1 }}>Day total expense</Typography>
+            <Typography color="text.secondary" sx={{ mb: 1.5, fontSize: '0.8125rem' }}>
+              One amount for all {items.length} visits today ({liveTotalKm || 0} km travelled).
+            </Typography>
+            {draft && !isAdmin ? (
+              <TextField
+                size="small"
+                type="number"
+                label="Total amount ₹"
+                value={expense.dayTotalAmount || ''}
+                onChange={(e) => setExpense((prev) => ({ ...prev, dayTotalAmount: e.target.value }))}
+                sx={{ maxWidth: 220 }}
+              />
+            ) : (
+              <Typography sx={{ fontWeight: 700 }}>₹{dayTotalAmount.toLocaleString('en-IN')}</Typography>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <Card sx={{ mt: 2, border: '1px solid', borderColor: 'divider' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 700, mb: 1 }}>Expense summary</Typography>
           <Typography>Date: {expense.date}</Typography>
           <Typography>Total visits: {items.length}</Typography>
           <Typography>Total kilometers: {liveTotalKm}</Typography>
-          <Typography>
-            Private travel: {privateKm} km × ₹{PRIVATE_KM_RATE}/km = ₹{privateAmount.toLocaleString('en-IN')}
-          </Typography>
-          <Typography>Public transport fares: ₹{publicAmount.toLocaleString('en-IN')}</Typography>
+          {perVisitMode ? (
+            <>
+              <Typography>
+                Private travel: {privateKm} km × ₹{PRIVATE_KM_RATE}/km = ₹{privateAmount.toLocaleString('en-IN')}
+              </Typography>
+              <Typography>Public transport fares: ₹{publicAmount.toLocaleString('en-IN')}</Typography>
+            </>
+          ) : (
+            <Typography>Day total claim: ₹{dayTotalAmount.toLocaleString('en-IN')}</Typography>
+          )}
           {draft && !isAdmin ? (
             <TextField
               size="small"

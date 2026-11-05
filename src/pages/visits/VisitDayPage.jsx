@@ -32,6 +32,7 @@ function stateLabel(visit) {
   if (visit.status === VISIT_STATUS.IN_PROGRESS) return 'In Progress';
   if (visit.status === VISIT_STATUS.APPROVED_MISSED) return 'Missed (approved)';
   if (visit.status === VISIT_STATUS.PENDING_APPROVAL) {
+    if (visit.fieldClosed && !visit.checkOutAt) return 'Missed (pending admin)';
     return visit.checkOutAt ? 'Pending Approval (Done)' : 'Pending Approval (Out of range)';
   }
   return 'Upcoming';
@@ -245,12 +246,14 @@ export default function VisitDayPage() {
       <Stack spacing={2}>
         {selected.map((visit, index) => {
           const isDone =
+            visit.fieldClosed ||
             visit.status === VISIT_STATUS.COMPLETED ||
             visit.status === VISIT_STATUS.APPROVED_MISSED ||
             (visit.status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkOutAt));
           const needsCheckOut =
-            visit.status === VISIT_STATUS.IN_PROGRESS ||
-            (visit.status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkInAt) && !visit.checkOutAt);
+            !isDone &&
+            (visit.status === VISIT_STATUS.IN_PROGRESS ||
+              (visit.status === VISIT_STATUS.PENDING_APPROVAL && Boolean(visit.checkInAt) && !visit.checkOutAt));
           return (
             <Card
               key={visit._id}

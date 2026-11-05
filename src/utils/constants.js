@@ -94,6 +94,11 @@ export const VISIT_EXPENSE_STATUS = {
   REJECTED: 'REJECTED',
 };
 
+export const VISIT_EXPENSE_CLAIM_MODE = {
+  PER_VISIT: 'PER_VISIT',
+  DAY_TOTAL: 'DAY_TOTAL',
+};
+
 export const TRANSPORT_MODE = {
   PRIVATE: 'PRIVATE',
   TRAIN: 'TRAIN',

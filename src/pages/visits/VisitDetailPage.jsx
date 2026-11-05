@@ -118,7 +118,7 @@ export default function VisitDetailPage() {
     }
   };
 
-  const handleCheckOutWithPhoto = async (photoFile) => {
+  const handleCheckOutWithPhoto = async (photoFile, options = {}) => {
     if (!photoFile) return;
     const cleanRemark = String(remark || '').trim();
     if (!cleanRemark) {
@@ -137,8 +137,9 @@ export default function VisitDetailPage() {
       if (loc.address) form.append('address', loc.address);
       form.append('photo', photoFile);
       form.append('outcomeNotes', cleanRemark);
-      if (!within && !isInitial) {
+      if (options.proceedAnyway) {
         form.append('proceedAnyway', 'true');
+        if (options.explanation) form.append('explanation', options.explanation);
       }
 
       const { data } = await visitApi.checkOut(id, form);
@@ -420,14 +421,25 @@ export default function VisitDetailPage() {
               </Stack>
             )}
 
-            {/* Actions for Salesperson Check-Out */}
+            {/* Actions for Salesperson Check-Out — camera + within 100m (or Proceed Anyway → admin) */}
             {canCheckOut && (
               <Stack spacing={2}>
-                {isOutOfRange && (
+                {proximity?.error ? (
+                  <Alert severity="warning" sx={{ borderRadius: '8px' }}>{proximity.error}</Alert>
+                ) : isOutOfRange ? (
                   <Alert severity="warning" sx={{ borderRadius: '8px' }}>
-                    📍 You are currently {Math.round(distance)}m away from customer site. Checking out will record your live coordinates for admin review.
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      Outside visit location ({Math.round(distance)}m away)
+                    </Typography>
+                    <Typography variant="body2">
+                      Check-out must be within {radius}m of the customer address. Move closer, or Proceed Anyway for admin approval.
+                    </Typography>
                   </Alert>
-                )}
+                ) : distance != null && !isInitial ? (
+                  <Alert severity="success" icon={<CheckCircleOutlineIcon fontSize="inherit" />} sx={{ borderRadius: '8px' }}>
+                    Within allowed location (<strong>{Math.round(distance)}m</strong> · limit {radius}m).
+                  </Alert>
+                ) : null}
                 <TextField
                   required
                   autoFocus
@@ -441,18 +453,51 @@ export default function VisitDetailPage() {
                   helperText="Mandatory remark required for check-out"
                 />
 
-                <Button
-                  component="label"
-                  variant="contained"
-                  color={status === VISIT_STATUS.PENDING_APPROVAL ? 'warning' : 'success'}
-                  size="large"
-                  disabled={busy || !remark.trim()}
-                  startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
-                  sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
-                >
-                  {busy ? (readingLoc ? 'Reading GPS…' : 'Checking out…') : 'Click Picture & Check Out'}
-                  <CameraFileInput capture="environment" onFile={handleCheckOutWithPhoto} />
-                </Button>
+                {!isOutOfRange ? (
+                  <Button
+                    component="label"
+                    variant="contained"
+                    color={status === VISIT_STATUS.PENDING_APPROVAL ? 'warning' : 'success'}
+                    size="large"
+                    disabled={busy || !remark.trim()}
+                    startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
+                    sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
+                  >
+                    {busy ? (readingLoc ? 'Reading GPS…' : 'Checking out…') : 'Click Picture & Check Out'}
+                    <CameraFileInput capture="environment" onFile={(file) => handleCheckOutWithPhoto(file)} />
+                  </Button>
+                ) : (
+                  <Stack spacing={1.5}>
+                    <TextField
+                      size="small"
+                      label="Reason for out-of-location check-out (optional)"
+                      placeholder="e.g. Met at gate / GPS drift"
+                      value={outOfRangeReason}
+                      onChange={(e) => setOutOfRangeReason(e.target.value)}
+                      fullWidth
+                    />
+                    <Button
+                      component="label"
+                      variant="contained"
+                      color="warning"
+                      size="large"
+                      disabled={busy || !remark.trim()}
+                      startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon />}
+                      sx={{ py: 1.5, fontWeight: 700, fontSize: '1rem', borderRadius: 999 }}
+                    >
+                      {busy ? (readingLoc ? 'Reading GPS…' : 'Submitting…') : 'Proceed Anyway & Check Out (Admin Approval)'}
+                      <CameraFileInput
+                        capture="environment"
+                        onFile={(file) =>
+                          handleCheckOutWithPhoto(file, {
+                            proceedAnyway: true,
+                            explanation: outOfRangeReason,
+                          })
+                        }
+                      />
+                    </Button>
+                  </Stack>
+                )}
                 {!remark.trim() && (
                   <Typography variant="caption" color="error.main" align="center">
                     Type your remark above to enable the check-out button
