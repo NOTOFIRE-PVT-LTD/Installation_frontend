@@ -93,3 +93,4 @@ export const DETAIL_COLUMNS = [
   },
   { field: 'status', headerName: 'Status', minWidth: 110 },
 ];
+

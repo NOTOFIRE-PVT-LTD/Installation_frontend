@@ -118,3 +118,4 @@ export function buildComplaintColumns({ onSelectTicket, assignees, onSelectEngin
     },
   ];
 }
+

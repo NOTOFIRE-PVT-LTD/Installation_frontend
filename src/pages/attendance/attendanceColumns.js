@@ -28,3 +28,4 @@ export const ATTENDANCE_COLUMNS = [
   },
   { field: 'status', headerName: 'Status', minWidth: 110 },
 ];
+

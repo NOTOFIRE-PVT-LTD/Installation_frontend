@@ -35,3 +35,4 @@ export default function ComplaintDetailHeader({ complaint, onClose, onCopy, copi
     </Box>
   );
 }
+

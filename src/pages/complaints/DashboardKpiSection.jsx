@@ -86,3 +86,4 @@ export default function DashboardKpiSection({ kpis, isFieldEngineer, ticketsPath
     </Stack>
   );
 }
+

@@ -83,3 +83,4 @@ export default function AttendanceDashboardPanel({ metrics, onOpen, clickable })
     </Box>
   );
 }
+

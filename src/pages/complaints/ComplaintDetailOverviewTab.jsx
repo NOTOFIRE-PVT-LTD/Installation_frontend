@@ -72,3 +72,4 @@ export default function ComplaintDetailOverviewTab({ ticket }) {
     </Grid>
   );
 }
+

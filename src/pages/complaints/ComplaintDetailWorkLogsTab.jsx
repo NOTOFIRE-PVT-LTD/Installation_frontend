@@ -56,3 +56,4 @@ export default function ComplaintDetailWorkLogsTab({ workLogs = [], onAddLog }) 
     </Stack>
   );
 }
+

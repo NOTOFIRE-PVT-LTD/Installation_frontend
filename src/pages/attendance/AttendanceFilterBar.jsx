@@ -57,3 +57,4 @@ export default function AttendanceFilterBar({ filters, setFilter, people }) {
     </Box>
   );
 }
+
