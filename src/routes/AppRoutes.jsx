@@ -44,6 +44,7 @@ import DeliveryChallansPage from '../pages/deliveryChallans/DeliveryChallansPage
 import AtlantaPaymentsPage from '../pages/atlantaPayments/AtlantaPaymentsPage';
 import AuditLogsPage from '../pages/auditLogs/AuditLogsPage';
 import ShippingControlPage, { ImportControlPage } from '../pages/shipping/ShippingControlPage';
+import ContractorAttendancePage from '../pages/contractorAttendance/ContractorAttendancePage';
 import ComplaintsPage from '../pages/complaints/ComplaintsPage';
 import ComplaintRegisterPage from '../pages/complaints/ComplaintRegisterPage';
 import PublicTrackPage from '../pages/complaints/PublicTrackPage';
@@ -516,6 +517,15 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="importControl" userPermission="importControl" roles={[ROLES.USER]}>
                 <ImportControlPage />
+              </PermissionGate>
+            }
+          />
+
+          <Route
+            path="/contractor-attendance"
+            element={
+              <PermissionGate permission="contractorAttendance" userPermission="contractorAttendance" roles={[ROLES.ADMIN, ROLES.USER]}>
+                <ContractorAttendancePage />
               </PermissionGate>
             }
           />

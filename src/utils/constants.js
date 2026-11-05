@@ -198,6 +198,7 @@ export const PERMISSION_KEYS = [
   'complaints',
   'shipping',
   'importControl',
+  'contractorAttendance',
 ];
 
 export const COMPLAINT_STATUS = {

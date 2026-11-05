@@ -98,6 +98,7 @@ export default function DashboardLayout() {
       path.startsWith('/leave') ||
       path === '/my-approvals' ||
       path.startsWith('/salesperson-tracking') ||
+      path.startsWith('/contractor-attendance') ||
       navItems.some((item) => path === item.path || path.startsWith(`${item.path}/`));
 
     if (!canStayOnPath) {

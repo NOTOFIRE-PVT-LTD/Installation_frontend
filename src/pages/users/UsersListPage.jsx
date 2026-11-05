@@ -145,9 +145,6 @@ function getUserAppAccess(row) {
   if (p.complaints || row?.adminType === 'COMPLAINT_COORDINATOR') {
     apps.push({ label: 'Complaint Resolution', color: '#8A3B14', bg: '#FDF3EC' });
   }
-  if (p.salespersonTracking) {
-    apps.push({ label: 'Sales Tracking', color: '#15803D', bg: '#ECFDF5' });
-  }
   if (p.projects || (row.role !== ROLES.ADMIN && p.projects !== false)) {
     apps.push({ label: 'Projects', color: '#0369A1', bg: '#F0F9FF' });
   }

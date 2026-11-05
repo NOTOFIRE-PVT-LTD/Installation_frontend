@@ -8,5 +8,8 @@ export function usePermission(key) {
   if (key === 'attendance' || key === 'salespersonTracking') {
     return Boolean(permissions?.attendance || permissions?.salespersonTracking);
   }
+  if (key === 'contractorAttendance') {
+    return Boolean(permissions?.contractorAttendance || permissions?.attendance);
+  }
   return Boolean(permissions?.[key]);
 }

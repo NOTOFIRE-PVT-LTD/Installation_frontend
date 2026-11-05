@@ -26,6 +26,7 @@ import {
   faWallet,
   faHeadset,
   faHouse,
+  faFileExcel,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 import { IMPORT_TABS, SHIPPING_TABS } from '../pages/shipping/companionTabs';
@@ -42,6 +43,7 @@ const APP_PATH_OWNERS = [
   { prefix: '/my-approvals', permission: 'attendance' },
   { prefix: '/shipping', permission: 'shipping' },
   { prefix: '/import-control', permission: 'importControl' },
+  { prefix: '/contractor-attendance', permission: 'contractorAttendance' },
 ];
 
 function pathOwnerPermission(path) {
@@ -204,6 +206,15 @@ export const NAV_ITEMS = [
         accent: { color: '#d4a34e', bg: '#fffdf0' },
       },
     ],
+  },
+  {
+    label: 'Contractor Attendance',
+    path: '/contractor-attendance',
+    icon: faFileExcel,
+    permission: 'contractorAttendance',
+    userPermission: 'contractorAttendance',
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#b45309', bg: '#fffbeb' },
   },
   {
     label: 'Shipping Control',
@@ -446,6 +457,7 @@ export function isSuperAdminUser(user) {
 const APP_SECTION_LABELS = {
   attendance: 'Attendance',
   salespersonTracking: 'Attendance',
+  contractorAttendance: 'Contractor Attendance',
   complaints: 'Complaints',
   shipping: 'Shipping Control',
   importControl: 'Import Control',
@@ -531,6 +543,9 @@ export function isNavItemAllowed(item, user, permissions) {
     if (item.permission === 'attendance' || item.permission === 'salespersonTracking') {
       return Boolean(permissions?.attendance || permissions?.salespersonTracking);
     }
+    if (item.permission === 'contractorAttendance') {
+      return Boolean(permissions?.contractorAttendance || permissions?.attendance);
+    }
     if (item.permission === 'complaints') {
       return Boolean(permissions?.complaints);
     }
@@ -544,6 +559,9 @@ export function isNavItemAllowed(item, user, permissions) {
   // Keep Attendance and Complaint Resolution separate — no cross-app nav bleed.
   if (key === 'attendance' || key === 'salespersonTracking') {
     return Boolean(permissions?.attendance || permissions?.salespersonTracking);
+  }
+  if (key === 'contractorAttendance') {
+    return Boolean(permissions?.contractorAttendance || permissions?.attendance);
   }
   if (key === 'complaints') return Boolean(permissions?.complaints);
   return Boolean(permissions?.[key]);
