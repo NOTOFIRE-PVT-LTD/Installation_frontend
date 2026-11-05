@@ -30,6 +30,7 @@ export const PLATFORM_OWNER_EMAIL = PLATFORM_OWNER_EMAILS[0];
 export const APP_ACCESS_OPTIONS = [
   { value: 'complaints', label: 'Complaint Resolution' },
   { value: 'attendance', label: 'Attendance & Visits' },
+  { value: 'contractorAttendance', label: 'Contractor Attendance' },
   { value: 'projects', label: 'Projects' },
   { value: 'tenders', label: 'Tenders' },
   { value: 'billing', label: 'Billing' },
