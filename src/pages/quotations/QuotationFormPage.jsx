@@ -18,8 +18,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import DownloadIcon from '@mui/icons-material/DownloadOutlined';
-import EmailIcon from '@mui/icons-material/EmailOutlined';
+import AnimatedActionButton from '../../components/common/AnimatedActionButton';
 import SaveIcon from '@mui/icons-material/SaveOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -87,7 +86,7 @@ function defaultValues(preparedBy = '') {
 
 function Section({ title, subtitle, action, children }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 2 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: '8px' }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} gap={1} sx={{ mb: 2 }}>
         <Box>
           <Typography fontWeight={700} fontSize="1.05rem">
@@ -109,7 +108,7 @@ function Section({ title, subtitle, action, children }) {
 function ContactDetails({ title, contact }) {
   if (!contact) return null;
   return (
-    <Box sx={{ mt: 1.5, p: 1.75, borderRadius: 1.5, bgcolor: 'action.hover' }}>
+    <Box sx={{ mt: 1.5, p: 1.75, borderRadius: '8px', bgcolor: 'action.hover' }}>
       <Typography variant="body2" fontWeight={700} sx={{ mb: 0.75 }}>
         {title}
       </Typography>
@@ -405,12 +404,8 @@ export default function QuotationFormPage({ mode = 'create' }) {
           >
             {readOnly ? 'Back' : 'Cancel'}
           </Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleDownload}>
-            Download
-          </Button>
-          <Button variant="outlined" startIcon={<EmailIcon />} onClick={handleEmail}>
-            Email
-          </Button>
+          <AnimatedActionButton kind="download" label="Download" onClick={handleDownload} />
+          <AnimatedActionButton kind="send" label="Email" onClick={handleEmail} />
           {readOnly ? (
             quotation && !quotation.isDeleted && (
               <Button variant="contained" startIcon={<EditIcon />} onClick={() => navigate(`/quotations/${id}/edit`)}>

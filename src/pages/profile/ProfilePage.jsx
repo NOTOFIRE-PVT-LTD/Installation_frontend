@@ -23,7 +23,11 @@ const profileSchema = yup.object({
 
 const passwordSchema = yup.object({
   currentPassword: yup.string().required('Current password is required'),
-  newPassword: yup.string().min(8, 'Must be at least 8 characters').required('New password is required'),
+  newPassword: yup
+    .string()
+    .min(8, 'Must be at least 8 characters')
+    .required('New password is required')
+    .notOneOf([yup.ref('currentPassword')], 'Try a different password. This was used previously.'),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref('newPassword')], 'Passwords do not match')

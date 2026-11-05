@@ -94,7 +94,7 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 3,
+        borderRadius: '8px',
         cursor: 'pointer',
         transition: 'box-shadow 150ms ease, transform 150ms ease',
         '&:hover': { boxShadow: '0 12px 28px rgba(31, 42, 68, 0.12)', transform: 'translateY(-2px)' },
@@ -133,7 +133,7 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
           sx={{
             width: '100%',
             aspectRatio: '4 / 3',
-            borderRadius: 2,
+            borderRadius: '8px',
             overflow: 'hidden',
             bgcolor: 'action.hover',
             display: 'flex',
@@ -190,7 +190,7 @@ export default function MasterItemCard({ item, onView, onEdit, onDelete }) {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: '10px',
+              borderRadius: '8px',
               border: '1px solid',
               borderColor: 'divider',
               boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',

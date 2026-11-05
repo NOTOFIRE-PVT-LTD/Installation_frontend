@@ -39,14 +39,45 @@ const SECTION_ORDER = ['projects', 'stations', 'users', 'numbers', 'tenders'];
 const ROUND_SX = {
   '& .MuiOutlinedInput-root': {
     borderRadius: 999,
-    bgcolor: 'background.default',
-    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.light' },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main', borderWidth: 1 },
+    minHeight: 40,
+    bgcolor: 'rgba(20, 12, 5, 0.55)',
+    color: '#FFFFFF',
+    boxShadow: 'none',
+    '& .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid',
+      borderColor: 'rgba(212, 167, 85, 0.4)',
+      transition: 'border-color 0.2s ease',
+    },
+    '&:hover': {
+      boxShadow: 'none',
+      bgcolor: 'rgba(20, 12, 5, 0.72)',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#D4A755',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 0 2px rgba(212, 167, 85, 0.25)',
+      bgcolor: 'rgba(20, 12, 5, 0.85)',
+    },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#D4A755',
+      borderWidth: 1,
+    },
+    '& .MuiInputBase-input': {
+      color: '#FFFFFF',
+      fontSize: '0.8125rem',
+      '&::placeholder': {
+        color: '#C9B69B',
+        opacity: 1,
+      },
+    },
+    '& .MuiInputAdornment-root': {
+      color: '#D4A755',
+    },
   },
 };
 
-export default function GlobalSearchBar() {
+export default function GlobalSearchBar({ placeholder = 'Search projects, users, stations...' }) {
   const navigate = useNavigate();
   const anchorRef = useRef(null);
   const requestIdRef = useRef(0);
@@ -118,12 +149,12 @@ export default function GlobalSearchBar() {
 
   return (
     <ClickAwayListener onClickAway={() => setOpen(false)}>
-      <Box sx={{ flex: 1, maxWidth: 520, mx: { xs: 1, sm: 2 }, position: 'relative' }} ref={anchorRef}>
+      <Box sx={{ width: '100%', maxWidth: 520, position: 'relative' }} ref={anchorRef}>
         <TextField
           fullWidth
           size="small"
           value={query}
-          placeholder="Search projects, users, stations..."
+          placeholder={placeholder}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
@@ -133,7 +164,7 @@ export default function GlobalSearchBar() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <SearchIcon sx={{ color: 'primary.main', fontSize: 20 }} />
               </InputAdornment>
             ),
             endAdornment: (
@@ -160,7 +191,7 @@ export default function GlobalSearchBar() {
             elevation={0}
             sx={{
               mt: 1,
-              borderRadius: '16px',
+              borderRadius: '8px',
               border: '1px solid',
               borderColor: 'divider',
               boxShadow: '0 18px 40px rgba(31, 42, 68, 0.12)',

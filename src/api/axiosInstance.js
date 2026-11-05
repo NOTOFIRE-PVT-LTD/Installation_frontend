@@ -11,7 +11,13 @@ export function injectStore(_store) {
   store = _store;
 }
 
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/forgot-password', '/auth/reset-password'];
+const NO_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/central-sso',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
 
 axiosInstance.interceptors.request.use((config) => {
   const token = store?.getState()?.auth?.accessToken;

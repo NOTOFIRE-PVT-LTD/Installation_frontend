@@ -27,7 +27,7 @@ const schema = yup.object({
     .required("Please confirm the password"),
 });
 
-const AVATAR_COLORS = ["#2f6fed", "#20b486", "#d97706", "#7c3aed", "#0891b2", "#ef4444"];
+const AVATAR_COLORS = ["#DC1F2E", "#20b486", "#d97706", "#7c3aed", "#0891b2", "#ef4444"];
 
 function avatarColor(name = "") {
   let hash = 0;
@@ -64,7 +64,7 @@ export default function SetPasswordDialog({ open, user, submitting, onClose, onS
             sx={{
               width: 36,
               height: 36,
-              borderRadius: "10px",
+              borderRadius: "8px",
               bgcolor: "#fef3c7",
               color: "#d97706",
               display: "flex",

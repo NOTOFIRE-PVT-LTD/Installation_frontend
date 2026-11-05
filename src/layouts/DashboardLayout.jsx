@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
+import ListSubheader from '@mui/material/ListSubheader';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -16,8 +16,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/PersonOutline';
 import Tooltip from '@mui/material/Tooltip';
@@ -26,20 +26,38 @@ import { useTheme } from '@mui/material/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { useAuth } from '../hooks/useAuth';
-import { NAV_ITEMS, getDefaultLandingPath, isNavItemAllowed } from '../routes/routeConfig';
+import { NAV_ITEMS, flattenNavItems, getDefaultLandingPath, isNavItemAllowed } from '../routes/routeConfig';
 import { logout } from '../features/auth/authThunks';
 import { stopImpersonation } from '../features/auth/authSlice';
 import { hideSnackbar } from '../features/ui/uiSlice';
-import { APP_NAME } from '../utils/constants';
 import logo from '../assets/logo.png';
 import GlobalSearchBar from '../components/common/GlobalSearchBar';
+import SidebarNavList from './SidebarNavList';
+import { goToCentralLogin } from '../utils/centralAuth';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 76;
 
+function isSidebarItemActive(pathname, item) {
+  if (item.path === '/visits/today') return pathname === '/visits/today';
+  if (item.path === '/visits/new') return pathname === '/visits/new';
+  if (item.path === '/visits') {
+    return (
+      pathname === '/visits' ||
+      (pathname.startsWith('/visits/') && pathname !== '/visits/new' && pathname !== '/visits/today')
+    );
+  }
+  if (item.path === '/expenses') return pathname === '/expenses' || pathname.startsWith('/expenses/');
+  if (pathname === item.path || pathname.startsWith(`${item.path}/`)) return true;
+  if (item.path === '/salesperson-tracking' && (pathname.startsWith('/visits/') || pathname.startsWith('/expenses/'))) {
+    return true;
+  }
+  return false;
+}
+
 function useVisibleNavItems() {
   const { user, permissions } = useAuth();
-  return NAV_ITEMS.filter((item) => isNavItemAllowed(item, user, permissions));
+  return flattenNavItems(NAV_ITEMS).filter((item) => isNavItemAllowed(item, user, permissions));
 }
 
 export default function DashboardLayout() {
@@ -59,7 +77,7 @@ export default function DashboardLayout() {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, permissions } = useAuth();
+  const { user, permissions, isSuperAdmin } = useAuth();
   const impersonatorAdmin = useAppSelector((state) => state.auth.impersonatorAdmin);
   const snackbar = useAppSelector((state) => state.ui.snackbar);
   const navItems = useVisibleNavItems();
@@ -72,6 +90,8 @@ export default function DashboardLayout() {
 
     const canStayOnPath =
       location.pathname === '/profile' ||
+      location.pathname.startsWith('/visits/') ||
+      location.pathname.startsWith('/expenses') ||
       navItems.some((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`));
 
     if (!canStayOnPath) {
@@ -82,7 +102,7 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     await dispatch(logout());
-    navigate('/login', { replace: true });
+    goToCentralLogin();
   };
 
   const handleExitImpersonation = () => {
@@ -91,80 +111,96 @@ export default function DashboardLayout() {
     navigate(restoredPath, { replace: true });
   };
 
-  const renderDrawerContent = ({ collapsible = false, forceExpanded = false } = {}) => {
-    const isCollapsed = forceExpanded ? false : collapsed;
-    return (
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          {!isCollapsed && (
-            <Box component="img" src={logo} alt={APP_NAME} sx={{ height: 36, maxWidth: 160, objectFit: 'contain' }} />
-          )}
-          {collapsible && (
-            <IconButton onClick={toggleCollapsed} size="small" sx={{ ml: isCollapsed ? 'auto' : 0, mr: isCollapsed ? 'auto' : 0 }}>
-              <MenuIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-        <Divider />
-        <List sx={{ flex: 1, px: 1 }}>
-          {navItems.map((item) => (
-            <Tooltip key={item.path} title={isCollapsed ? item.label : ''} placement="right">
-              <ListItemButton
-                component={NavLink}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
-                sx={{
-                  borderRadius: 0,
-                  mb: 0.5,
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  px: isCollapsed ? 1.5 : 2,
-                  '&.active': { bgcolor: 'primary.main', color: 'primary.contrastText', '& .MuiListItemIcon-root': { color: 'inherit' } },
-                }}
-              >
-                <ListItemIcon sx={{ color: item.accent?.color, minWidth: isCollapsed ? 0 : 40, justifyContent: 'center' }}>
-                  <FontAwesomeIcon icon={item.icon} fixedWidth />
-                </ListItemIcon>
-                {!isCollapsed && <ListItemText primary={item.label} />}
-              </ListItemButton>
-            </Tooltip>
-          ))}
-        </List>
-      </Box>
-    );
-  };
+
 
   return (
     <Box sx={{ display: 'flex', width: '100%', overflowX: 'hidden' }}>
       <AppBar
         position="fixed"
-        color="inherit"
         elevation={0}
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          zIndex: (t) => t.zIndex.drawer + 1,
+          width: '100%',
+          left: 0,
           borderRadius: 0,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          transition: 'width 0.2s, margin-left 0.2s',
+          boxShadow: '0 2px 10px rgba(26, 17, 7, 0.25)',
+          border: 'none',
+          borderBottom: '1px solid rgba(212, 167, 85, 0.35)',
+          background: 'linear-gradient(90deg, #E5B85C 0%, #C99846 15%, #8C591D 45%, #543310 70%, #2A1705 100%)',
+          color: '#FFFFFF',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', gap: 1, px: { xs: 1, sm: 2 }, minWidth: 0 }}>
-          <IconButton edge="start" sx={{ display: { sm: 'none' } }} onClick={() => setMobileOpen(true)}>
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'none', sm: 'block' } }}>
-            <GlobalSearchBar />
+        <Toolbar sx={{ gap: 0, px: { xs: 1, sm: 0 }, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: { xs: 'auto', sm: drawerWidth },
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'flex-start', sm: collapsed ? 'center' : 'flex-start' },
+              gap: 0.5,
+              px: { xs: 0, sm: collapsed ? 0 : 1 },
+              boxSizing: 'border-box',
+              transition: 'width 0.2s',
+            }}
+          >
+            <IconButton
+              onClick={() => (isMobile ? setMobileOpen(true) : toggleCollapsed())}
+              sx={{ color: '#241404', '&:hover': { bgcolor: 'rgba(36, 20, 4, 0.12)' } }}
+            >
+              {collapsed && !isMobile ? <MenuOpenIcon /> : <MenuIcon />}
+            </IconButton>
+            <Box
+              component="img"
+              src={logo}
+              alt="Valuecon"
+              sx={{
+                height: 32,
+                maxWidth: 160,
+                objectFit: 'contain',
+                display: { xs: 'none', sm: collapsed ? 'none' : 'block' },
+              }}
+            />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'flex', sm: 'none' }, alignItems: 'center' }}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>
-              {APP_NAME}
-            </Typography>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pr: { xs: 0.5, sm: 2 },
+            }}
+          >
+            {isSuperAdmin ? (
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: { xs: 'stretch', sm: 'center' } }}>
+                <GlobalSearchBar placeholder={isMobile ? 'Search…' : 'Search projects, users, stations...'} />
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, minWidth: 0 }} />
+            )}
+            <IconButton
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+              sx={{ p: 0, flexShrink: 0, '&:hover': { bgcolor: 'transparent' } }}
+            >
+              <Avatar
+                src={user?.profileImage?.url}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: '1.5px solid #FAE2B4',
+                  color: '#241404',
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  bgcolor: 'transparent',
+                  background: 'linear-gradient(135deg, #FAE2B4 0%, #E5B85C 50%, #D4A34E 100%) !important',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                }}
+              >
+                {user?.name?.[0]?.toUpperCase()}
+              </Avatar>
+            </IconButton>
           </Box>
-          <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-            <Avatar src={user?.profileImage?.url} sx={{ width: 34, height: 34 }}>
-              {user?.name?.[0]?.toUpperCase()}
-            </Avatar>
-          </IconButton>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
             <MenuItem
               onClick={() => {
@@ -172,13 +208,13 @@ export default function DashboardLayout() {
                 navigate('/profile');
               }}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ color: 'primary.main' }}>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
               Profile
             </MenuItem>
             <MenuItem onClick={handleLogout}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ color: 'primary.main' }}>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
               Logout
@@ -195,10 +231,19 @@ export default function DashboardLayout() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, borderRadius: 0 },
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              borderRadius: 0,
+              border: 'none',
+              borderRight: '1px solid rgba(212, 167, 85, 0.25)',
+              boxShadow: '4px 0 20px rgba(26, 17, 7, 0.35)',
+              background: 'linear-gradient(180deg, #201204 0%, #341D08 25%, #563310 50%, #82521B 72%, #B57F2F 88%, #D4A34E 100%)',
+              top: 52,
+              height: 'calc(100% - 52px)',
+            },
           }}
         >
-          {renderDrawerContent({ forceExpanded: true })}
+          <SidebarNavList isCollapsed={false} onNavigate={() => setMobileOpen(false)} />
         </Drawer>
         <Drawer
           variant="permanent"
@@ -208,13 +253,20 @@ export default function DashboardLayout() {
               width: drawerWidth,
               boxSizing: 'border-box',
               overflowX: 'hidden',
+              overflowY: 'auto',
               transition: 'width 0.2s',
               borderRadius: 0,
+              border: 'none',
+              borderRight: '1px solid rgba(212, 167, 85, 0.25)',
+              boxShadow: '2px 0 14px rgba(26, 17, 7, 0.25)',
+              background: 'linear-gradient(180deg, #201204 0%, #341D08 25%, #563310 50%, #82521B 72%, #B57F2F 88%, #D4A34E 100%)',
+              top: 52,
+              height: 'calc(100% - 52px)',
             },
           }}
           open
         >
-          {renderDrawerContent({ collapsible: true })}
+          <SidebarNavList isCollapsed={collapsed} onNavigate={() => {}} />
         </Drawer>
       </Box>
 
@@ -227,6 +279,8 @@ export default function DashboardLayout() {
           p: { xs: 1, sm: 2 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           transition: 'width 0.2s',
+          bgcolor: '#F8F6F1',
+          minHeight: '100vh',
         }}
       >
         <Toolbar />

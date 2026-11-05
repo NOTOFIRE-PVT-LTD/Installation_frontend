@@ -71,7 +71,7 @@ export default function TenderDetailDrawer({ open, tender, onClose, onEdit, canE
                 href={img.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ width: 110, height: 110, borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
+                sx={{ width: 110, height: 110, borderRadius: '8px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}
               >
                 <Box component="img" src={img.url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </Box>

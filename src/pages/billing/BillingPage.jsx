@@ -157,7 +157,7 @@ function SummaryBlock({ doc }) {
         width: { xs: '100%', sm: 420 },
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 1.5,
+        borderRadius: '8px',
         overflow: 'hidden',
       }}
     >

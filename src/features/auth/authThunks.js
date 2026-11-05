@@ -10,8 +10,16 @@ export const login = createAsyncThunk('auth/login', async (credentials, { reject
   }
 });
 
-export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
+export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { getState, dispatch, rejectWithValue }) => {
   try {
+    if (!getState().auth.accessToken) {
+      try {
+        const refreshed = await authApi.refresh();
+        dispatch({ type: 'auth/setCredentials', payload: refreshed.data.data });
+      } catch {
+        return rejectWithValue('Not authenticated');
+      }
+    }
     const { data } = await authApi.me();
     return data.data;
   } catch (err) {
