@@ -18,26 +18,24 @@ import PeopleListPage from '../people/PeopleListPage';
 import VisitsHomePage from '../visits/VisitsHomePage';
 import CustomersListPage from '../customers/CustomersListPage';
 import AttendancePage from '../attendance/AttendancePage';
+import AdminAttendanceRoster from '../attendance/AdminAttendanceRoster';
 import TrackingApprovalsPage from './TrackingApprovalsPage';
 import { peopleApi } from '../../api/peopleApi';
 import { attendanceApi } from '../../api/attendanceApi';
 import { visitApi } from '../../api/visitApi';
 import { customerApi } from '../../api/customerApi';
 
-const ALL_TABS = [
-  { id: 'people', label: 'People', adminOnly: true },
+// Content-area hub tabs — Super Admin only (many apps). Admins/users use the sidebar.
+const SUPER_ADMIN_TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'people', label: 'People' },
   { id: 'visits', label: 'Visits' },
   { id: 'customers', label: 'Customers' },
   { id: 'attendance', label: 'Attendance' },
-  { id: 'approvals', label: 'Approvals', adminOnly: true },
+  { id: 'approvals', label: 'Approvals' },
 ];
 
-function isTabAllowed(tab, { isAdmin, permissions }) {
-  if (tab.adminOnly) return isAdmin;
-  if (isAdmin) return true;
-  if (tab.id === 'customers') return permissions?.customers !== false;
-  return permissions?.attendance !== false;
-}
+const ADMIN_SECTION_IDS = ['dashboard', 'people', 'visits', 'customers', 'attendance', 'approvals'];
 
 function AttendanceStatCard({ label, value, sub, icon, active, onClick }) {
   return (
@@ -57,14 +55,16 @@ function AttendanceStatCard({ label, value, sub, icon, active, onClick }) {
         minWidth: 0,
         width: '100%',
         height: '100%',
-        cursor: 'pointer',
+        cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
         boxShadow: active ? '0 4px 16px rgba(163, 120, 54, 0.16)' : 'none',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 18px rgba(88, 55, 20, 0.1)',
-          borderColor: '#A37836',
-        },
+        '&:hover': onClick
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 18px rgba(88, 55, 20, 0.1)',
+              borderColor: '#A37836',
+            }
+          : undefined,
       }}
     >
       <Box sx={{ minWidth: 0, pr: 1 }}>
@@ -109,12 +109,71 @@ function AttendanceStatCard({ label, value, sub, icon, active, onClick }) {
   );
 }
 
+function DashboardPanel({ metrics, onOpen, clickable }) {
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(5, minmax(0, 1fr))' },
+        gap: 1.5,
+      }}
+    >
+      <AttendanceStatCard
+        label="Total Staff"
+        value={metrics.totalStaff}
+        sub="Sales & Coordinators"
+        icon={faUsers}
+        onClick={clickable ? () => onOpen('people') : undefined}
+      />
+      <AttendanceStatCard
+        label="Today's Visits"
+        value={metrics.visitsToday}
+        sub="Scheduled & completed"
+        icon={faRoute}
+        onClick={clickable ? () => onOpen('visits') : undefined}
+      />
+      <AttendanceStatCard
+        label="Active Clients"
+        value={metrics.totalCustomers}
+        sub="Registered accounts"
+        icon={faBuildingUser}
+        onClick={clickable ? () => onOpen('customers') : undefined}
+      />
+      <AttendanceStatCard
+        label="Today's Punches"
+        value={metrics.attendanceToday}
+        sub="Punch in / out logged"
+        icon={faClock}
+        onClick={clickable ? () => onOpen('attendance') : undefined}
+      />
+      <AttendanceStatCard
+        label="Approvals Queue"
+        value={metrics.pendingApprovals}
+        sub="Visits, expense & leave"
+        icon={faClipboardCheck}
+        onClick={clickable ? () => onOpen('approvals') : undefined}
+      />
+    </Box>
+  );
+}
+
+function SectionBody({ current }) {
+  if (current === 'people') return <PeopleListPage embedded />;
+  if (current === 'visits') return <VisitsHomePage embedded />;
+  if (current === 'customers') return <CustomersListPage embedded />;
+  if (current === 'attendance') return <AdminAttendanceRoster />;
+  if (current === 'approvals') return <TrackingApprovalsPage />;
+  return null;
+}
+
 export default function SalespersonTrackingPage() {
-  const { isAdmin, isSalesperson, permissions } = useAuth();
+  const { isAdmin, isSuperAdmin, isSalesperson } = useAuth();
   const [params, setParams] = useSearchParams();
-  const tabs = ALL_TABS.filter((tab) => isTabAllowed(tab, { isAdmin, permissions }));
   const requested = params.get('tab');
-  const current = tabs.some((tab) => tab.id === requested) ? requested : tabs[0]?.id || 'people';
+  const allowed = isSuperAdmin
+    ? SUPER_ADMIN_TABS.map((t) => t.id)
+    : ADMIN_SECTION_IDS;
+  const current = allowed.includes(requested) ? requested : 'dashboard';
 
   const [metrics, setMetrics] = useState({
     totalStaff: 0,
@@ -126,25 +185,22 @@ export default function SalespersonTrackingPage() {
 
   const loadKpis = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
       const [peopleRes, attRes, visitsRes, custRes] = await Promise.allSettled([
         peopleApi.list({ pageSize: 1 }),
         attendanceApi.list({ from: today, to: today, pageSize: 1 }),
-        visitApi.today(),
+        visitApi.list({ from: today, to: today, pageSize: 1 }),
         customerApi.list({ pageSize: 1, active: 'true' }),
       ]);
 
       const staffCount = peopleRes.status === 'fulfilled' ? peopleRes.value.data?.meta?.total || 0 : 0;
-      const attCount = attRes.status === 'fulfilled' ? attRes.value.data?.total || 0 : 0;
-
-      let visitCount = 0;
-      if (visitsRes.status === 'fulfilled') {
-        const vData = visitsRes.value.data?.data;
-        if (Array.isArray(vData)) visitCount = vData.length;
-        else if (vData?.visits) visitCount = vData.visits.length;
-        else if (typeof vData?.total === 'number') visitCount = vData.total;
-      }
-
+      const attCount = attRes.status === 'fulfilled' ? attRes.value.data?.meta?.total || attRes.value.data?.total || 0 : 0;
+      const visitCount = visitsRes.status === 'fulfilled' ? visitsRes.value.data?.meta?.total || visitsRes.value.data?.total || 0 : 0;
       const custCount = custRes.status === 'fulfilled' ? custRes.value.data?.meta?.total || custRes.value.data?.total || 0 : 0;
 
       setMetrics({
@@ -160,12 +216,9 @@ export default function SalespersonTrackingPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
-      loadKpis();
-    }
+    if (isAdmin) loadKpis();
   }, [isAdmin]);
 
-  // If user is a regular field salesperson (non-admin), directly render personal punch card & chart
   if (isSalesperson && !isAdmin) {
     return <AttendancePage />;
   }
@@ -178,80 +231,56 @@ export default function SalespersonTrackingPage() {
     setParams(next, { replace: true });
   };
 
+  useEffect(() => {
+    if (!requested || !allowed.includes(requested)) setTab('dashboard');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requested]);
+
+  // Super Admin: content hub with pills (many apps). Admin: sidebar only — no content pills.
+  if (isSuperAdmin) {
+    return (
+      <>
+        <PageHeader
+          title="Attendance & Field Operations"
+          subtitle="People, visits, customers, attendance records, and approvals in one place"
+        />
+        <Box sx={{ mb: 2.5 }}>
+          <DashboardPanel metrics={metrics} onOpen={setTab} clickable />
+        </Box>
+        <Box sx={{ mb: 2 }}>
+          <SlidingPills
+            fullWidth
+            value={current}
+            onChange={setTab}
+            items={SUPER_ADMIN_TABS.map((tab, index) => ({
+              id: tab.id,
+              label: `${index + 1}. ${tab.label}`,
+            }))}
+          />
+        </Box>
+        {current !== 'dashboard' ? <SectionBody current={current} /> : null}
+      </>
+    );
+  }
+
+  const titles = {
+    dashboard: ['Dashboard', 'Attendance overview'],
+    people: ['People', 'Sales staff and coordinators'],
+    visits: ['Visits', 'Planned and completed field visits'],
+    customers: ['Customers', 'Registered client accounts'],
+    attendance: ['Attendance', 'Today’s punches and visit counts'],
+    approvals: ['Approvals', 'Visits, expense and leave queue'],
+  };
+  const [title, subtitle] = titles[current] || titles.dashboard;
+
   return (
     <>
-      <PageHeader
-        title="Attendance & Field Operations"
-        subtitle="People, visits, customers, attendance records, and approvals in one place"
-      />
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(5, minmax(0, 1fr))' },
-          gap: 1.5,
-          mb: 2.5,
-        }}
-      >
-        <AttendanceStatCard
-          label="Total Staff"
-          value={metrics.totalStaff}
-          sub="Sales & Coordinators"
-          icon={faUsers}
-          active={current === 'people'}
-          onClick={() => setTab('people')}
-        />
-        <AttendanceStatCard
-          label="Today's Visits"
-          value={metrics.visitsToday}
-          sub="Scheduled & completed"
-          icon={faRoute}
-          active={current === 'visits'}
-          onClick={() => setTab('visits')}
-        />
-        <AttendanceStatCard
-          label="Active Clients"
-          value={metrics.totalCustomers}
-          sub="Registered accounts"
-          icon={faBuildingUser}
-          active={current === 'customers'}
-          onClick={() => setTab('customers')}
-        />
-        <AttendanceStatCard
-          label="Today's Punches"
-          value={metrics.attendanceToday}
-          sub="Punch in / out logged"
-          icon={faClock}
-          active={current === 'attendance'}
-          onClick={() => setTab('attendance')}
-        />
-        <AttendanceStatCard
-          label="Approvals Queue"
-          value={metrics.pendingApprovals}
-          sub="Visits, expense & leave"
-          icon={faClipboardCheck}
-          active={current === 'approvals'}
-          onClick={() => setTab('approvals')}
-        />
-      </Box>
-
-      <Box sx={{ mb: 2 }}>
-        <SlidingPills
-          fullWidth
-          value={current}
-          onChange={setTab}
-          items={tabs.map((tab, index) => ({
-            id: tab.id,
-            label: `${index + 1}. ${tab.label}`,
-          }))}
-        />
-      </Box>
-
-      {current === 'people' && <PeopleListPage embedded />}
-      {current === 'visits' && <VisitsHomePage embedded />}
-      {current === 'customers' && <CustomersListPage embedded />}
-      {current === 'attendance' && <AttendancePage embedded />}
-      {current === 'approvals' && <TrackingApprovalsPage />}
+      <PageHeader title={title} subtitle={subtitle} />
+      {current === 'dashboard' ? (
+        <DashboardPanel metrics={metrics} onOpen={setTab} clickable={false} />
+      ) : (
+        <SectionBody current={current} />
+      )}
     </>
   );
 }

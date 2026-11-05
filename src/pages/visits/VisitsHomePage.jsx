@@ -14,6 +14,7 @@ import { buildCsvColumns } from '../../components/common/DataTable/DataTable.hel
 import { exportToCsv } from '../../utils/csvExport';
 import MultiVisitPlanDrawer from './MultiVisitPlanDrawer';
 import DailyVisitsSummary from './DailyVisitsSummary';
+import AdminVisitsDayBoard from './AdminVisitsDayBoard';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
@@ -73,6 +74,7 @@ export default function VisitsHomePage({ embedded = false }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [planDrawer, setPlanDrawer] = useState(false);
+  const [boardKey, setBoardKey] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -130,7 +132,7 @@ export default function VisitsHomePage({ embedded = false }) {
           subtitle={
             isSalesperson
               ? 'View all your customer visits grouped by date with check-in/out details and expenses, or manage your schedule'
-              : 'Monitor planned visits across all salespeople'
+              : 'Day-wise visits by salesperson — filter any From / To range'
           }
           actions={
             <Stack direction="row" spacing={1}>
@@ -155,7 +157,47 @@ export default function VisitsHomePage({ embedded = false }) {
         />
       )}
 
-      {viewMode === 'daily' ? (
+      {isAdmin ? (
+        viewMode === 'daily' ? (
+          <>
+            <Box sx={{ mb: 2 }}>{viewPills}</Box>
+            <AdminVisitsDayBoard
+              key={boardKey}
+              onPlanVisit={() => setPlanDrawer(true)}
+            />
+          </>
+        ) : (
+          <DataTable
+            columns={tableColumns}
+            rows={rows}
+            totalCount={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            sortModel={sortField ? { field: sortField, sort: sortOrder } : null}
+            onSortChange={(model) => model && setSort(model.field, model.sort)}
+            searchValue={search}
+            onSearchChange={setSearch}
+            loading={loading}
+            onRowClick={(row) => navigate(`/visits/${row._id}`)}
+            onExportCsv={() => exportToCsv('visits', rows, buildCsvColumns(tableColumns))}
+            toolbarStart={viewPills}
+            toolbarEnd={
+              embedded ? (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setPlanDrawer(true)}
+                  sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  Plan Visits
+                </Button>
+              ) : null
+            }
+          />
+        )
+      ) : viewMode === 'daily' ? (
         <>
           <Box sx={{ mb: 2 }}>{viewPills}</Box>
           <DailyVisitsSummary onPlanVisit={() => setPlanDrawer(true)} />
@@ -197,6 +239,7 @@ export default function VisitsHomePage({ embedded = false }) {
         onClose={() => setPlanDrawer(false)}
         onCreated={() => {
           if (viewMode === 'all') load();
+          else setBoardKey((k) => k + 1);
         }}
       />
     </>

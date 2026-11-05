@@ -85,20 +85,26 @@ export default function DashboardLayout() {
   // render (from .filter()), which would otherwise re-run this effect constantly.
   const navPathsKey = useMemo(() => navItems.map((item) => item.path).join('|'), [navItems]);
 
+  // Keep every non–Super Admin inside apps they were granted (impersonation + normal login).
   useEffect(() => {
-    if (!impersonatorAdmin) return;
+    if (!user || isSuperAdmin) return;
 
+    const path = location.pathname;
     const canStayOnPath =
-      location.pathname === '/profile' ||
-      location.pathname.startsWith('/visits/') ||
-      location.pathname.startsWith('/expenses') ||
-      navItems.some((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`));
+      path === '/profile' ||
+      path === '/home' ||
+      path.startsWith('/visits') ||
+      path.startsWith('/expenses') ||
+      path.startsWith('/leave') ||
+      path === '/my-approvals' ||
+      path.startsWith('/salesperson-tracking') ||
+      navItems.some((item) => path === item.path || path.startsWith(`${item.path}/`));
 
     if (!canStayOnPath) {
       navigate(getDefaultLandingPath(user, permissions), { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [impersonatorAdmin, location.pathname, navPathsKey, navigate]);
+  }, [user, isSuperAdmin, impersonatorAdmin, location.pathname, navPathsKey, navigate]);
 
   const handleLogout = async () => {
     await dispatch(logout());

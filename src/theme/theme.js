@@ -153,9 +153,14 @@ const theme = createTheme({
         '*::-webkit-scrollbar-thumb:hover': {
           background: BRAND.btnGradientHover,
         },
-        'input[type="date"]': {
+        'input[type="date"], input[type="month"], input[type="time"]': {
           accentColor: BRAND.yellowMain,
           colorScheme: 'light',
+        },
+        'input[type="date"]::-webkit-calendar-picker-indicator, input[type="month"]::-webkit-calendar-picker-indicator': {
+          filter: 'sepia(0.85) saturate(2.2) hue-rotate(5deg) brightness(0.85)',
+          cursor: 'pointer',
+          opacity: 0.85,
         },
         '#root': {
           minHeight: '100vh',

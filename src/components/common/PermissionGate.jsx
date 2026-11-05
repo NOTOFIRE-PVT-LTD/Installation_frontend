@@ -8,7 +8,12 @@ import { getDefaultLandingPath } from '../../routes/routeConfig';
 // module for them (mirrors the backend's requirePermissionOrRole rule).
 export default function PermissionGate({ permission, userPermission, roles = [], jobRole, children }) {
   const { user, isAdmin, isSuperAdmin, permissions } = useAuth();
-  const hasPermission = usePermission(permission) || usePermission(userPermission);
+  // Call both hooks unconditionally — `a || b` short-circuits and violates Rules of Hooks
+  // when the second usePermission (→ useAuth → useSelector) is skipped on some renders.
+  // usePermission(undefined) returns true ("no key = allow"); only OR it when userPermission is set.
+  const hasPermA = usePermission(permission);
+  const hasPermB = usePermission(userPermission);
+  const hasPermission = hasPermA || (userPermission != null && hasPermB);
   const home = getDefaultLandingPath(user, permissions);
 
   // Super Admin can access all modules and subpages without restriction

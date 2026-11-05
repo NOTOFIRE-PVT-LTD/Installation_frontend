@@ -100,6 +100,7 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
   const [formData, setFormData] = useState({
     customerName: '',
     contactNumber: '',
+    whatsappNumber: '',
     email: '',
     customerOrganization: '',
     customerLocation: '',
@@ -136,6 +137,7 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
         setFormData({
           customerName: doc.customerName || '',
           contactNumber: doc.contactNumber || '',
+          whatsappNumber: doc.whatsappNumber || doc.contactNumber || '',
           email: doc.email || '',
           customerOrganization: doc.customerOrganization || doc.companyName || '',
           customerLocation: doc.customerLocation || doc.siteName || doc.location || '',
@@ -232,6 +234,9 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
     }
     if (formData.contactNumber !== (complaint.contactNumber || '')) {
       payload.contactNumber = formData.contactNumber;
+    }
+    if (formData.whatsappNumber !== (complaint.whatsappNumber || '')) {
+      payload.whatsappNumber = formData.whatsappNumber;
     }
     if (formData.email !== (complaint.email || '')) {
       payload.email = formData.email;
@@ -619,6 +624,17 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
                     label="Phone / Mobile Number *"
                     value={formData.contactNumber}
                     onChange={(e) => handleChange('contactNumber', e.target.value)}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="WhatsApp Number *"
+                    value={formData.whatsappNumber || ''}
+                    onChange={(e) => handleChange('whatsappNumber', e.target.value)}
+                    helperText="Ticket updates are sent on WhatsApp only"
                   />
                 </Grid>
 

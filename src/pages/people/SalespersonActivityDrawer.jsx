@@ -10,6 +10,7 @@ import Paper from '@mui/material/Paper';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
@@ -291,22 +292,59 @@ export default function SalespersonActivityDrawer({
             </IconButton>
           </Stack>
 
-          <TextField
-            size="small"
-            type="month"
-            label="Jump to Month"
-            value={selectedMonth}
-            onChange={(e) => e.target.value && setSelectedMonth(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{
-              width: 170,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#FFFDF8',
-                borderRadius: '8px',
-                '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
-              },
-            }}
-          />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <TextField
+              select
+              size="small"
+              label="Month"
+              value={Number(selectedMonth.split('-')[1])}
+              onChange={(e) => {
+                const y = selectedMonth.split('-')[0];
+                setSelectedMonth(`${y}-${String(e.target.value).padStart(2, '0')}`);
+              }}
+              sx={{
+                minWidth: 128,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFDF8',
+                  borderRadius: '8px',
+                  '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.45)' },
+                },
+              }}
+            >
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December',
+              ].map((label, i) => (
+                <MenuItem key={label} value={i + 1}>
+                  {label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Year"
+              value={Number(selectedMonth.split('-')[0])}
+              onChange={(e) => {
+                const m = selectedMonth.split('-')[1];
+                setSelectedMonth(`${e.target.value}-${m}`);
+              }}
+              sx={{
+                minWidth: 96,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFDF8',
+                  borderRadius: '8px',
+                  '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.45)' },
+                },
+              }}
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <MenuItem key={y} value={y}>
+                  {y}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
         </Paper>
 
         {/* Month Summary KPI Stats */}

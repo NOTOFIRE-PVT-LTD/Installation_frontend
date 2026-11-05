@@ -175,7 +175,9 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
       </DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
         <Typography variant="caption" sx={{ color: '#7C6752', display: 'block', mb: 1.5, fontWeight: 600 }}>
-          {isAdmin ? 'Select administrative modules this Admin can manage:' : 'Select workspace apps this User can access:'}
+          {isAdmin
+            ? 'Opt-in only — grant the modules for this Admin’s app. Leave other apps unchecked so access stays unmixed.'
+            : 'Select workspace apps this User can access:'}
         </Typography>
 
         <FormGroup sx={{ gap: 0.5 }}>

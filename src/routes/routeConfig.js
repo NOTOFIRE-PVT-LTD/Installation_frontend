@@ -31,6 +31,53 @@ import {
 import { ROLES } from '../utils/constants';
 import { IMPORT_TABS, SHIPPING_TABS } from '../pages/shipping/companionTabs';
 
+// Path → owning app permission. Blocks nav/config mistakes that hang one app's
+// screens under another app's permission (e.g. Phone Intake under attendance).
+const APP_PATH_OWNERS = [
+  { prefix: '/complaints', permission: 'complaints' },
+  { prefix: '/attendance', permission: 'attendance' },
+  { prefix: '/salesperson-tracking', permission: 'attendance' },
+  { prefix: '/visits', permission: 'attendance' },
+  { prefix: '/leave', permission: 'attendance' },
+  { prefix: '/expenses', permission: 'attendance' },
+  { prefix: '/my-approvals', permission: 'attendance' },
+  { prefix: '/shipping', permission: 'shipping' },
+  { prefix: '/import-control', permission: 'importControl' },
+];
+
+function pathOwnerPermission(path) {
+  const base = String(path || '').split('?')[0];
+  const hit = APP_PATH_OWNERS.find((o) => base === o.prefix || base.startsWith(`${o.prefix}/`));
+  return hit?.permission || null;
+}
+
+function isAttendanceFamilyPermission(key) {
+  return key === 'attendance' || key === 'salespersonTracking';
+}
+
+/** True when a nav item's path belongs to app A but its permission flag is for app B. */
+export function navItemCrossesAppBoundary(item) {
+  const owner = pathOwnerPermission(item?.path);
+  if (!owner || item?.permission == null) return false;
+  if (owner === 'attendance') return !isAttendanceFamilyPermission(item.permission);
+  return item.permission !== owner;
+}
+
+function assertNavAppBoundaries(items) {
+  const walk = (list) => {
+    for (const item of list || []) {
+      if (navItemCrossesAppBoundary(item)) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[RBAC] "${item.label}" (${item.path}) is owned by "${pathOwnerPermission(item.path)}" but permission="${item.permission}" — apps must not mix`
+        );
+      }
+      if (item.children?.length) walk(item.children);
+    }
+  };
+  walk(items);
+}
+
 // permission: null means "no admin permission required"
 // superAdminOnly: true means only visible on Super Admin's sidebar
 // Attendance is a full workspace app visible to Super Admin and any user/admin with attendance access
@@ -104,6 +151,60 @@ export const NAV_ITEMS = [
     userPermission: 'attendance',
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#d4a34e', bg: '#fffdf0' },
+    // Admins navigate these from the sidebar only. Content-area pills stay Super Admin.
+    expandChildrenInSidebar: true,
+    children: [
+      {
+        label: 'Dashboard',
+        path: '/attendance?tab=dashboard',
+        icon: faChartLine,
+        permission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+      {
+        label: 'People',
+        path: '/attendance?tab=people',
+        icon: faUsers,
+        permission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+      {
+        label: 'Visits',
+        path: '/attendance?tab=visits',
+        icon: faRoute,
+        permission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+      {
+        label: 'Customers',
+        path: '/attendance?tab=customers',
+        icon: faBuildingColumns,
+        permission: 'attendance',
+        userPermission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+      {
+        label: 'Attendance',
+        path: '/attendance?tab=attendance',
+        icon: faClock,
+        permission: 'attendance',
+        userPermission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+      {
+        label: 'Approvals',
+        path: '/attendance?tab=approvals',
+        icon: faClipboardCheck,
+        permission: 'attendance',
+        roles: [ROLES.ADMIN],
+        accent: { color: '#d4a34e', bg: '#fffdf0' },
+      },
+    ],
   },
   {
     label: 'Shipping Control',
@@ -162,16 +263,6 @@ export const NAV_ITEMS = [
     jobRole: 'SALESPERSON',
     roles: [ROLES.USER],
     accent: { color: '#DC1F2E', bg: '#FFE8EA' },
-  },
-  {
-    label: 'Phone Intake',
-    path: '/complaints/new',
-    icon: faHeadset,
-    permission: 'attendance',
-    userPermission: 'attendance',
-    jobRole: 'SALESPERSON',
-    roles: [ROLES.USER],
-    accent: { color: '#d4a34e', bg: '#fffdf0' },
   },
   {
     label: 'All Visits',
@@ -366,6 +457,8 @@ export const NAV_ITEMS = [
   },
 ];
 
+if (import.meta.env.DEV) assertNavAppBoundaries(NAV_ITEMS);
+
 export function isSuperAdminUser(user) {
   return (
     user?.adminType === 'SUPER_ADMIN' ||
@@ -374,20 +467,74 @@ export function isSuperAdminUser(user) {
   );
 }
 
+/** Sidebar app heading for Admin/User multi-app menus (Super Admin stays flat). */
+const APP_SECTION_LABELS = {
+  attendance: 'Attendance',
+  salespersonTracking: 'Attendance',
+  complaints: 'Complaints',
+  shipping: 'Shipping Control',
+  importControl: 'Import Control',
+  dashboard: 'Dashboard',
+  users: 'Users',
+  projects: 'Projects',
+  tenders: 'Tender',
+  inspections: 'Inspection',
+  financialDocuments: 'Financial Document',
+  billing: 'Billing',
+  quotations: 'Quotations',
+  proformaInvoices: 'Proforma Invoices',
+  deliveryChallans: 'Delivery Challans',
+  atlantaPayments: 'Atlanta Payments',
+  itemsMaster: 'Items Master',
+  stockItems: 'Stock Items',
+  bom: 'BOM',
+  accounts: 'Accounts',
+  claimApprovals: 'Approvals',
+  numbers: 'Numbers',
+  auditLogs: 'Audit Logs',
+};
+
+export function navAppSection(item) {
+  if (item?.section) return item.section;
+  const owner = pathOwnerPermission(item?.path);
+  if (owner && APP_SECTION_LABELS[owner]) return APP_SECTION_LABELS[owner];
+  const key = item?.permission || item?.userPermission;
+  if (key && APP_SECTION_LABELS[key]) return APP_SECTION_LABELS[key];
+  return item?.label || null;
+}
+
 export function expandNavItems(items, user, permissions) {
   const superAdmin = isSuperAdminUser(user);
-  return items.flatMap((item) => {
+  const expanded = items.flatMap((item) => {
     if (!isNavItemAllowed(item, user, permissions)) return [];
     if (!superAdmin && item.expandChildrenInSidebar && item.children?.length) {
-      return item.children.filter((child) => isNavItemAllowed(child, user, permissions));
+      const kids = item.children.filter((child) => isNavItemAllowed(child, user, permissions));
+      // Salesperson Users have no admin children — keep the parent Attendance link.
+      if (kids.length) {
+        return kids.map((child) => ({ ...child, section: item.label }));
+      }
     }
-    return [item];
+    // Super Admin keeps the existing flat sidebar — no app section headers.
+    if (superAdmin) return [item];
+    return [{ ...item, section: navAppSection(item) }];
   });
+
+  if (superAdmin) return expanded;
+
+  // Only show "App name → options" headers when the person can open more than one app.
+  const sections = new Set(expanded.map((i) => i.section).filter(Boolean));
+  if (sections.size <= 1) {
+    return expanded.map(({ section: _section, ...rest }) => rest);
+  }
+  return expanded;
 }
 
 // Admins are gated strictly by their permission flag. If an admin has 2 apps granted, they only see those 2 apps.
 export function isNavItemAllowed(item, user, permissions) {
   if (!user) return false;
+
+  // Hard stop: never surface a screen under the wrong app's permission flag.
+  if (navItemCrossesAppBoundary(item)) return false;
 
   const isSuperAdmin = isSuperAdminUser(user);
 
@@ -422,8 +569,7 @@ export function isNavItemAllowed(item, user, permissions) {
   // User only sees the apps they have explicit permission for.
   const key = item.userPermission || item.permission;
   if (!key) return true;
-  // Salespeople already create/see tickets via Phone Intake — no extra Complaints nav.
-  if (user?.jobRole === 'SALESPERSON' && key === 'complaints') return false;
+  // Keep Attendance and Complaint Resolution separate — no cross-app nav bleed.
   if (key === 'attendance' || key === 'salespersonTracking') {
     return Boolean(permissions?.attendance || permissions?.salespersonTracking);
   }
@@ -445,8 +591,17 @@ export function getDefaultLandingPath(user, permissions) {
     return '/home';
   }
   if (user.jobRole === 'SALESPERSON') return '/attendance';
+<<<<<<< HEAD
   if (user.role === ROLES.USER && (user.jobRole === 'INSTALLER' || permissions?.complaints)) {
     if (permissions?.complaints) return '/complaints/dashboard';
+=======
+  // Complaint home is for field Users / coordinators — not Admins who happen to have
+  // jobRole INSTALLER leftover in Mongo (those must land on their first granted app).
+  if (user.role !== ROLES.ADMIN) {
+    if (user.jobRole === 'INSTALLER' || permissions?.complaints) {
+      return '/complaints/dashboard';
+    }
+>>>>>>> a31824a6bde55f44b843556735623fc6646c7787
   }
   if (user.adminType === 'COMPLAINT_COORDINATOR') return '/complaints/dashboard';
   const eligible = NAV_ITEMS.find((item) => isNavItemAllowed(item, user, permissions));
