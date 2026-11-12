@@ -591,23 +591,15 @@ export function getDefaultLandingPath(user, permissions) {
     return '/home';
   }
   if (user.jobRole === 'SALESPERSON') return '/attendance';
-<<<<<<< HEAD
-  if (user.role === ROLES.USER && (user.jobRole === 'INSTALLER' || permissions?.complaints)) {
-    if (permissions?.complaints) return '/complaints/dashboard';
-=======
   // Complaint home is for field Users / coordinators — not Admins who happen to have
   // jobRole INSTALLER leftover in Mongo (those must land on their first granted app).
-  if (user.role !== ROLES.ADMIN) {
-    if (user.jobRole === 'INSTALLER' || permissions?.complaints) {
-      return '/complaints/dashboard';
-    }
->>>>>>> a31824a6bde55f44b843556735623fc6646c7787
+  if (user.role !== ROLES.ADMIN && permissions?.complaints) {
+    return '/complaints/dashboard';
   }
   if (user.adminType === 'COMPLAINT_COORDINATOR') return '/complaints/dashboard';
   const eligible = NAV_ITEMS.find((item) => isNavItemAllowed(item, user, permissions));
   return eligible ? eligible.path : '/profile';
 }
-
 
 export function canOpenPath(pathname, user, permissions) {
   if (!pathname || pathname === '/login' || pathname === '/403' || pathname === '/404') return false;
@@ -619,9 +611,9 @@ export function canOpenPath(pathname, user, permissions) {
     user?.email === 'super.admin@demo.local';
   if (isSuperAdmin) return true;
 
-  const match = flattenNavItems().filter(
-    (item) => pathname === item.path || pathname.startsWith(`${item.path}/`)
-  ).sort((a, b) => b.path.length - a.path.length)[0];
+  const match = flattenNavItems()
+    .filter((item) => pathname === item.path || pathname.startsWith(`${item.path}/`))
+    .sort((a, b) => b.path.length - a.path.length)[0];
 
   return match ? isNavItemAllowed(match, user, permissions) : false;
-};
+}
