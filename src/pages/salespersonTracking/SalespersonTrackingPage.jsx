@@ -126,7 +126,7 @@ export default function SalespersonTrackingPage() {
           subtitle="People, visits, customers, attendance records, and approvals in one place"
         />
         <Box sx={{ mb: 2.5 }}>
-          <DashboardPanel metrics={metrics} onOpen={setTab} clickable />
+          <AttendanceDashboardPanel metrics={metrics} onOpen={setTab} clickable />
         </Box>
         <Box sx={{ mb: 2 }}>
           <SlidingPills
@@ -158,7 +158,7 @@ export default function SalespersonTrackingPage() {
     <>
       <PageHeader title={title} subtitle={subtitle} />
       {current === 'dashboard' ? (
-        <DashboardPanel metrics={metrics} onOpen={setTab} clickable={false} />
+        <AttendanceDashboardPanel metrics={metrics} onOpen={setTab} clickable={false} />
       ) : (
         <SectionBody current={current} />
       )}

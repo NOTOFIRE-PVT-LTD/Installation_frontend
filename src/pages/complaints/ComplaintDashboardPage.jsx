@@ -112,16 +112,29 @@ export default function ComplaintDashboardPage() {
       ) : (
         <Stack spacing={3}>
           <DashboardKpiSection kpis={kpis} isFieldEngineer={isFieldEngineer} ticketsPath={ticketsPath} />
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: isFieldEngineer ? '1fr' : '1fr 1fr' }, gap: 2, alignItems: 'stretch' }}>
-            <DashboardOverdueList overdue={overdue} onSelectTicket={(id) => { setSelectedTicketId(id); setDrawerOpen(true); }} />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: isFieldEngineer ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)' },
+              gap: 2,
+              alignItems: 'stretch',
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <DashboardOverdueList overdue={overdue} onSelectTicket={(id) => { setSelectedTicketId(id); setDrawerOpen(true); }} />
+            </Box>
             {!isFieldEngineer && (
-              <DashboardEngineerWorkloadTable
-                engineerList={engineerList}
-                engineerPage={engineerPage}
-                setEngineerPage={setEngineerPage}
-                engineerRowsPerPage={engineerRowsPerPage}
-                setEngineerRowsPerPage={setEngineerRowsPerPage}
-              />
+              <Box sx={{ minWidth: 0 }}>
+                <DashboardEngineerWorkloadTable
+                  engineerList={engineerList}
+                  engineerPage={engineerPage}
+                  setEngineerPage={setEngineerPage}
+                  engineerRowsPerPage={engineerRowsPerPage}
+                  setEngineerRowsPerPage={setEngineerRowsPerPage}
+                />
+              </Box>
             )}
           </Box>
         </Stack>

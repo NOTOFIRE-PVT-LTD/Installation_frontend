@@ -25,11 +25,13 @@ export default function PermissionGate({ permission, userPermission, roles = [],
     }
     const keys = [permission, userPermission].filter(Boolean);
     if (!keys.length) return children;
-    const allowed = !permissions
-      ? true
-      : keys.some((key) =>
-          key === 'atlantaPayments' ? Boolean(permissions[key]) : permissions[key] !== false
-        );
+    // Opt-in only — missing flag must NOT open another app (same rule as nav).
+    const allowed = keys.some((key) => {
+      if (key === 'attendance' || key === 'salespersonTracking') {
+        return Boolean(permissions?.attendance || permissions?.salespersonTracking);
+      }
+      return Boolean(permissions?.[key]);
+    });
     return allowed ? children : <Navigate to={home} replace />;
   }
   if (isAdmin && hasPermission) return children;

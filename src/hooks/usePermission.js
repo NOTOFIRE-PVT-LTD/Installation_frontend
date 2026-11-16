@@ -8,8 +8,9 @@ export function usePermission(key) {
   if (key === 'attendance' || key === 'salespersonTracking') {
     return Boolean(permissions?.attendance || permissions?.salespersonTracking);
   }
+  // Contractor Attendance is its own app — do not open it via Attendance access.
   if (key === 'contractorAttendance') {
-    return Boolean(permissions?.contractorAttendance || permissions?.attendance);
+    return Boolean(permissions?.contractorAttendance);
   }
   return Boolean(permissions?.[key]);
 }
