@@ -7,6 +7,7 @@
   overflow-x: hidden;
   font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --login-radius: 999px;
   --bg: #f6f0e4;
   --bg-elevated: #fffdf8;
   --border: #e2d3be;
@@ -440,8 +441,65 @@
 }
 
 .login-form-card .form-grid {
+  display: grid;
   gap: 0.55rem;
   align-content: start;
+}
+
+/* Same pill radius as WhatsApp phone shell (.login-phone). */
+.login-screen .field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--stone);
+  margin-bottom: 0.3rem;
+}
+
+.login-screen .field input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--login-radius);
+  padding: 0.7rem 1.05rem;
+  background: #fff;
+  color: var(--fg);
+  font: inherit;
+}
+
+.login-screen .field input:focus,
+.login-screen .field input:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 1px var(--focus-ring);
+}
+
+.login-screen .login-password input {
+  border-radius: var(--login-radius);
+  padding-right: 2.75rem;
+}
+
+.login-screen .login-phone {
+  border-radius: var(--login-radius);
+}
+
+.login-screen .btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--login-radius);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-screen .btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 /* Keep CTA natural height — never stretch with flex/grid. */
@@ -454,10 +512,12 @@
   min-height: 0;
   align-self: start;
   flex: none;
+  border-radius: var(--login-radius) !important;
 }
 
 /* Gold linear-gradient CTA; hover shifts to deeper brown-gold. */
 .login-screen .login-submit.btn-primary {
+  border-radius: var(--login-radius);
   background: linear-gradient(135deg, #e5b85c 0%, #d4a34e 50%, #b8863b 100%);
   color: #241404;
   border-color: #c99846;
