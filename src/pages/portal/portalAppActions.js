@@ -1,5 +1,4 @@
 import { portalApi } from '../../api/portalApi';
-import { getDefaultLandingPath } from '../../routes/routeConfig';
 import { goToFullPortalLogout } from '../../utils/centralAuth';
 
 export async function openPnlApp({ setError, setBusy }) {
@@ -9,17 +8,18 @@ export async function openPnlApp({ setError, setBusy }) {
     const res = await portalApi.openPnl();
     const url = res.data?.data?.url;
     if (!url) throw new Error('missing url');
-    window.location.href = url;
+    window.location.assign(url);
   } catch {
     setError('Could not open P&L');
     setBusy(null);
   }
 }
 
-export function openWorkspaceApp({ navigate, user, permissions, setBusy }) {
+export function openWorkspaceApp({ setBusy, setError }) {
+  setError?.(null);
   setBusy('workspace');
-  const path = getDefaultLandingPath(user, permissions) || '/home';
-  navigate(path === '/apps' ? '/home' : path);
+  // Hard nav leaves the portal shell; soft navigate can leave busy stuck on /apps.
+  window.location.assign('/home');
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {

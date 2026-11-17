@@ -39,7 +39,7 @@ export function useCentralLoginForm() {
     return () => clearInterval(id);
   }, [otpExpiresAt]);
 
-  async function goAfterLogin(payload) {
+  async function goAfterLogin() {
     const from = location.state?.from?.pathname;
     if (from && from !== '/login' && from !== '/apps') {
       navigate(from, { replace: true });
@@ -48,8 +48,6 @@ export function useCentralLoginForm() {
     try {
       await applyPortalLanding({
         navigate,
-        user: payload?.user,
-        permissions: payload?.permissions,
         setError,
         setBusy: () => {},
       });
@@ -107,7 +105,7 @@ export function useCentralLoginForm() {
         setError(res.payload || t.invalidOtp);
         return;
       }
-      await goAfterLogin(res.payload);
+      await goAfterLogin();
     } catch {
       setError(t.signInFailed);
     } finally {
@@ -127,7 +125,7 @@ export function useCentralLoginForm() {
         setError(res.payload || t.invalidEmailPassword);
         return;
       }
-      await goAfterLogin(res.payload);
+      await goAfterLogin();
     } catch {
       setError(t.signInFailed);
     } finally {

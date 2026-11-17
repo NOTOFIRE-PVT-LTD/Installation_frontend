@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { logout } from '../../features/auth/authThunks';
 import { usePortalAccess } from './usePortalAccess';
@@ -14,8 +13,7 @@ import {
 
 export function usePortalApps() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { user, permissions } = useAppSelector((s) => s.auth);
+  const { user } = useAppSelector((s) => s.auth);
   const { access, ready, error, setError } = usePortalAccess();
   const { menuOpen, setMenuOpen, menuRef } = usePortalMenu();
   const [busy, setBusy] = useState(null);
@@ -32,9 +30,9 @@ export function usePortalApps() {
       openPnlApp({ setError, setBusy });
     } else if (kind === 'workspace') {
       singleAppRedirected.current = true;
-      openWorkspaceApp({ navigate, user, permissions, setBusy });
+      openWorkspaceApp({ setBusy, setError });
     }
-  }, [ready, access, busy, navigate, user, permissions, setError]);
+  }, [ready, access, busy, setError]);
 
   const email = user?.email || '';
   const name = user?.name || email;
@@ -58,7 +56,7 @@ export function usePortalApps() {
     usersLoading: directory.loading,
     usersError: directory.error,
     openPnl: () => openPnlApp({ setError, setBusy }),
-    openWorkspace: () => openWorkspaceApp({ navigate, user, permissions, setBusy }),
+    openWorkspace: () => openWorkspaceApp({ setBusy, setError }),
     onLogout: () => logoutPortalApp({ dispatch, logoutThunk: logout }),
     goProfile: () => {
       setMenuOpen(false);

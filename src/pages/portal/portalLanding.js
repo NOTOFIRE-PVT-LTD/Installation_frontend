@@ -16,7 +16,7 @@ export async function fetchPortalAccess() {
 }
 
 /** After login / when /apps is not a chooser: go to the one app or stay on /apps. */
-export async function applyPortalLanding({ navigate, user, permissions, setError, setBusy }) {
+export async function applyPortalLanding({ navigate, setError, setBusy }) {
   const access = await fetchPortalAccess();
   const kind = resolvePortalLanding(access);
   if (kind === 'pnl') {
@@ -24,7 +24,7 @@ export async function applyPortalLanding({ navigate, user, permissions, setError
     return kind;
   }
   if (kind === 'workspace') {
-    openWorkspaceApp({ navigate, user, permissions, setBusy });
+    openWorkspaceApp({ setBusy, setError });
     return kind;
   }
   navigate('/apps', { replace: true });
