@@ -1,4 +1,4 @@
-# Auto-deploy portal/Workspace frontend to EC2 after push to dev.
+# Auto-deploy portal/Workspace frontend to EC2 after push to dev or main.
 # Build runs on GitHub (fast); only dist/ is synced to the server.
 # Required repo secrets (Settings → Secrets → Actions):
 #   EC2_HOST       e.g. 13.201.19.145
@@ -13,7 +13,7 @@ name: Deploy frontend to EC2
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, main]
   workflow_dispatch:
 
 concurrency:
