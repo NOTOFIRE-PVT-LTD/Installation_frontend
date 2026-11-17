@@ -17,6 +17,7 @@ function PortalMain({ p }) {
       busy={p.busy}
       error={p.error}
       onOpenPnl={p.openPnl}
+      onPrefetchPnl={p.prefetchPnl}
       onOpenWorkspace={p.openWorkspace}
     />
   );
@@ -46,6 +47,7 @@ export default function PortalAppsPage() {
             bothApps={p.bothApps}
             busy={p.busy}
             onOpenPnl={p.openPnl}
+            onPrefetchPnl={p.prefetchPnl}
             onOpenWorkspace={p.openWorkspace}
             usersLoading={p.usersLoading}
             userCount={p.users.length}

@@ -9,6 +9,8 @@ import {
   logoutPortalApp,
   openPnlApp,
   openWorkspaceApp,
+  prefetchPnlUrl,
+  warmPnlApp,
 } from './portalAppActions';
 
 export function usePortalApps() {
@@ -21,6 +23,15 @@ export function usePortalApps() {
   const singleAppRedirected = useRef(false);
   const bothApps = Boolean(access.pnl && access.workspace);
   const directory = usePortalDirectory(bothApps);
+
+  useEffect(() => {
+    if (!ready || !access.pnl) return undefined;
+    warmPnlApp();
+    const t = window.setTimeout(() => {
+      prefetchPnlUrl().catch(() => {});
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [ready, access.pnl]);
 
   useEffect(() => {
     if (!ready || busy || singleAppRedirected.current) return;
@@ -56,6 +67,9 @@ export function usePortalApps() {
     usersLoading: directory.loading,
     usersError: directory.error,
     openPnl: () => openPnlApp({ setError, setBusy }),
+    prefetchPnl: () => {
+      prefetchPnlUrl().catch(() => {});
+    },
     openWorkspace: () => openWorkspaceApp({ setBusy, setError }),
     onLogout: () => logoutPortalApp({ dispatch, logoutThunk: logout }),
     goProfile: () => {

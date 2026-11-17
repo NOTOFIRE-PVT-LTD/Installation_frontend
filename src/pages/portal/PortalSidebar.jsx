@@ -7,6 +7,7 @@ export default function PortalSidebar({
   bothApps,
   busy,
   onOpenPnl,
+  onPrefetchPnl,
   onOpenWorkspace,
   usersLoading,
   userCount,
@@ -28,7 +29,14 @@ export default function PortalSidebar({
 
       <p className="central-side-label">Applications</p>
       {access.pnl ? (
-        <button type="button" className="central-side-btn" onClick={onOpenPnl} disabled={busy !== null}>
+        <button
+          type="button"
+          className="central-side-btn"
+          onClick={onOpenPnl}
+          onPointerEnter={onPrefetchPnl}
+          onFocus={onPrefetchPnl}
+          disabled={busy !== null}
+        >
           <span className="central-side-btn__left">
             <ChartIcon />
             <span>P&amp;L</span>

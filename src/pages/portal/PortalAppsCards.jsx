@@ -1,4 +1,11 @@
-export default function PortalAppsCards({ access, busy, error, onOpenPnl, onOpenWorkspace }) {
+export default function PortalAppsCards({
+  access,
+  busy,
+  error,
+  onOpenPnl,
+  onPrefetchPnl,
+  onOpenWorkspace,
+}) {
   return (
     <main className="central-home">
       <p className="central-home__eyebrow">Valuecon</p>
@@ -9,7 +16,14 @@ export default function PortalAppsCards({ access, busy, error, onOpenPnl, onOpen
       <p className="central-home__sub">Plant numbers. Field work. Connected.</p>
       <div className="central-home__apps">
         {access.pnl ? (
-          <button type="button" className="central-home__app-btn" disabled={busy !== null} onClick={onOpenPnl}>
+          <button
+            type="button"
+            className="central-home__app-btn"
+            disabled={busy !== null}
+            onClick={onOpenPnl}
+            onPointerEnter={onPrefetchPnl}
+            onFocus={onPrefetchPnl}
+          >
             <span>P&amp;L</span>
             <span className="central-home__app-hint">{busy === 'pnl' ? '…' : 'Open'}</span>
           </button>
