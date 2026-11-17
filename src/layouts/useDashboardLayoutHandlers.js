@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { getDefaultLandingPath } from '../routes/routeConfig';
 import { logout } from '../features/auth/authThunks';
 import { stopImpersonation } from '../features/auth/authSlice';
-import { goToCentralLogin } from '../utils/centralAuth';
+import { goToFullPortalLogout } from '../utils/centralAuth';
 import { DRAWER_WIDTH, DRAWER_WIDTH_COLLAPSED } from './dashboardLayoutConstants';
 
 export function useDashboardLayoutHandlers() {
@@ -31,7 +31,7 @@ export function useDashboardLayoutHandlers() {
 
   const handleLogout = async () => {
     await dispatch(logout());
-    goToCentralLogin();
+    goToFullPortalLogout();
   };
 
   const handleExitImpersonation = () => {
