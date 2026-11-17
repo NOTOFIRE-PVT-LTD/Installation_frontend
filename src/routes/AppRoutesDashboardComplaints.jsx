@@ -1,8 +1,7 @@
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import PermissionGate from '../components/common/PermissionGate';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import UsersListPage from '../pages/users/UsersListPage';
-import WorkspaceHomePage from '../pages/home/WorkspaceHomePage';
 import ComplaintsPage from '../pages/complaints/ComplaintsPage';
 import ComplaintDashboardPage from '../pages/complaints/ComplaintDashboardPage';
 import ComplaintIntakePage from '../pages/complaints/ComplaintIntakePage';
@@ -14,7 +13,7 @@ import { DefaultLandingRedirect } from './AppRoutesLanding';
 export const dashboardComplaintRouteNodes = (
   <>
       <Route path="/" element={<DefaultLandingRedirect />} />
-      <Route path="/home" element={<WorkspaceHomePage />} />
+      <Route path="/home" element={<Navigate to="/dashboard" replace />} />
       <Route
         path="/dashboard"
         element={

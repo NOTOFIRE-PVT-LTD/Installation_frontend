@@ -1,9 +1,11 @@
 import Box from '@mui/material/Box';
 import GlobalSearchBar from '../components/common/GlobalSearchBar';
 import DashboardAppBarUserAvatar from './DashboardAppBarUserAvatar';
+import DashboardAppsHomeLink from './DashboardAppsHomeLink';
 
 export default function DashboardAppBarCenter({
   isSuperAdmin,
+  showAppsHome,
   searchPlaceholder,
   user,
   setAnchorEl,
@@ -26,6 +28,7 @@ export default function DashboardAppBarCenter({
       ) : (
         <Box sx={{ flex: 1, minWidth: 0 }} />
       )}
+      {showAppsHome ? <DashboardAppsHomeLink /> : null}
       <DashboardAppBarUserAvatar user={user} onOpenMenu={(e) => setAnchorEl(e.currentTarget)} />
     </Box>
   );

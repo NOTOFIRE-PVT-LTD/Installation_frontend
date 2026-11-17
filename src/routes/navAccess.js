@@ -140,7 +140,7 @@ export function getDefaultLandingPath(user, permissions) {
   if (!user) return '/login';
   // Portal chooser is the home after main login.
   if (typeof window !== 'undefined') return '/apps';
-  if (isSuperAdminUser(user)) return '/home';
+  if (isSuperAdminUser(user)) return '/dashboard';
   if (user.jobRole === 'SALESPERSON') return '/attendance';
 
   const complaintsPath = resolveComplaintsLanding(user, permissions);

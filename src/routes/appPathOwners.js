@@ -45,7 +45,9 @@ export function canStayOnWorkspacePath(pathname, user, permissions, navItems = [
   if (!user) return false;
   if (isSuperAdminUser(user)) return true;
   const path = String(pathname || '');
-  if (path === '/profile' || path === '/home' || path === '/403' || path === '/404') return true;
+  if (path === '/profile' || path === '/home' || path === '/dashboard' || path === '/403' || path === '/404') {
+    return true;
+  }
 
   const owner = pathOwnerPermission(path);
   if (owner) return userHasAppPermission(permissions, owner);

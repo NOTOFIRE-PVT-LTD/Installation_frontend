@@ -47,7 +47,8 @@ export async function openPnlApp({ setError, setBusy }) {
 export function openWorkspaceApp({ setBusy, setError }) {
   setError?.(null);
   setBusy('workspace');
-  window.location.assign('/home');
+  // Land on Dashboard — not the old Workspace apps-grid /home page.
+  window.location.assign('/dashboard');
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {
