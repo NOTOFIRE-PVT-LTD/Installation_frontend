@@ -22,6 +22,14 @@ export const loginWithOtp = createAsyncThunk('auth/loginWithOtp', async (payload
 export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { getState, dispatch, rejectWithValue }) => {
   try {
     if (!getState().auth.accessToken) {
+      // Skip cookie refresh on public auth screens — avoids noisy 401 on /login.
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const onPublicAuth =
+        path.endsWith('/login') ||
+        path.includes('/forgot-password') ||
+        path.includes('/reset-password') ||
+        path.includes('/central-sso');
+      if (onPublicAuth) return rejectWithValue('Not authenticated');
       try {
         const refreshed = await authApi.refresh();
         dispatch({ type: 'auth/setCredentials', payload: refreshed.data.data });
