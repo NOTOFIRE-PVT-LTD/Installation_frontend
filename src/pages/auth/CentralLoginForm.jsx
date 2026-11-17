@@ -1,67 +1,98 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { login } from '../../features/auth/authThunks';
+import CentralLoginLangSwitch from './CentralLoginLangSwitch';
 import CentralLoginEmailForm from './CentralLoginEmailForm';
+import CentralLoginWhatsappPhone from './CentralLoginWhatsappPhone';
+import CentralLoginWhatsappOtp from './CentralLoginWhatsappOtp';
+import { useCentralLoginForm } from './useCentralLoginForm';
 
 export default function CentralLoginForm() {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { status, error: storeError } = useAppSelector((s) => s.auth);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState(null);
-
-  async function onEmailSubmit(e) {
-    e.preventDefault();
-    setError(null);
-    const res = await dispatch(login({ email: email.trim(), password }));
-    if (res.error) {
-      setError(res.payload || 'Invalid email or password');
-      return;
-    }
-    const from = location.state?.from?.pathname;
-    navigate(from && from !== '/login' ? from : '/apps', { replace: true });
-  }
+  const f = useCentralLoginForm();
+  const { t } = f;
 
   return (
     <section className="login-form-panel">
       <div className="login-form-card">
         <div className="login-form-card__top">
           <div className="login-form-card__intro">
-            <h2>Welcome back</h2>
-            <p className="lead">Sign in to Centralisation — then open P&amp;L or Workspace.</p>
+            <h2>{t.welcomeBack}</h2>
+            <p className="lead">{t.signInLead}</p>
+          </div>
+          <div className="login-form-card__lang">
+            <CentralLoginLangSwitch locale={f.locale} onChange={f.setLocale} label={t.language} />
           </div>
         </div>
 
         <div className="login-mode-tabs" role="tablist" aria-label="Login">
-          <button type="button" role="tab" aria-selected className="is-active">
-            Email
+          <button
+            type="button"
+            role="tab"
+            aria-selected={f.mode === 'whatsapp'}
+            className={f.mode === 'whatsapp' ? 'is-active' : ''}
+            onClick={() => f.switchMode('whatsapp')}
+          >
+            {t.whatsappLogin}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={f.mode === 'email'}
+            className={f.mode === 'email' ? 'is-active' : ''}
+            onClick={() => f.switchMode('email')}
+          >
+            {t.emailLogin}
           </button>
         </div>
 
-        {error || storeError ? (
+        {f.error ? (
           <div className="alert alert--error" role="alert">
-            {error || storeError}
+            {f.error}
           </div>
         ) : null}
 
-        <CentralLoginEmailForm
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          rememberMe={rememberMe}
-          setRememberMe={setRememberMe}
-          loading={status === 'loading'}
-          onSubmit={onEmailSubmit}
-          onForgotPassword={() => navigate('/forgot-password')}
-        />
+        {f.mode === 'whatsapp' ? (
+          f.whatsappStep === 'phone' ? (
+            <CentralLoginWhatsappPhone
+              t={t}
+              phone={f.phone}
+              setPhone={f.setPhone}
+              rememberMe={f.rememberMe}
+              setRememberMe={f.setRememberMe}
+              sendingOtp={f.sendingOtp}
+              onSendOtp={f.onSendOtp}
+            />
+          ) : (
+            <CentralLoginWhatsappOtp
+              t={t}
+              otp={f.otp}
+              setOtp={f.setOtp}
+              otpSecondsLeft={f.otpSecondsLeft}
+              rememberMe={f.rememberMe}
+              setRememberMe={f.setRememberMe}
+              loading={f.loading}
+              sendingOtp={f.sendingOtp}
+              onWhatsappLogin={f.onWhatsappLogin}
+              onChangeNumber={() => {
+                f.setWhatsappStep('phone');
+                f.setOtp('');
+                f.setOtpExpiresAt(null);
+              }}
+            />
+          )
+        ) : (
+          <CentralLoginEmailForm
+            t={t}
+            email={f.email}
+            setEmail={f.setEmail}
+            password={f.password}
+            setPassword={f.setPassword}
+            showPassword={f.showPassword}
+            setShowPassword={f.setShowPassword}
+            rememberMe={f.rememberMe}
+            setRememberMe={f.setRememberMe}
+            loading={f.loading}
+            onSubmit={f.onEmailSubmit}
+            onForgotPassword={f.goForgot}
+          />
+        )}
       </div>
     </section>
   );

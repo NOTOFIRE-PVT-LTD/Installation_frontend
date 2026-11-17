@@ -10,6 +10,15 @@ export const login = createAsyncThunk('auth/login', async (credentials, { reject
   }
 });
 
+export const loginWithOtp = createAsyncThunk('auth/loginWithOtp', async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await authApi.loginWithOtp(payload);
+    return data.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Invalid or expired OTP');
+  }
+});
+
 export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { getState, dispatch, rejectWithValue }) => {
   try {
     if (!getState().auth.accessToken) {

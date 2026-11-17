@@ -1,10 +1,12 @@
 /* Cable Junction — login landing (page-scoped Valuecon gold/brown) */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 .login-screen {
   min-height: 100dvh;
   display: flex;
   overflow-x: hidden;
-  /* Scope brand tokens so login matches Workspace without rewriting whole P&L. */
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --bg: #f6f0e4;
   --bg-elevated: #fffdf8;
   --border: #e2d3be;
@@ -646,4 +648,33 @@
   margin: 0;
   cursor: pointer;
   accent-color: var(--teal);
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.18rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  flex-shrink: 0;
+}
+.lang-switch__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  line-height: 1;
+  min-height: 1.7rem;
+}
+.lang-switch__btn.is-active {
+  background: var(--teal);
+  color: #241404;
 }

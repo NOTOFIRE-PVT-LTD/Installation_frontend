@@ -1,5 +1,4 @@
-/** Left-panel brand atmosphere — Valuecon gold & brown cable art. */
-export default function CentralLoginVisual() {
+export default function CentralLoginVisual({ brandName, tagline }) {
   return (
     <section className="login-visual" aria-hidden="true">
       <div className="login-visual__blob login-visual__blob--gold" />
@@ -21,22 +20,22 @@ export default function CentralLoginVisual() {
           </linearGradient>
         </defs>
         {[
-          { d: 'M -60,110 C 140,170 240,300 430,350', grad: 'cableGradA', cls: 'cable-line--1' },
-          { d: 'M -60,280 C 110,270 280,410 430,350', grad: 'cableGradC', cls: 'cable-line--2' },
-          { d: 'M -60,470 C 150,440 270,380 430,350', grad: 'cableGradA', cls: 'cable-line--3' },
-          { d: 'M -60,650 C 190,600 300,420 430,350', grad: 'cableGradC', cls: 'cable-line--4' },
-          { d: 'M 430,350 C 500,430 540,560 520,720', grad: 'cableGradB', cls: 'cable-line--5' },
-          { d: 'M 430,350 C 490,390 610,410 700,370', grad: 'cableGradB', cls: 'cable-line--6' },
-        ].map((c) => (
-          <path key={c.cls} className={`cable-line ${c.cls}`} d={c.d} stroke={`url(#${c.grad})`} strokeWidth="3" strokeLinecap="round" />
+          { d: 'M -60,110 C 140,170 240,300 430,350', g: 'cableGradA', c: 'cable-line--1' },
+          { d: 'M -60,280 C 110,270 280,410 430,350', g: 'cableGradC', c: 'cable-line--2' },
+          { d: 'M -60,470 C 150,440 270,380 430,350', g: 'cableGradA', c: 'cable-line--3' },
+          { d: 'M -60,650 C 190,600 300,420 430,350', g: 'cableGradC', c: 'cable-line--4' },
+          { d: 'M 430,350 C 500,430 540,560 520,720', g: 'cableGradB', c: 'cable-line--5' },
+          { d: 'M 430,350 C 490,390 610,410 700,370', g: 'cableGradB', c: 'cable-line--6' },
+        ].map((x) => (
+          <path key={x.c} className={`cable-line ${x.c}`} d={x.d} stroke={`url(#${x.g})`} strokeWidth="3" strokeLinecap="round" />
         ))}
         <circle className="cable-ring cable-ring--1" cx="430" cy="350" r="10" stroke="#D4A34E" strokeWidth="1.5" />
         <circle className="cable-ring cable-ring--2" cx="430" cy="350" r="10" stroke="#563310" strokeWidth="1.5" />
         <circle className="cable-node" cx="430" cy="350" r="7" fill="#FFFDF8" />
       </svg>
       <div className="login-visual__content">
-        <h1 className="login-visual__brand">Valuecon</h1>
-        <p className="login-visual__tagline">Plant numbers. Field work. One login.</p>
+        <h1 className="login-visual__brand">{brandName}</h1>
+        <p className="login-visual__tagline">{tagline}</p>
       </div>
     </section>
   );

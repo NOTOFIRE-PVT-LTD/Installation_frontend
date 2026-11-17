@@ -13,6 +13,7 @@ export function injectStore(_store) {
 
 const NO_REFRESH_PATHS = [
   '/auth/login',
+  '/auth/otp/',
   '/auth/central-sso',
   '/auth/refresh',
   '/auth/forgot-password',
