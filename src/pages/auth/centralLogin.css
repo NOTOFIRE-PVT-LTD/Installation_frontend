@@ -667,16 +667,37 @@
     margin: 0;
   }
 
-  /* Spread phone/email fields, remember row, and CTA evenly in leftover height. */
-  .login-form-card .form-grid {
+  /*
+   * Same body layout for WhatsApp phone, WhatsApp OTP, and Email:
+   * fields group on top, remember + submit as a footer block.
+   */
+  .login-form-card .login-form-body,
+  .login-form-card .form-grid.login-form-body {
     flex: 1 1 auto;
     min-height: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    gap: 0.75rem;
-    align-content: stretch;
+    justify-content: space-between;
+    gap: 1rem;
     align-items: stretch;
+  }
+
+  .login-form-card .login-form-body__main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.85rem;
+    min-height: 0;
+  }
+
+  .login-form-card .login-form-body__footer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
   }
 
   .login-form-card .field,
@@ -689,8 +710,7 @@
   }
 
   .login-form-card .login-submit {
-    margin-top: 0;
-    margin-bottom: 0;
+    margin: 0;
     padding: 0.85rem 1.1rem;
     height: auto;
     min-height: unset;
@@ -700,7 +720,7 @@
   }
 
   .login-form-card .login-link-btn:not(.login-email-meta__forgot) {
-    margin-top: 0;
+    margin: 0;
     flex: 0 0 auto;
   }
 }
