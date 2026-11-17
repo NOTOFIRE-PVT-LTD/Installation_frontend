@@ -145,7 +145,7 @@ export default function MigratedAppWorkspace({
   const recentRows = dashboard?.recentShipments || dashboard?.recentImports || [];
   const metrics = dashboard?.metrics || {};
 
-  if (!allowed) return <Navigate to="/home" replace />;
+  if (!allowed) return <Navigate to="/dashboard" replace />;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

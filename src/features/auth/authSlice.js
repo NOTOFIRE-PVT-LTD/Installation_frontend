@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { login, fetchMe, logout, updateProfile } from './authThunks';
+import { login, loginWithOtp, fetchMe, logout, updateProfile } from './authThunks';
 
 const initialState = {
   user: null,
@@ -59,6 +59,21 @@ const authSlice = createSlice({
         state.bootstrapped = true;
       })
       .addCase(login.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(loginWithOtp.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(loginWithOtp.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = action.payload.user;
+        state.permissions = action.payload.permissions;
+        state.accessToken = action.payload.accessToken;
+        state.bootstrapped = true;
+      })
+      .addCase(loginWithOtp.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })

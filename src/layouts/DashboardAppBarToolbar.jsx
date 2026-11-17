@@ -17,6 +17,7 @@ export default function DashboardAppBarToolbar(props) {
       />
       <DashboardAppBarCenter
         isSuperAdmin={props.isSuperAdmin}
+        showAppsHome={props.showAppsHome}
         searchPlaceholder={props.searchPlaceholder}
         user={props.user}
         setAnchorEl={setAnchorEl}

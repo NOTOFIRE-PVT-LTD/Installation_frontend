@@ -7,6 +7,7 @@ import DashboardLayoutSnackbar from './DashboardLayoutSnackbar';
 export default function DashboardLayoutView({
   isMobile,
   isSuperAdmin,
+  showAppsHome,
   user,
   snackbar,
   layout,
@@ -20,6 +21,7 @@ export default function DashboardLayoutView({
         isMobile={isMobile}
         onToggleSidebar={() => layout.handleToggleSidebar(isMobile)}
         isSuperAdmin={isSuperAdmin}
+        showAppsHome={showAppsHome}
         user={user}
         anchorEl={layout.anchorEl}
         setAnchorEl={layout.setAnchorEl}

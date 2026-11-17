@@ -9,8 +9,10 @@ import PublicTrackPage from '../pages/complaints/PublicTrackPage';
 
 export const authPublicRouteNodes = (
   <>
+    {/* Full-bleed Centralisation login — no AuthLayout sparkle card */}
+    <Route path="/login" element={<LoginPage />} />
+
     <Route element={<AuthLayout />}>
-      <Route path="/login" element={<LoginPage />} />
       <Route path="/central-sso" element={<CentralSsoPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

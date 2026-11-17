@@ -2,6 +2,8 @@ import axiosInstance from './axiosInstance';
 
 export const authApi = {
   login: (credentials) => axiosInstance.post('/auth/login', credentials),
+  requestOtp: (phone) => axiosInstance.post('/auth/otp/request', { phone }),
+  loginWithOtp: (payload) => axiosInstance.post('/auth/otp/login', payload),
   centralSso: (payload) => axiosInstance.post('/auth/central-sso', payload),
   logout: () => axiosInstance.post('/auth/logout'),
   refresh: () => axiosInstance.post('/auth/refresh'),

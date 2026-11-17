@@ -3,7 +3,9 @@ import { useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import { useAuth } from '../hooks/useAuth';
+import { usePortalAccess } from '../pages/portal/usePortalAccess';
 import { NAV_ITEMS, expandNavItems } from '../routes/routeConfig';
+import { filterPortalNavItems } from './filterPortalNavItems';
 import { isSidebarItemActive } from './sidebarNavActive';
 import { useUnassignedComplaintsCount } from './useUnassignedComplaintsCount';
 import { useSidebarNavIndicator } from './useSidebarNavIndicator';
@@ -13,7 +15,12 @@ import SidebarNavListItems from './SidebarNavListItems';
 export default function SidebarNavList({ isCollapsed = false, onNavigate }) {
   const location = useLocation();
   const { user, permissions, isSuperAdmin } = useAuth();
-  const navItems = useMemo(() => expandNavItems(NAV_ITEMS, user, permissions), [user, permissions]);
+  const { access, ready } = usePortalAccess();
+  const bothApps = Boolean(access.pnl && access.workspace);
+  const navItems = useMemo(() => {
+    const expanded = expandNavItems(NAV_ITEMS, user, permissions);
+    return filterPortalNavItems(expanded, { bothApps, ready });
+  }, [user, permissions, bothApps, ready]);
   const showAppSections = !isSuperAdmin && navItems.some((item) => item.section);
   const unassignedComplaints = useUnassignedComplaintsCount();
 

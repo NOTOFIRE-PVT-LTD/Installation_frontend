@@ -18,6 +18,8 @@ function useWorkspaceApps() {
       NAV_ITEMS.filter(
         (item) =>
           item.path !== '/home' &&
+          item.path !== '/apps' &&
+          !item.bothAppsOnly &&
           !item.path.includes('?') &&
           item.path !== '/complaints/desk' &&
           isNavItemAllowed(item, user, permissions),

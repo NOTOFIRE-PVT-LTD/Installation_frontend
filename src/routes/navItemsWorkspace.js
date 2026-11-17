@@ -11,11 +11,13 @@ import { ROLES } from '../utils/constants';
 export const NAV_ITEMS_WORKSPACE = [
   {
     label: 'Home',
-    path: '/home',
+    // Centralisation chooser — only for users with both P&L + Workspace.
+    path: '/apps',
     icon: faHouse,
     permission: null,
     roles: [ROLES.ADMIN],
     superAdminOnly: true,
+    bothAppsOnly: true,
     accent: { color: '#563310', bg: '#FAE2B4' },
   },
   {
