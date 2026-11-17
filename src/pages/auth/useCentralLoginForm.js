@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../app/hooks';
 import { login, loginWithOtp } from '../../features/auth/authThunks';
 import { authApi } from '../../api/authApi';
+import { applyPortalLanding } from '../portal/portalLanding';
 import { getLoginCopy } from './centralLoginCopy';
 
 export function useCentralLoginForm() {
@@ -38,9 +39,23 @@ export function useCentralLoginForm() {
     return () => clearInterval(id);
   }, [otpExpiresAt]);
 
-  function goApps() {
+  async function goAfterLogin(payload) {
     const from = location.state?.from?.pathname;
-    navigate(from && from !== '/login' ? from : '/apps', { replace: true });
+    if (from && from !== '/login' && from !== '/apps') {
+      navigate(from, { replace: true });
+      return;
+    }
+    try {
+      await applyPortalLanding({
+        navigate,
+        user: payload?.user,
+        permissions: payload?.permissions,
+        setError,
+        setBusy: () => {},
+      });
+    } catch {
+      navigate('/apps', { replace: true });
+    }
   }
 
   function switchMode(next) {
@@ -92,7 +107,7 @@ export function useCentralLoginForm() {
         setError(res.payload || t.invalidOtp);
         return;
       }
-      goApps();
+      await goAfterLogin(res.payload);
     } catch {
       setError(t.signInFailed);
     } finally {
@@ -112,7 +127,7 @@ export function useCentralLoginForm() {
         setError(res.payload || t.invalidEmailPassword);
         return;
       }
-      goApps();
+      await goAfterLogin(res.payload);
     } catch {
       setError(t.signInFailed);
     } finally {

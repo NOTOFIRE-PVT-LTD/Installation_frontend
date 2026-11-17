@@ -4,6 +4,7 @@ export default function PortalSidebar({
   view,
   setView,
   access,
+  bothApps,
   busy,
   onOpenPnl,
   onOpenWorkspace,
@@ -12,16 +13,18 @@ export default function PortalSidebar({
 }) {
   return (
     <aside className="central-sidebar" aria-label="Centralisation navigation">
-      <button
-        type="button"
-        className={`central-side-btn${view === 'home' ? ' is-active' : ''}`}
-        onClick={() => setView('home')}
-      >
-        <span className="central-side-btn__left">
-          <HomeIcon />
-          <span>Home</span>
-        </span>
-      </button>
+      {bothApps ? (
+        <button
+          type="button"
+          className={`central-side-btn${view === 'home' ? ' is-active' : ''}`}
+          onClick={() => setView('home')}
+        >
+          <span className="central-side-btn__left">
+            <HomeIcon />
+            <span>Home</span>
+          </span>
+        </button>
+      ) : null}
 
       <p className="central-side-label">Applications</p>
       {access.pnl ? (
@@ -48,18 +51,22 @@ export default function PortalSidebar({
         </button>
       ) : null}
 
-      <p className="central-side-label">Directory</p>
-      <button
-        type="button"
-        className={`central-side-btn${view === 'users' ? ' is-active' : ''}`}
-        onClick={() => setView('users')}
-      >
-        <span className="central-side-btn__left">
-          <UsersIcon />
-          <span>Users</span>
-        </span>
-        <span className="central-side-hint">{usersLoading ? '…' : String(userCount)}</span>
-      </button>
+      {bothApps ? (
+        <>
+          <p className="central-side-label">Directory</p>
+          <button
+            type="button"
+            className={`central-side-btn${view === 'users' ? ' is-active' : ''}`}
+            onClick={() => setView('users')}
+          >
+            <span className="central-side-btn__left">
+              <UsersIcon />
+              <span>Users</span>
+            </span>
+            <span className="central-side-hint">{usersLoading ? '…' : String(userCount)}</span>
+          </button>
+        </>
+      ) : null}
     </aside>
   );
 }

@@ -3,6 +3,7 @@ import { portalApi } from '../../api/portalApi';
 
 export function usePortalAccess() {
   const [access, setAccess] = useState({ pnl: false, workspace: false });
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -16,11 +17,14 @@ export function usePortalAccess() {
       })
       .catch(() => {
         if (!cancelled) setError('Could not load app access');
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { access, error, setError };
+  return { access, ready, error, setError };
 }
