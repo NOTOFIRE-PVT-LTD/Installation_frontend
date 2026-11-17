@@ -29,6 +29,9 @@ const APP_SECTION_LABELS = {
   claimApprovals: 'Approvals',
   numbers: 'Numbers',
   auditLogs: 'Audit Logs',
+  payflow: 'Payflow',
+  payflowUser: 'Payment Requests',
+  salesTravelRequests: 'Sales Travel Request',
 };
 
 export function navAppSection(item) {
@@ -115,6 +118,7 @@ export function isNavItemAllowed(item, user, permissions) {
   if (!isSuperAdmin && item.superAdminOnly) return false;
   if (!item.roles.includes(user?.role)) return false;
   if (item.jobRole && user?.jobRole !== item.jobRole) return false;
+  if (item.permission === 'payflow' && permissions?.payflowUser && !permissions?.payflow) return false;
 
   if (user?.role === ROLES.ADMIN) {
     return evaluateAdminNavPermission(item, permissions, isSuperAdmin);
@@ -127,17 +131,15 @@ export function flattenNavItems(items = NAV_ITEMS) {
 }
 
 function resolveComplaintsLanding(user, permissions) {
-  if (user.role !== ROLES.ADMIN) {
-    if (user.jobRole === 'INSTALLER' || permissions?.complaints) {
-      return '/complaints/dashboard';
-    }
+  if (user.role !== ROLES.ADMIN && permissions?.complaints) {
+    return '/complaints/dashboard';
   }
   if (user.adminType === 'COMPLAINT_COORDINATOR') return '/complaints/dashboard';
   return null;
 }
 
 export function getDefaultLandingPath(user, permissions) {
-  if (!user) return '/central-sso';
+  if (!user) return '/login';
   if (isSuperAdminUser(user)) return '/home';
   if (user.jobRole === 'SALESPERSON') return '/attendance';
 
