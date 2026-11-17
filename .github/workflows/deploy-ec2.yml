@@ -1,0 +1,78 @@
+# Auto-deploy portal/Workspace frontend to EC2 after push to dev.
+# Build runs on GitHub (fast); only dist/ is synced to the server.
+# Required repo secrets (Settings → Secrets → Actions):
+#   EC2_HOST       e.g. 13.201.19.145
+#   EC2_USER       e.g. ubuntu
+#   EC2_SSH_KEY    full private key PEM contents
+#   EC2_WEB_DIR    e.g. /var/www/workspace-web  (optional; default below)
+# Optional build secrets (override nginx path defaults):
+#   VITE_API_BASE_URL   default /ws-api
+#   VITE_PNL_PUBLIC_URL default /pnl
+
+name: Deploy frontend to EC2
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-installation-fe-ec2
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install and build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_PNL_PUBLIC_URL: ${{ secrets.VITE_PNL_PUBLIC_URL }}
+        run: |
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/ws-api}"
+          export VITE_PNL_PUBLIC_URL="${VITE_PNL_PUBLIC_URL:-/pnl}"
+          export VITE_BASE_PATH=/
+          npm ci || npm install
+          npm run build
+          test -f dist/index.html
+
+      - name: Resolve web dir
+        id: dirs
+        run: |
+          WEB_DIR="${{ secrets.EC2_WEB_DIR }}"
+          echo "web_dir=${WEB_DIR:-/var/www/workspace-web}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload dist to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: 'dist/*'
+          target: ${{ steps.dirs.outputs.web_dir }}/dist
+          strip_components: 1
+          rm: true
+          overwrite: true
+
+      - name: Confirm deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            WEB_DIR="${{ steps.dirs.outputs.web_dir }}"
+            test -f "$WEB_DIR/dist/index.html"
+            echo "Frontend deploy OK → $WEB_DIR/dist"
