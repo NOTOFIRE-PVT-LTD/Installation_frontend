@@ -2,20 +2,6 @@ import { useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { changePassword, updateProfile } from '../../features/auth/authThunks';
 
-async function saveProfileParts(dispatch, { name, mobileNumber, imageFile, removeImage, pwd }) {
-  const formData = new FormData();
-  formData.append('name', name);
-  formData.append('mobileNumber', mobileNumber);
-  if (imageFile) formData.append('profileImage', imageFile);
-  else if (removeImage) formData.append('removeProfileImage', 'true');
-  await dispatch(updateProfile(formData)).unwrap();
-
-  if (!pwd.new) return;
-  await dispatch(
-    changePassword({ currentPassword: pwd.current, newPassword: pwd.new }),
-  ).unwrap();
-}
-
 export function usePortalProfile() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
@@ -28,9 +14,10 @@ export function usePortalProfile() {
   const [imageFile, setImageFile] = useState(null);
   const [removeImage, setRemoveImage] = useState(false);
   const [preview, setPreview] = useState(user?.profileImage?.url || '');
-  const [msg, setMsg] = useState(null);
-  const [saving, setSaving] = useState(false);
-
+  const [infoMsg, setInfoMsg] = useState(null);
+  const [pwdMsg, setPwdMsg] = useState(null);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
   const initial = (name || user?.email || 'U').trim().charAt(0).toUpperCase();
 
   function onPickFile(e) {
@@ -38,13 +25,13 @@ export function usePortalProfile() {
     e.target.value = '';
     if (!file) return;
     if (file.size > 2_500_000) {
-      setMsg('Image must be under 2.5 MB');
+      setInfoMsg('Image must be under 2.5 MB');
       return;
     }
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
     setRemoveImage(false);
-    setMsg(null);
+    setInfoMsg(null);
   }
 
   function onRemovePhoto() {
@@ -53,42 +40,53 @@ export function usePortalProfile() {
     setRemoveImage(true);
   }
 
-  async function onSubmit(e) {
+  async function onSaveInfo(e) {
     e.preventDefault();
-    setMsg(null);
-    if (newPwd || confirmPwd) {
-      if (!currentPwd) {
-        setMsg('Enter current password to change it');
-        return;
-      }
-      if (newPwd.length < 8) {
-        setMsg('Password must be at least 8 characters');
-        return;
-      }
-      if (newPwd !== confirmPwd) {
-        setMsg('Passwords do not match');
-        return;
-      }
-    }
-    setSaving(true);
+    setInfoMsg(null);
+    setSavingInfo(true);
     try {
-      await saveProfileParts(dispatch, {
-        name: name.trim(),
-        mobileNumber: mobile.trim(),
-        imageFile,
-        removeImage,
-        pwd: { current: currentPwd, new: newPwd.trim() },
-      });
+      const formData = new FormData();
+      formData.append('name', name.trim());
+      formData.append('mobileNumber', mobile.trim());
+      if (imageFile) formData.append('profileImage', imageFile);
+      else if (removeImage) formData.append('removeProfileImage', 'true');
+      await dispatch(updateProfile(formData)).unwrap();
       setImageFile(null);
       setRemoveImage(false);
+      setInfoMsg('Profile updated.');
+    } catch (err) {
+      setInfoMsg(typeof err === 'string' ? err : 'Could not save profile');
+    } finally {
+      setSavingInfo(false);
+    }
+  }
+
+  async function onSavePassword(e) {
+    e.preventDefault();
+    setPwdMsg(null);
+    if (!currentPwd || newPwd.length < 8 || newPwd !== confirmPwd) {
+      setPwdMsg(
+        !currentPwd
+          ? 'Enter current password'
+          : newPwd.length < 8
+            ? 'Password must be at least 8 characters'
+            : 'Passwords do not match',
+      );
+      return;
+    }
+    setSavingPwd(true);
+    try {
+      await dispatch(
+        changePassword({ currentPassword: currentPwd, newPassword: newPwd }),
+      ).unwrap();
       setCurrentPwd('');
       setNewPwd('');
       setConfirmPwd('');
-      setMsg('Saved.');
+      setPwdMsg('Password changed.');
     } catch (err) {
-      setMsg(typeof err === 'string' ? err : 'Could not save profile');
+      setPwdMsg(typeof err === 'string' ? err : 'Could not change password');
     } finally {
-      setSaving(false);
+      setSavingPwd(false);
     }
   }
 
@@ -109,8 +107,11 @@ export function usePortalProfile() {
     fileRef,
     onPickFile,
     onRemovePhoto,
-    msg,
-    saving,
-    onSubmit,
+    infoMsg,
+    pwdMsg,
+    savingInfo,
+    savingPwd,
+    onSaveInfo,
+    onSavePassword,
   };
 }

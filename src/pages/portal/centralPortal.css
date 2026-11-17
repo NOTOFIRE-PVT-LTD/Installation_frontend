@@ -555,15 +555,53 @@ body:has(.central-shell) {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   overflow: auto;
   padding: 8px 0 20px;
+  width: 100%;
 }
 
 .central-profile {
   width: min(100%, 28rem);
   margin: 0 auto;
+}
+
+.central-profile--cards {
+  width: min(100%, 56rem);
+}
+
+.central-profile__header {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.central-profile__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.central-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--c-card-border, #e8dcc8);
+  border-radius: 16px;
+  padding: 1.15rem 1.2rem 1.25rem;
+  box-shadow: 0 8px 24px rgba(36, 20, 4, 0.06);
+  text-align: left;
+}
+
+.central-profile-card__title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--c-text);
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--c-line, #eadfce);
 }
 
 .central-avatar-edit {
@@ -737,6 +775,10 @@ body:has(.central-shell) {
 
   .central-profile {
     padding: 0;
+  }
+
+  .central-profile__grid {
+    grid-template-columns: 1fr;
   }
 }
 
