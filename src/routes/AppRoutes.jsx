@@ -56,25 +56,18 @@ import PayflowUserPage from '../pages/payflow/PayflowUserPage';
 import SalesTravelRequestsPage from '../pages/salesTravelRequests/SalesTravelRequestsPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
-import ForbiddenPage from '../pages/ForbiddenPage';
-import { useAuth } from '../hooks/useAuth';
-import { getDefaultLandingPath } from './routeConfig';
-import { ROLES } from '../utils/constants';
-
-function DefaultLandingRedirect() {
-  const { user, permissions } = useAuth();
-
-  return <Navigate to={getDefaultLandingPath(user, permissions)} replace />;
-}
+import { authPublicRouteNodes } from './AppRoutesAuthPublic';
+import { protectedRouteNodes } from './AppRoutesProtected';
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
+        {/* Staff auth is Centralisation only — no Workspace login UI */}
+        <Route path="/login" element={<CentralLoginRedirect />} />
         <Route path="/central-sso" element={<CentralSsoPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/forgot-password" element={<CentralLoginRedirect />} />
+        <Route path="/reset-password/:token" element={<CentralLoginRedirect />} />
       </Route>
 
       {/* Public Customer Self-Service & Support URLs */}
@@ -519,30 +512,6 @@ export default function AppRoutes() {
             element={
               <PermissionGate permission="importControl" userPermission="importControl" roles={[ROLES.USER]}>
                 <ImportControlPage />
-              </PermissionGate>
-            }
-          />
-          <Route
-            path="/payflow"
-            element={
-              <PermissionGate permission="payflow" roles={[]}>
-                <PayflowPage />
-              </PermissionGate>
-            }
-          />
-          <Route
-            path="/payflow-requests"
-            element={
-              <PermissionGate permission="payflowUser" roles={[ROLES.USER]}>
-                <PayflowUserPage />
-              </PermissionGate>
-            }
-          />
-          <Route
-            path="/sales-travel-requests"
-            element={
-              <PermissionGate permission="salesTravelRequests" roles={[ROLES.USER]}>
-                <SalesTravelRequestsPage />
               </PermissionGate>
             }
           />

@@ -11,7 +11,6 @@ import Alert from '@mui/material/Alert';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
-import RHFSelect from '../../components/common/FormFields/RHFSelect';
 
 const schema = yup.object({
   companyName: yup.string().required('Company name is required'),
@@ -23,7 +22,6 @@ const schema = yup.object({
   state: yup.string(),
   pincode: yup.string(),
   gstin: yup.string(),
-  assignedSalesperson: yup.string(),
   locationLat: yup.string(),
   locationLng: yup.string(),
   overrideReason: yup.string(),
@@ -39,7 +37,6 @@ const EMPTY = {
   state: '',
   pincode: '',
   gstin: '',
-  assignedSalesperson: '',
   locationLat: '',
   locationLng: '',
   overrideReason: '',
@@ -49,7 +46,6 @@ export default function CustomerDrawer({
   open,
   mode = 'create',
   customer,
-  salespersonOptions,
   matches,
   onClose,
   onSubmit,
@@ -76,7 +72,6 @@ export default function CustomerDrawer({
         state: customer?.state || '',
         pincode: customer?.pincode || '',
         gstin: customer?.gstin || '',
-        assignedSalesperson: customer?.assignedSalesperson?._id || customer?.assignedSalesperson || '',
         locationLat: customer?.locationLat ?? '',
         locationLng: customer?.locationLng ?? '',
         overrideReason: '',
@@ -88,7 +83,6 @@ export default function CustomerDrawer({
   const submit = (values) => {
     onSubmit({
       ...values,
-      assignedSalesperson: values.assignedSalesperson || null,
       confirmDuplicates,
     });
   };
@@ -110,12 +104,6 @@ export default function CustomerDrawer({
             <RHFTextField name="state" label="State" disabled={readOnly} />
             <RHFTextField name="pincode" label="Pincode" disabled={readOnly} />
             <RHFTextField name="gstin" label="GSTIN (optional)" disabled={readOnly} />
-            <RHFSelect
-              name="assignedSalesperson"
-              label="Assigned salesperson"
-              disabled={readOnly}
-              options={[{ value: '', label: 'Unassigned' }, ...salespersonOptions]}
-            />
             <RHFTextField name="locationLat" label="Latitude" disabled={readOnly} />
             <RHFTextField name="locationLng" label="Longitude" disabled={readOnly} />
             {matches?.length ? (

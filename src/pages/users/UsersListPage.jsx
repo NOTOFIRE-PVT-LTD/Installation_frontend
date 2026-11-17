@@ -142,11 +142,11 @@ function getUserAppAccess(row) {
   if (p.attendance || p.salespersonTracking || row?.jobRole === 'SALESPERSON' || row?.adminType === 'SALES_COORDINATOR') {
     apps.push({ label: 'Attendance', color: '#85581A', bg: 'rgba(212, 163, 78, 0.16)' });
   }
+  if (p.contractorAttendance) {
+    apps.push({ label: 'Contractor Attendance', color: '#b45309', bg: '#fffbeb' });
+  }
   if (p.complaints || row?.adminType === 'COMPLAINT_COORDINATOR') {
     apps.push({ label: 'Complaint Resolution', color: '#8A3B14', bg: '#FDF3EC' });
-  }
-  if (p.salespersonTracking) {
-    apps.push({ label: 'Sales Tracking', color: '#15803D', bg: '#ECFDF5' });
   }
   if (p.projects || (row.role !== ROLES.ADMIN && p.projects !== false)) {
     apps.push({ label: 'Projects', color: '#0369A1', bg: '#F0F9FF' });

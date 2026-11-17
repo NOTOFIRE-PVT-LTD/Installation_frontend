@@ -39,6 +39,7 @@ const USER_LABELS = {
   atlantaPaymentsOwnOnly: 'Atlanta Payments (Own Records Only)',
   shipping: 'Shipping Control',
   importControl: 'Import Control',
+  contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
   payflowUser: 'Payflow user (submit & view own payment requests)',
   salesTravelRequests: 'Sales Travel Request',
   salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
@@ -47,6 +48,7 @@ const USER_LABELS = {
 const ADMIN_LABELS = {
   complaints: 'Complaint Resolution (Admin / Coordinator)',
   salespersonTracking: 'Attendance & Salesperson Tracking (Admin)',
+  contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
   dashboard: 'Installation Dashboard',
   users: 'User Management',
   projects: 'Projects',
