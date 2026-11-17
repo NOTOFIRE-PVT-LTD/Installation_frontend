@@ -637,7 +637,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.1rem 1rem;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding: 1.1rem 1.15rem calc(1rem + env(safe-area-inset-bottom));
     border: 1px solid var(--border);
     border-radius: 20px;
     background: var(--bg-elevated);
@@ -647,7 +649,7 @@
   }
 
   .login-form-card__top {
-    margin-bottom: 0.55rem;
+    margin-bottom: 0;
     flex: 0 0 auto;
   }
 
@@ -656,41 +658,50 @@
   }
 
   .login-mode-tabs {
-    margin-bottom: 0.55rem;
+    margin-bottom: 0;
     flex: 0 0 auto;
   }
 
   .login-form-card .alert {
     flex: 0 0 auto;
+    margin: 0;
   }
 
-  /* Fill card height; pin submit near the bottom (gap above CTA). */
+  /* Spread phone/email fields, remember row, and CTA evenly in leftover height. */
   .login-form-card .form-grid {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    justify-content: space-evenly;
+    gap: 0.75rem;
     align-content: stretch;
     align-items: stretch;
   }
 
+  .login-form-card .field,
   .login-form-card .login-remember-me,
-  .login-form-card .login-email-meta {
+  .login-form-card .login-email-meta,
+  .login-form-card .login-otp-hint,
+  .login-form-card .login-otp-expiry {
     margin: 0;
+    flex: 0 0 auto;
   }
 
   .login-form-card .login-submit {
-    margin-top: auto;
+    margin-top: 0;
+    margin-bottom: 0;
     padding: 0.85rem 1.1rem;
     height: auto;
     min-height: unset;
     align-self: stretch;
     width: 100%;
+    flex: 0 0 auto;
   }
 
   .login-form-card .login-link-btn:not(.login-email-meta__forgot) {
-    margin-top: 0.25rem;
+    margin-top: 0;
+    flex: 0 0 auto;
   }
 }
 
