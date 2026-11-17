@@ -105,7 +105,9 @@ export function useCentralLoginForm() {
     setError(null);
     setLoading(true);
     try {
-      const res = await dispatch(login({ email: email.trim(), password }));
+      const res = await dispatch(
+        login({ email: email.trim().toLowerCase(), password: password.trim() }),
+      );
       if (res.error) {
         setError(res.payload || t.invalidEmailPassword);
         return;
