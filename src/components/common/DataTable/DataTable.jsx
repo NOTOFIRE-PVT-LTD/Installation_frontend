@@ -272,9 +272,10 @@ export default function DataTable({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1.25,
-              // Mobile: row 1 full width (e.g. Staff Role)
-              flex: onSearchChange ? { xs: '1 1 100%', md: '0 0 auto' } : '1 1 0%',
+              gap: 1,
+              // Mobile row 1: Staff Role shares the line with Search
+              flex: onSearchChange ? { xs: '1 1 40%', md: '0 0 auto' } : '1 1 0%',
+              maxWidth: onSearchChange ? { xs: '42%', md: 'none' } : undefined,
               flexWrap: 'nowrap',
               minWidth: 0,
             }}
@@ -289,10 +290,10 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              // Mobile: row 2 full width
-              flex: { xs: '1 1 100%', md: '1 1 160px' },
+              // Mobile row 1: Search next to Staff Role
+              flex: { xs: '1 1 52%', md: '1 1 160px' },
               minWidth: { xs: 0, md: 140 },
-              width: { xs: '100%', md: 'auto' },
+              maxWidth: { xs: '58%', md: 'none' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: 999,
                 minHeight: 40,
@@ -319,7 +320,7 @@ export default function DataTable({
           flexWrap="nowrap"
           useFlexGap
           sx={{
-            // Mobile: row 3 — icon(s) + Add Salesperson + Add Admin side by side
+            // Mobile row 2: columns icon + both action buttons (≤3 lines total for toolbar)
             flex: { xs: '1 1 100%', md: '0 0 auto' },
             width: { xs: '100%', md: 'auto' },
             minWidth: 0,
