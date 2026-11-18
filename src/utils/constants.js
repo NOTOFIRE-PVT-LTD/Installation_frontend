@@ -196,13 +196,10 @@ export const PERMISSION_KEYS = [
   'atlantaPayments',
   'atlantaPaymentsOwnOnly',
   'auditLogs',
-<<<<<<< HEAD
-=======
   'payflow',
   'payflowUser',
   'salesTravelRequests',
   'salesTravelRequestsOwnOnly',
->>>>>>> 95ad65b104f132308b8a67f2ff9430f343688917
   'complaints',
   'shipping',
   'importControl',
@@ -235,13 +232,10 @@ export const COMPLAINT_PUBLIC_PRIORITIES = [
   COMPLAINT_PRIORITY.LOW,
   COMPLAINT_PRIORITY.MEDIUM,
   COMPLAINT_PRIORITY.HIGH,
-<<<<<<< HEAD
   'payflow',
   'payflowUser',
   'salesTravelRequests',
   'salesTravelRequestsOwnOnly',
-=======
->>>>>>> 95ad65b104f132308b8a67f2ff9430f343688917
 ];
 
 export const STOCK_MOVEMENT_TYPES = {
