@@ -310,7 +310,23 @@ export default function DataTable({
         ) : toolbarStart ? null : (
           <Box sx={{ flex: 1 }} />
         )}
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="nowrap" useFlexGap sx={{ flex: '0 0 auto' }}>
+        <Stack
+          direction="row"
+          spacing={0.75}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+          sx={{
+            flex: { xs: '1 1 100%', md: '0 0 auto' },
+            width: { xs: '100%', md: 'auto' },
+            minWidth: 0,
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            '& > .MuiStack-root, & > .MuiButton-root': {
+              flex: { xs: '1 1 calc(50% - 6px)', sm: '0 0 auto' },
+              minWidth: 0,
+            },
+          }}
+        >
           {checkboxSelection && selectedCount > 0 && onBulkDelete && (
             <Button
               size="small"

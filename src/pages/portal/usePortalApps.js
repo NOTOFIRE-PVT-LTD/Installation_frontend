@@ -27,10 +27,9 @@ export function usePortalApps() {
   useEffect(() => {
     if (!ready || !access.pnl) return undefined;
     warmPnlApp();
-    const t = window.setTimeout(() => {
-      prefetchPnlUrl().catch(() => {});
-    }, 400);
-    return () => window.clearTimeout(t);
+    // Prefetch SSO URL immediately so the first P&L click can navigate without waiting.
+    prefetchPnlUrl().catch(() => {});
+    return undefined;
   }, [ready, access.pnl]);
 
   useEffect(() => {

@@ -38,7 +38,10 @@ const SUPER_ADMIN_TABS = [
 
 const ADMIN_SECTION_IDS = ['dashboard', 'people', 'visits', 'customers', 'attendance', 'approvals'];
 
-function SectionBody({ current }) {
+function SectionBody({ current, metrics, onOpen }) {
+  if (current === 'dashboard') {
+    return <AttendanceDashboardPanel metrics={metrics} onOpen={onOpen} clickable />;
+  }
   if (current === 'people') return <PeopleListPage embedded />;
   if (current === 'visits') return <VisitsHomePage embedded />;
   if (current === 'customers') return <CustomersListPage embedded />;
@@ -125,9 +128,6 @@ export default function SalespersonTrackingPage() {
           title="Attendance & Field Operations"
           subtitle="People, visits, customers, attendance records, and approvals in one place"
         />
-        <Box sx={{ mb: 2.5 }}>
-          <AttendanceDashboardPanel metrics={metrics} onOpen={setTab} clickable />
-        </Box>
         <Box sx={{ mb: 2 }}>
           <SlidingPills
             fullWidth
@@ -139,7 +139,7 @@ export default function SalespersonTrackingPage() {
             }))}
           />
         </Box>
-        {current !== 'dashboard' ? <SectionBody current={current} /> : null}
+        <SectionBody current={current} metrics={metrics} onOpen={setTab} />
       </>
     );
   }
@@ -157,11 +157,7 @@ export default function SalespersonTrackingPage() {
   return (
     <>
       <PageHeader title={title} subtitle={subtitle} />
-      {current === 'dashboard' ? (
-        <AttendanceDashboardPanel metrics={metrics} onOpen={setTab} clickable={false} />
-      ) : (
-        <SectionBody current={current} />
-      )}
+      <SectionBody current={current} metrics={metrics} onOpen={setTab} />
     </>
   );
 }

@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
-import ListAltIcon from '@mui/icons-material/ListAlt';
 import { complaintApi } from '../../api/complaintApi';
 import { useAppDispatch } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +12,7 @@ import ComplaintDetailDrawer from './ComplaintDetailDrawer';
 import DashboardKpiSection from './DashboardKpiSection';
 import DashboardOverdueList from './DashboardOverdueList';
 import DashboardEngineerWorkloadTable from './DashboardEngineerWorkloadTable';
+import ComplaintDashboardActions from './ComplaintDashboardActions';
 
 function usePagedComplaints(filter, refresh = 0) {
   const [page, setPage] = useState(0);
@@ -77,8 +72,8 @@ export default function ComplaintDashboardPage() {
   const engineerList = data?.engineerWorkload || [];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1600, mx: 'auto', width: '100%' }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+    <Box sx={{ p: { xs: 0, md: 1 }, maxWidth: 1600, mx: 'auto', width: '100%' }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h5" fontWeight={800} sx={{ color: '#241404' }}>
             {isFieldEngineer ? 'My Assigned Dashboard' : 'Service Operations Dashboard'}
@@ -87,24 +82,13 @@ export default function ComplaintDashboardPage() {
             {isFieldEngineer ? `Assigned tickets and SLA follow-ups for ${user?.name || 'you'}` : 'Master complaint queue, SLA follow-ups, and field engineer workloads'}
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1.5} flexWrap="wrap">
-          <Button variant="outlined" size="small" onClick={fetchDashboard} disabled={loading} startIcon={<RefreshIcon />} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, borderColor: '#D4A34E', color: '#583714', bgcolor: 'rgba(212, 163, 78, 0.08)' }}>
-            Refresh
-          </Button>
-          {!isFieldEngineer && (
-            <Button variant="outlined" size="small" onClick={() => setQrOpen(true)} startIcon={<QrCode2Icon />} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, borderColor: '#D4A34E', color: '#583714', bgcolor: 'rgba(212, 163, 78, 0.08)' }}>
-              QR & Links
-            </Button>
-          )}
-          <Button component={Link} to={ticketsPath} variant="outlined" size="small" startIcon={<ListAltIcon />} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, borderColor: '#D4A34E', color: '#583714', bgcolor: 'rgba(212, 163, 78, 0.08)' }}>
-            All Tickets
-          </Button>
-          {!isFieldEngineer && (
-            <Button component={Link} to="/complaints/new" variant="contained" size="small" startIcon={<AddCircleOutlineIcon />} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 800, background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)', color: '#3A230B', px: 2 }}>
-              + Phone Intake
-            </Button>
-          )}
-        </Stack>
+        <ComplaintDashboardActions
+          loading={loading}
+          isFieldEngineer={isFieldEngineer}
+          ticketsPath={ticketsPath}
+          onRefresh={fetchDashboard}
+          onOpenQr={() => setQrOpen(true)}
+        />
       </Stack>
 
       {loading && !data ? (

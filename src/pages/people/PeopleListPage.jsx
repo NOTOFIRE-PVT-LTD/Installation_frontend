@@ -267,7 +267,12 @@ export default function PeopleListPage({ embedded = false }) {
   ];
 
   const actionButtons = (
-    <Stack direction="row" spacing={1}>
+    <Stack
+      direction={{ xs: 'column', sm: 'row' }}
+      spacing={1}
+      useFlexGap
+      sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 0 }}
+    >
       <Button
         variant="outlined"
         startIcon={<AddIcon />}
@@ -278,10 +283,11 @@ export default function PeopleListPage({ embedded = false }) {
           fontWeight: 700,
           borderRadius: '8px',
           textTransform: 'none',
+          width: { xs: '100%', sm: 'auto' },
           '&:hover': { borderColor: '#583714', bgcolor: 'rgba(255, 233, 151, 0.15)' },
         }}
       >
-        + Add Salesperson
+        Add Salesperson
       </Button>
       <Button
         variant="contained"
@@ -299,13 +305,14 @@ export default function PeopleListPage({ embedded = false }) {
           fontWeight: 700,
           borderRadius: '8px',
           textTransform: 'none',
+          width: { xs: '100%', sm: 'auto' },
           boxShadow: '0 2px 8px rgba(88, 55, 20, 0.15)',
           '&:hover': {
             background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
           },
         }}
       >
-        + Add Admin / Coordinator
+        Add Admin / Coordinator
       </Button>
     </Stack>
   );

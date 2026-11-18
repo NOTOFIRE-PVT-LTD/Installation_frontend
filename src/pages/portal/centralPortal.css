@@ -286,6 +286,8 @@ body:has(.central-shell) {
   margin: 0 auto;
   padding-top: 3.5rem;
   text-align: center;
+  /* Same soft hairline that sits above Workspace page headings / tables */
+  border-top: 1px solid var(--c-line);
 }
 
 .central-home__eyebrow {
@@ -746,7 +748,8 @@ body:has(.central-shell) {
 
   .central-main {
     grid-column: 1;
-    padding: 14px 14px 20px;
+    /* Match Visits mobile side padding */
+    padding: 16px 16px 20px;
     width: 100%;
     max-width: 100%;
   }
@@ -754,6 +757,7 @@ body:has(.central-shell) {
   .central-home {
     max-width: none;
     padding-top: 1.25rem;
+    border-top: 1px solid var(--c-line);
   }
 
   .central-home__title {

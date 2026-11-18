@@ -32,14 +32,16 @@ export async function openPnlApp({ setError, setBusy }) {
   setError(null);
   setBusy('pnl');
   try {
+    // Reuse warm prefetch when still valid; otherwise mint in parallel with navigation intent.
     const url =
       pnlPrefetch && pnlPrefetch.until > Date.now()
         ? pnlPrefetch.url
         : await prefetchPnlUrl();
     pnlPrefetch = null;
-    window.location.assign(url);
+    // Full page load into Next — keep P&L (npm run dev / build) already running for speed.
+    window.location.href = url;
   } catch {
-    setError('Could not open P&L');
+    setError('Could not open P&L — is the P&L app running?');
     setBusy(null);
   }
 }
