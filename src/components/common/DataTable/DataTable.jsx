@@ -273,10 +273,10 @@ export default function DataTable({
               display: 'flex',
               alignItems: 'center',
               gap: 1.25,
+              // Mobile: row 1 full width (e.g. Staff Role)
               flex: onSearchChange ? { xs: '1 1 100%', md: '0 0 auto' } : '1 1 0%',
-              flexWrap: onSearchChange ? 'wrap' : 'nowrap',
+              flexWrap: 'nowrap',
               minWidth: 0,
-              overflow: 'hidden',
             }}
           >
             {toolbarStart}
@@ -289,8 +289,10 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              flex: '1 1 160px',
-              minWidth: 140,
+              // Mobile: row 2 full width
+              flex: { xs: '1 1 100%', md: '1 1 160px' },
+              minWidth: { xs: 0, md: 140 },
+              width: { xs: '100%', md: 'auto' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: 999,
                 minHeight: 40,
@@ -314,17 +316,16 @@ export default function DataTable({
           direction="row"
           spacing={0.75}
           alignItems="center"
-          flexWrap="wrap"
+          flexWrap="nowrap"
           useFlexGap
           sx={{
+            // Mobile: row 3 — icon(s) + Add Salesperson + Add Admin side by side
             flex: { xs: '1 1 100%', md: '0 0 auto' },
             width: { xs: '100%', md: 'auto' },
             minWidth: 0,
             justifyContent: { xs: 'flex-start', md: 'flex-end' },
-            '& > .MuiStack-root, & > .MuiButton-root': {
-              flex: { xs: '1 1 calc(50% - 6px)', sm: '0 0 auto' },
-              minWidth: 0,
-            },
+            '& > .MuiIconButton-root': { flex: '0 0 auto' },
+            '& > .MuiStack-root': { flex: '1 1 auto', minWidth: 0 },
           }}
         >
           {checkboxSelection && selectedCount > 0 && onBulkDelete && (

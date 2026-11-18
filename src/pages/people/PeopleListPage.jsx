@@ -268,10 +268,15 @@ export default function PeopleListPage({ embedded = false }) {
 
   const actionButtons = (
     <Stack
-      direction={{ xs: 'column', sm: 'row' }}
+      direction="row"
       spacing={1}
       useFlexGap
-      sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 0 }}
+      sx={{
+        width: { xs: '100%', sm: 'auto' },
+        minWidth: 0,
+        flex: { xs: '1 1 auto', sm: '0 0 auto' },
+        '& .MuiButton-root': { flex: { xs: '1 1 0', sm: '0 0 auto' }, minWidth: 0 },
+      }}
     >
       <Button
         variant="outlined"
@@ -281,9 +286,7 @@ export default function PeopleListPage({ embedded = false }) {
           borderColor: 'rgba(88, 55, 20, 0.3)',
           color: '#583714',
           fontWeight: 700,
-          borderRadius: '8px',
           textTransform: 'none',
-          width: { xs: '100%', sm: 'auto' },
           '&:hover': { borderColor: '#583714', bgcolor: 'rgba(255, 233, 151, 0.15)' },
         }}
       >
@@ -303,9 +306,7 @@ export default function PeopleListPage({ embedded = false }) {
           background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
           color: '#3A230B',
           fontWeight: 700,
-          borderRadius: '8px',
           textTransform: 'none',
-          width: { xs: '100%', sm: 'auto' },
           boxShadow: '0 2px 8px rgba(88, 55, 20, 0.15)',
           '&:hover': {
             background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
@@ -350,9 +351,11 @@ export default function PeopleListPage({ embedded = false }) {
             onChange={(e) => setFilter('role', e.target.value)}
             sx={{
               minWidth: 190,
+              width: { xs: '100%', sm: 190 },
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#FFFDF8',
-                borderRadius: '10px',
+                borderRadius: 999,
+                minHeight: 40,
                 '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
               },
             }}
