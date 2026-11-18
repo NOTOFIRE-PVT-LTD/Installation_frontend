@@ -13,6 +13,9 @@ const APP_PATH_OWNERS = [
   { prefix: '/shipping', permission: 'shipping' },
   { prefix: '/import-control', permission: 'importControl' },
   { prefix: '/contractor-attendance', permission: 'contractorAttendance' },
+  { prefix: '/payflow-requests', permission: 'payflowUser' },
+  { prefix: '/payflow', permission: 'payflow' },
+  { prefix: '/sales-travel-requests', permission: 'salesTravelRequests' },
 ];
 
 export function pathOwnerPermission(path) {

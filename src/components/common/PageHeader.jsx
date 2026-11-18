@@ -38,11 +38,11 @@ export default function PageHeader({ title, subtitle, actions }) {
             width: '100%',
             display: 'flex',
             flexDirection: 'row',
-            flexWrap: 'nowrap',
+            flexWrap: 'wrap',
             alignItems: 'center',
             gap: 1,
-            overflowX: 'auto',
-            '& .MuiButton-root': { flex: '0 0 auto', minWidth: 0, whiteSpace: 'nowrap' },
+            minWidth: 0,
+            '& .MuiButton-root': { flex: { xs: '1 1 calc(50% - 4px)', sm: '0 0 auto' }, minWidth: 0 },
           }}
         >
           {actions}

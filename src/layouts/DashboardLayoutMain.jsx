@@ -17,7 +17,9 @@ export default function DashboardLayoutMain({
         flexGrow: 1,
         minWidth: 0,
         overflowX: 'hidden',
-        p: { xs: 1, sm: 2 },
+        // Match Visits mobile gutters (~16px) across Attendance / Complaints / People.
+        px: { xs: 2, sm: 2.5 },
+        py: { xs: 1.5, sm: 2 },
         width: { sm: `calc(100% - ${drawerWidth}px)` },
         transition: 'width 0.2s',
         bgcolor: '#F8F6F1',

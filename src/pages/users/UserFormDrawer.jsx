@@ -19,7 +19,7 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPen, faUserPlus, faMoneyBillWave, faPlaneDeparture } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
 import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS, GENDER, APP_ACCESS_OPTIONS, ACCOUNT_LEVEL } from '../../utils/constants';
@@ -383,22 +383,6 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                     ? user?.permissions?.atlantaPaymentsOwnOnly
                       ? 'User Flow (Own records only)'
                       : 'Admin Flow (All records)'
-                    : 'No Access'
-                }
-              />
-              <DetailRow
-                icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
-                label="Payflow"
-                value={user?.permissions?.payflowUser ? 'Payflow User (Own requests)' : 'No Access'}
-              />
-              <DetailRow
-                icon={<FontAwesomeIcon icon={faPlaneDeparture} style={{ fontSize: 13 }} />}
-                label="Sales Travel Request"
-                value={
-                  user?.permissions?.salesTravelRequests
-                    ? user?.permissions?.salesTravelRequestsOwnOnly
-                      ? 'User Flow (Own requests)'
-                      : 'Admin Flow (All requests)'
                     : 'No Access'
                 }
               />

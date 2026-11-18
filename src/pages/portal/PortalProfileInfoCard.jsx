@@ -1,4 +1,6 @@
 export default function PortalProfileInfoCard({ p }) {
+  const canRemove = Boolean(p.preview) || p.removeImage;
+
   return (
     <form className="central-profile-card" onSubmit={p.onSaveInfo}>
       <h3 className="central-profile-card__title">Profile Information</h3>
@@ -15,11 +17,15 @@ export default function PortalProfileInfoCard({ p }) {
           <button type="button" className="central-page-btn" onClick={() => p.fileRef.current?.click()}>
             Change Photo
           </button>
-          {p.preview ? (
-            <button type="button" className="central-page-btn" onClick={p.onRemovePhoto}>
-              Delete Photo
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="central-page-btn central-page-btn--danger"
+            onClick={p.onRemovePhoto}
+            disabled={!canRemove}
+            title={canRemove ? 'Remove photo and use letter avatar' : 'No photo to remove'}
+          >
+            Remove Photo
+          </button>
           <input
             ref={p.fileRef}
             type="file"

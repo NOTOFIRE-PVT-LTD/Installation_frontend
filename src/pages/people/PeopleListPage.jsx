@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import AssessmentIcon from '@mui/icons-material/AssessmentOutlined';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -266,26 +265,37 @@ export default function PeopleListPage({ embedded = false }) {
     },
   ];
 
+  const actionBtnSx = {
+    flex: { xs: '1 1 0', sm: '0 0 auto' },
+    minWidth: 0,
+    px: { xs: 1.25, sm: 2 },
+    whiteSpace: 'nowrap',
+    fontSize: { xs: '0.72rem', sm: '0.75rem' },
+    textTransform: 'none',
+    fontWeight: 700,
+  };
+
   const actionButtons = (
-    <Stack direction="row" spacing={1}>
+    <Stack
+      direction="row"
+      spacing={1}
+      useFlexGap
+      sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 0, flex: { xs: '1 1 auto', sm: '0 0 auto' } }}
+    >
       <Button
         variant="outlined"
-        startIcon={<AddIcon />}
         onClick={() => setDrawer({ open: true, mode: 'create', user: { role: ROLES.USER, jobRole: 'SALESPERSON' } })}
         sx={{
+          ...actionBtnSx,
           borderColor: 'rgba(88, 55, 20, 0.3)',
           color: '#583714',
-          fontWeight: 700,
-          borderRadius: '8px',
-          textTransform: 'none',
           '&:hover': { borderColor: '#583714', bgcolor: 'rgba(255, 233, 151, 0.15)' },
         }}
       >
-        + Add Salesperson
+        + Salesperson
       </Button>
       <Button
         variant="contained"
-        startIcon={<AddIcon />}
         onClick={() =>
           setDrawer({
             open: true,
@@ -294,18 +304,16 @@ export default function PeopleListPage({ embedded = false }) {
           })
         }
         sx={{
+          ...actionBtnSx,
           background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
           color: '#3A230B',
-          fontWeight: 700,
-          borderRadius: '8px',
-          textTransform: 'none',
           boxShadow: '0 2px 8px rgba(88, 55, 20, 0.15)',
           '&:hover': {
             background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
           },
         }}
       >
-        + Add Admin / Coordinator
+        + Admin/Coord
       </Button>
     </Stack>
   );
@@ -342,10 +350,13 @@ export default function PeopleListPage({ embedded = false }) {
             value={filters.role || ''}
             onChange={(e) => setFilter('role', e.target.value)}
             sx={{
-              minWidth: 190,
+              minWidth: { xs: 118, sm: 190 },
+              flex: { xs: '0 1 42%', sm: '0 0 auto' },
+              width: { xs: 'auto', sm: 190 },
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#FFFDF8',
-                borderRadius: '10px',
+                borderRadius: 999,
+                minHeight: 40,
                 '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
               },
             }}

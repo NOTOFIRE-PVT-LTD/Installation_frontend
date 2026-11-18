@@ -8,6 +8,7 @@ import { attendanceRouteNodes } from './AppRoutesAttendance';
 import { backOfficeRouteNodes } from './AppRoutesBackOffice';
 import { dashboardComplaintRouteNodes } from './AppRoutesDashboardComplaints';
 import { projectsReportsRouteNodes } from './AppRoutesProjectsReports';
+import { payflowRouteNodes } from './AppRoutesPayflow';
 
 export const protectedRouteNodes = (
   <Route element={<ProtectedRoute />}>
@@ -17,6 +18,7 @@ export const protectedRouteNodes = (
       {attendanceRouteNodes}
       {projectsReportsRouteNodes}
       {backOfficeRouteNodes}
+      {payflowRouteNodes}
     </Route>
 
     <Route

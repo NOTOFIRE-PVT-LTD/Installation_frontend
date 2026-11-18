@@ -272,11 +272,12 @@ export default function DataTable({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1.25,
-              flex: onSearchChange ? { xs: '1 1 100%', md: '0 0 auto' } : '1 1 0%',
-              flexWrap: onSearchChange ? 'wrap' : 'nowrap',
+              gap: 1,
+              // Mobile row 1: Staff Role shares the line with Search
+              flex: onSearchChange ? { xs: '1 1 40%', md: '0 0 auto' } : '1 1 0%',
+              maxWidth: onSearchChange ? { xs: '42%', md: 'none' } : undefined,
+              flexWrap: 'nowrap',
               minWidth: 0,
-              overflow: 'hidden',
             }}
           >
             {toolbarStart}
@@ -289,8 +290,10 @@ export default function DataTable({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             sx={{
-              flex: '1 1 160px',
-              minWidth: 140,
+              // Mobile row 1: Search next to Staff Role
+              flex: { xs: '1 1 52%', md: '1 1 160px' },
+              minWidth: { xs: 0, md: 140 },
+              maxWidth: { xs: '58%', md: 'none' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: 999,
                 minHeight: 40,
@@ -302,7 +305,7 @@ export default function DataTable({
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <SearchIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                  <SearchIcon sx={{ color: 'primary.main', fontSize: 16, width: 16, height: 16 }} />
                 </InputAdornment>
               ),
             }}
@@ -310,7 +313,22 @@ export default function DataTable({
         ) : toolbarStart ? null : (
           <Box sx={{ flex: 1 }} />
         )}
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="nowrap" useFlexGap sx={{ flex: '0 0 auto' }}>
+        <Stack
+          direction="row"
+          spacing={0.75}
+          alignItems="center"
+          flexWrap="nowrap"
+          useFlexGap
+          sx={{
+            // Mobile row 2: columns icon + both action buttons (≤3 lines total for toolbar)
+            flex: { xs: '1 1 100%', md: '0 0 auto' },
+            width: { xs: '100%', md: 'auto' },
+            minWidth: 0,
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            '& > .MuiIconButton-root': { flex: '0 0 auto' },
+            '& > .MuiStack-root': { flex: '1 1 auto', minWidth: 0 },
+          }}
+        >
           {checkboxSelection && selectedCount > 0 && onBulkDelete && (
             <Button
               size="small"

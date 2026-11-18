@@ -22,6 +22,9 @@ const APP_SECTION_LABELS = {
   proformaInvoices: 'Proforma Invoices',
   deliveryChallans: 'Delivery Challans',
   atlantaPayments: 'Atlanta Payments',
+  payflow: 'Payflow',
+  payflowUser: 'Payment Requests',
+  salesTravelRequests: 'Sales Travel Request',
   itemsMaster: 'Items Master',
   stockItems: 'Stock Items',
   bom: 'BOM',
@@ -119,6 +122,11 @@ export function isNavItemAllowed(item, user, permissions) {
   if (!item.roles.includes(user?.role)) return false;
   if (item.jobRole && user?.jobRole !== item.jobRole) return false;
   if (item.permission === 'payflow' && permissions?.payflowUser && !permissions?.payflow) return false;
+
+  // Payflow users only get Payment Requests, not the full Payflow module.
+  if (item.permission === 'payflow' && permissions?.payflowUser && !permissions?.payflow) {
+    return false;
+  }
 
   if (user?.role === ROLES.ADMIN) {
     return evaluateAdminNavPermission(item, permissions, isSuperAdmin);

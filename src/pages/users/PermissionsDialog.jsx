@@ -21,6 +21,9 @@ const USER_PERMISSION_KEYS = [
   'customers',
   'atlantaPayments',
   'atlantaPaymentsOwnOnly',
+  'payflowUser',
+  'salesTravelRequests',
+  'salesTravelRequestsOwnOnly',
   'shipping',
   'importControl',
   'payflowUser',
@@ -37,6 +40,9 @@ const USER_LABELS = {
   customers: 'Customers Directory',
   atlantaPayments: 'Atlanta Payments',
   atlantaPaymentsOwnOnly: 'Atlanta Payments (Own Records Only)',
+  payflowUser: 'Payflow user (submit & view own payment requests)',
+  salesTravelRequests: 'Sales Travel Request',
+  salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
   shipping: 'Shipping Control',
   importControl: 'Import Control',
   contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
@@ -76,16 +82,11 @@ const ADMIN_LABELS = {
   payflowUser: 'Payflow user (submit & view own payment requests)',
   salesTravelRequests: 'Sales Travel Request',
   salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
+  numbers: 'Numbers Directory',
+  auditLogs: 'Audit Logs',
+  shipping: 'Shipping Control',
+  importControl: 'Import Control',
 };
-
-// Opt-in modules: off unless an Admin explicitly grants them.
-const OPT_IN_KEYS = [
-  'atlantaPayments',
-  'atlantaPaymentsOwnOnly',
-  'payflowUser',
-  'salesTravelRequests',
-  'salesTravelRequestsOwnOnly',
-];
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
