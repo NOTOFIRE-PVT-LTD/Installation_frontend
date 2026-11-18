@@ -49,8 +49,9 @@ export async function openPnlApp({ setError, setBusy }) {
 export function openWorkspaceApp({ setBusy, setError }) {
   setError?.(null);
   setBusy('workspace');
-  // Land on Dashboard — not the old Workspace apps-grid /home page.
-  window.location.assign('/dashboard');
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+  // Absolute URL so /ws/dashboard always leaves /apps (nginx SPA-safe).
+  window.location.href = `${window.location.origin}${base}dashboard`;
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {

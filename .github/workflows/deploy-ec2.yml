@@ -5,9 +5,10 @@
 #   EC2_USER       e.g. ubuntu
 #   EC2_SSH_KEY    full private key PEM contents
 #   EC2_WEB_DIR    e.g. /var/www/workspace-web  (optional; default below)
-# Optional build secrets (override nginx path defaults):
-#   VITE_API_BASE_URL   default /ws-api
-#   VITE_PNL_PUBLIC_URL default /pnl
+# Optional build secrets (match live nginx: portal under /ws/, P&L at /):
+#   VITE_API_BASE_URL   default http://HOST/ws-api  (or /ws-api if same host)
+#   VITE_PNL_PUBLIC_URL default http://HOST         (P&L at site root on this EC2)
+#   VITE_BASE_PATH      default /ws/
 
 name: Deploy frontend to EC2
 
@@ -38,13 +39,15 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_PNL_PUBLIC_URL: ${{ secrets.VITE_PNL_PUBLIC_URL }}
+          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH }}
         run: |
-          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/ws-api}"
-          export VITE_PNL_PUBLIC_URL="${VITE_PNL_PUBLIC_URL:-/pnl}"
-          export VITE_BASE_PATH=/
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://13.201.19.145/ws-api}"
+          export VITE_PNL_PUBLIC_URL="${VITE_PNL_PUBLIC_URL:-http://13.201.19.145}"
+          export VITE_BASE_PATH="${VITE_BASE_PATH:-/ws/}"
           npm ci || npm install
           npm run build
           test -f dist/index.html
+          grep -q '/ws/assets/' dist/index.html
 
       - name: Resolve web dir
         id: dirs

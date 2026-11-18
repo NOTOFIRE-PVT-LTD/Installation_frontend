@@ -18,6 +18,7 @@ export function usePortalApps() {
   const { user } = useAppSelector((s) => s.auth);
   const { access, ready, error, setError } = usePortalAccess();
   const { menuOpen, setMenuOpen, menuRef } = usePortalMenu();
+  const [navOpen, setNavOpen] = useState(false);
   const [busy, setBusy] = useState(null);
   const [view, setView] = useState('home');
   const singleAppRedirected = useRef(false);
@@ -60,6 +61,8 @@ export function usePortalApps() {
     menuOpen,
     menuRef,
     setMenuOpen,
+    navOpen,
+    setNavOpen,
     view,
     setView,
     users: directory.users,

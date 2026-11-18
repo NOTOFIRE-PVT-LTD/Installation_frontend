@@ -11,81 +11,12 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import { ADMIN_TYPES, PERMISSION_KEYS, ROLES } from '../../utils/constants';
-
-const USER_PERMISSION_KEYS = [
-  'complaints',
-  'attendance',
-  'projects',
-  'reports',
-  'cadDrawing',
-  'customers',
-  'atlantaPayments',
-  'atlantaPaymentsOwnOnly',
-  'shipping',
-  'importControl',
-  'contractorAttendance',
-  'payflowUser',
-  'salesTravelRequests',
-  'salesTravelRequestsOwnOnly',
-];
-
-const USER_LABELS = {
-  complaints: 'Complaint Resolution (Field Engineer)',
-  attendance: 'Attendance (Field Sales / Visits)',
-  projects: 'Projects & Installation',
-  reports: 'Reports',
-  cadDrawing: 'CAD Drawings (inside Projects)',
-  customers: 'Customers Directory',
-  atlantaPayments: 'Atlanta Payments',
-  atlantaPaymentsOwnOnly: 'Atlanta Payments (Own Records Only)',
-  shipping: 'Shipping Control',
-  importControl: 'Import Control',
-  contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
-  payflowUser: 'Payflow user (submit & view own payment requests)',
-  salesTravelRequests: 'Sales Travel Request',
-  salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
-};
-
-const ADMIN_LABELS = {
-  complaints: 'Complaint Resolution (Admin / Coordinator)',
-  salespersonTracking: 'Attendance & Salesperson Tracking (Admin)',
-  contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
-  dashboard: 'Installation Dashboard',
-  users: 'User Management',
-  projects: 'Projects',
-  reports: 'Reports',
-  claimApprovals: 'Claim & Expense Approvals',
-  tenders: 'Tenders Management',
-  tenderWhatsappAlerts: 'Tender WhatsApp Alerts',
-  accounts: 'Accounts (BG Application)',
-  bgWhatsappAlerts: 'BG Deadline WhatsApp Alerts',
-  stockItems: 'Stock Items',
-  bom: 'BOM',
-  itemsMaster: 'Items Master',
-  billing: 'Billing',
-  quotations: 'Quotations',
-  quotationsOwnOnly: 'Quotation User (Own Records)',
-  proformaInvoices: 'Proforma Invoices',
-  deliveryChallans: 'Delivery Challans',
-  atlantaPayments: 'Atlanta Payments',
-  atlantaPaymentsOwnOnly: 'Atlanta Payments (Own Records Only)',
-  numbers: 'Numbers Directory',
-  auditLogs: 'Audit Logs',
-  shipping: 'Shipping Control',
-  importControl: 'Import Control',
-  payflow: 'Payflow (Vendors, Categories, Companies, Branches)',
-  payflowUser: 'Payflow user (submit & view own payment requests)',
-  salesTravelRequests: 'Sales Travel Request',
-  salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
-};
-
-const OPT_IN_KEYS = [
-  'atlantaPayments',
-  'atlantaPaymentsOwnOnly',
-  'payflowUser',
-  'salesTravelRequests',
-  'salesTravelRequestsOwnOnly',
-];
+import {
+  ADMIN_LABELS,
+  OPT_IN_KEYS,
+  USER_LABELS,
+  USER_PERMISSION_KEYS,
+} from './PermissionsDialogLabels';
 
 export default function PermissionsDialog({ open, user, onClose, onSubmit, submitting }) {
   const isAdmin = user?.role === ROLES.ADMIN;
@@ -100,41 +31,32 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
   const [values, setValues] = useState({});
 
   useEffect(() => {
-    if (open) {
-      setValues(
-        keys.reduce((acc, key) => {
-          if (!isAdmin) {
-            if (OPT_IN_KEYS.includes(key)) {
-              acc[key] = Boolean(user?.permissions?.[key]);
-            } else {
-              acc[key] = user?.permissions ? user.permissions[key] !== false : true;
-            }
-          } else if (key === 'complaints') {
-            acc[key] = isSuperAdmin ? true : Boolean(user?.permissions?.[key]);
-          } else {
+    if (!open) return;
+    setValues(
+      keys.reduce((acc, key) => {
+        if (!isAdmin) {
+          if (OPT_IN_KEYS.includes(key)) {
             acc[key] = Boolean(user?.permissions?.[key]);
+          } else {
+            acc[key] = user?.permissions ? user.permissions[key] !== false : true;
           }
-          return acc;
-        }, {})
-      );
-    }
+        } else if (key === 'complaints') {
+          acc[key] = isSuperAdmin ? true : Boolean(user?.permissions?.[key]);
+        } else {
+          acc[key] = Boolean(user?.permissions?.[key]);
+        }
+        return acc;
+      }, {})
+    );
   }, [open, user, isAdmin, isSuperAdmin, keys]);
 
   const handleCheckboxChange = (key, checked) => {
     setValues((prev) => {
       const next = { ...prev, [key]: checked };
-      if (key === 'atlantaPaymentsOwnOnly' && checked) {
-        next.atlantaPayments = true;
-      }
-      if (key === 'atlantaPayments' && !checked) {
-        next.atlantaPaymentsOwnOnly = false;
-      }
-      if (key === 'salesTravelRequestsOwnOnly' && checked) {
-        next.salesTravelRequests = true;
-      }
-      if (key === 'salesTravelRequests' && !checked) {
-        next.salesTravelRequestsOwnOnly = false;
-      }
+      if (key === 'atlantaPaymentsOwnOnly' && checked) next.atlantaPayments = true;
+      if (key === 'atlantaPayments' && !checked) next.atlantaPaymentsOwnOnly = false;
+      if (key === 'salesTravelRequestsOwnOnly' && checked) next.salesTravelRequests = true;
+      if (key === 'salesTravelRequests' && !checked) next.salesTravelRequestsOwnOnly = false;
       if (key === 'salespersonTracking') {
         next.customers = checked;
         next.attendance = checked;
@@ -181,12 +103,9 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
             ? 'Opt-in only — grant the modules for this Admin’s app. Leave other apps unchecked so access stays unmixed.'
             : 'Select workspace apps this User can access:'}
         </Typography>
-
         <FormGroup sx={{ gap: 0.5 }}>
           {keys.map((key) => {
-            const label = isAdmin
-              ? ADMIN_LABELS[key] || key
-              : USER_LABELS[key] || key;
+            const label = isAdmin ? ADMIN_LABELS[key] || key : USER_LABELS[key] || key;
             return (
               <FormControlLabel
                 key={key}
@@ -195,12 +114,7 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
                     checked={values[key] || false}
                     disabled={key === 'complaints' && isSuperAdmin}
                     onChange={(e) => handleCheckboxChange(key, e.target.checked)}
-                    sx={{
-                      color: '#D4A34E',
-                      '&.Mui-checked': {
-                        color: '#9E7432',
-                      },
-                    }}
+                    sx={{ color: '#D4A34E', '&.Mui-checked': { color: '#9E7432' } }}
                   />
                 }
                 label={
@@ -228,7 +142,11 @@ export default function PermissionsDialog({ open, user, onClose, onSubmit, submi
           onClick={() =>
             onSubmit(
               isAdmin
-                ? { ...values, customers: Boolean(values.salespersonTracking), attendance: Boolean(values.salespersonTracking) }
+                ? {
+                    ...values,
+                    customers: Boolean(values.salespersonTracking),
+                    attendance: Boolean(values.salespersonTracking),
+                  }
                 : values
             )
           }

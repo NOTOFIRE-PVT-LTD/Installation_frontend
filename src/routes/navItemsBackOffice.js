@@ -160,28 +160,4 @@ export const NAV_ITEMS_BACK_OFFICE = [
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#6366f1', bg: '#eef2ff' },
   },
-  {
-    label: 'Payflow',
-    path: '/payflow',
-    icon: faWallet,
-    permission: 'payflow',
-    roles: [ROLES.ADMIN],
-    accent: { color: '#2563eb', bg: '#eff6ff' },
-  },
-  {
-    label: 'Payment Requests',
-    path: '/payflow-requests',
-    icon: faWallet,
-    permission: 'payflowUser',
-    roles: [ROLES.ADMIN, ROLES.USER],
-    accent: { color: '#2563eb', bg: '#eff6ff' },
-  },
-  {
-    label: 'Sales Travel Request',
-    path: '/sales-travel-requests',
-    icon: faPlaneDeparture,
-    permission: 'salesTravelRequests',
-    roles: [ROLES.ADMIN, ROLES.USER],
-    accent: { color: '#0d6efd', bg: '#eff6ff' },
-  },
 ];

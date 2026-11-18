@@ -11,7 +11,7 @@ import {
   filterPortalUsers,
 } from './portalUsersHelpers';
 
-export default function PortalUsersPanel({ users, loading, error }) {
+export default function PortalUsersPanel({ users, loading, error, onGoHome }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -54,6 +54,11 @@ export default function PortalUsersPanel({ users, loading, error }) {
   return (
     <div className="central-users-page">
       <header className="central-users-page__head">
+        {onGoHome ? (
+          <button type="button" className="central-users__home" onClick={onGoHome}>
+            ← Apps home
+          </button>
+        ) : null}
         <p className="central-home__eyebrow">Directory</p>
         <h2 className="central-users__title">Users</h2>
         <p className="central-users__lead">

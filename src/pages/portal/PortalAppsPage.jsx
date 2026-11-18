@@ -9,7 +9,14 @@ import './centralPortal.css';
 function PortalMain({ p }) {
   if (p.view === 'profile') return <PortalProfilePanel />;
   if (p.view === 'users' && p.bothApps) {
-    return <PortalUsersPanel users={p.users} loading={p.usersLoading} error={p.usersError} />;
+    return (
+      <PortalUsersPanel
+        users={p.users}
+        loading={p.usersLoading}
+        error={p.usersError}
+        onGoHome={() => p.setView('home')}
+      />
+    );
   }
   return (
     <PortalAppsCards
@@ -35,22 +42,41 @@ export default function PortalAppsPage() {
         menuOpen={p.menuOpen}
         menuRef={p.menuRef}
         onToggleMenu={() => p.setMenuOpen((v) => !v)}
+        showNavToggle={p.bothApps}
+        onToggleNav={() => p.setNavOpen((v) => !v)}
         onProfile={p.goProfile}
         onLogout={p.onLogout}
       />
-      <div className="central-body">
+      <div className={`central-body${p.navOpen ? ' is-nav-open' : ''}`}>
         {p.bothApps ? (
           <PortalSidebar
             view={p.view}
-            setView={p.setView}
+            setView={(next) => {
+              p.setView(next);
+              p.setNavOpen(false);
+            }}
             access={p.access}
             bothApps={p.bothApps}
             busy={p.busy}
-            onOpenPnl={p.openPnl}
+            onOpenPnl={() => {
+              p.setNavOpen(false);
+              p.openPnl();
+            }}
             onPrefetchPnl={p.prefetchPnl}
-            onOpenWorkspace={p.openWorkspace}
+            onOpenWorkspace={() => {
+              p.setNavOpen(false);
+              p.openWorkspace();
+            }}
             usersLoading={p.usersLoading}
             userCount={p.users.length}
+          />
+        ) : null}
+        {p.navOpen ? (
+          <button
+            type="button"
+            className="central-nav-backdrop"
+            aria-label="Close menu"
+            onClick={() => p.setNavOpen(false)}
           />
         ) : null}
         <div className="central-main">
