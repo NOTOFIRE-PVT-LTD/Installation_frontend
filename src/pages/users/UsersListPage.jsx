@@ -354,12 +354,15 @@ export default function UsersListPage() {
   const [setPasswordUser, setSetPasswordUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchUsers(queryParams));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(queryParams)]);
+  // Workspace Users: only accounts with workspace portal grant (hide P&L-only).
+  const listParams = { ...queryParams, portalApp: 'workspace' };
 
-  const refresh = () => dispatch(fetchUsers(queryParams));
+  useEffect(() => {
+    dispatch(fetchUsers(listParams));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(listParams)]);
+
+  const refresh = () => dispatch(fetchUsers(listParams));
 
   const handleCreate = () => setDialogState({ open: true, mode: 'create', user: null });
   const handleEdit = (user) => setDialogState({ open: true, mode: 'edit', user });

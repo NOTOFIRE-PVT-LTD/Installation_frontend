@@ -302,7 +302,7 @@ export default function DataTable({
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <SearchIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                  <SearchIcon sx={{ color: 'primary.main', fontSize: 16, width: 16, height: 16 }} />
                 </InputAdornment>
               ),
             }}

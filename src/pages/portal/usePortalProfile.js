@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { changePassword, updateProfile } from '../../features/auth/authThunks';
 
@@ -19,6 +19,13 @@ export function usePortalProfile() {
   const [savingInfo, setSavingInfo] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
   const initial = (name || user?.email || 'U').trim().charAt(0).toUpperCase();
+
+  // Keep preview in sync after save/reload (e.g. photo removed → letter avatar).
+  useEffect(() => {
+    if (imageFile) return;
+    setPreview(user?.profileImage?.url || '');
+    setRemoveImage(false);
+  }, [user?.profileImage?.url, imageFile]);
 
   function onPickFile(e) {
     const file = e.target.files?.[0];
@@ -104,6 +111,7 @@ export function usePortalProfile() {
     confirmPwd,
     setConfirmPwd,
     preview,
+    removeImage,
     fileRef,
     onPickFile,
     onRemovePhoto,
