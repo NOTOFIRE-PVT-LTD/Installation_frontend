@@ -64,6 +64,20 @@ export default function RHFSelect({
             SelectProps={{
               ...SelectProps,
               multiple: isMultiple,
+              MenuProps: {
+                disablePortal: true,
+                PaperProps: {
+                  sx: {
+                    mt: 0.5,
+                    maxHeight: 340,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 8px 24px rgba(31, 42, 68, 0.16)',
+                  },
+                },
+                ...(searchable || onRemoveOption ? { autoFocus: false } : {}),
+                ...SelectProps?.MenuProps,
+              },
               ...(isMultiple
                 ? {
                     renderValue: (selected) => {
@@ -90,11 +104,6 @@ export default function RHFSelect({
                     onClose: (event) => {
                       setQuery('');
                       SelectProps?.onClose?.(event);
-                    },
-                    MenuProps: {
-                      autoFocus: false,
-                      PaperProps: { sx: { maxHeight: 340 } },
-                      ...SelectProps?.MenuProps,
                     },
                   }
                 : {}),

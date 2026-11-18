@@ -10,8 +10,33 @@ export const login = createAsyncThunk('auth/login', async (credentials, { reject
   }
 });
 
-export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
+export const loginWithOtp = createAsyncThunk('auth/loginWithOtp', async (payload, { rejectWithValue }) => {
   try {
+    const { data } = await authApi.loginWithOtp(payload);
+    return data.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Invalid or expired OTP');
+  }
+});
+
+export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { getState, dispatch, rejectWithValue }) => {
+  try {
+    if (!getState().auth.accessToken) {
+      // Skip cookie refresh on public auth screens — avoids noisy 401 on /login.
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const onPublicAuth =
+        path.endsWith('/login') ||
+        path.includes('/forgot-password') ||
+        path.includes('/reset-password') ||
+        path.includes('/central-sso');
+      if (onPublicAuth) return rejectWithValue('Not authenticated');
+      try {
+        const refreshed = await authApi.refresh();
+        dispatch({ type: 'auth/setCredentials', payload: refreshed.data.data });
+      } catch {
+        return rejectWithValue('Not authenticated');
+      }
+    }
     const { data } = await authApi.me();
     return data.data;
   } catch (err) {

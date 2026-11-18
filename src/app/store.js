@@ -1,6 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
 import usersReducer from '../features/users/usersSlice';
+import customersReducer from '../features/customers/customersSlice';
+import attendanceReducer from '../features/attendance/attendanceSlice';
 import projectsReducer from '../features/projects/projectsSlice';
 import reportsReducer from '../features/reports/reportsSlice';
 import paymentsReducer from '../features/payments/paymentsSlice';
@@ -25,6 +27,8 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     users: usersReducer,
+    customers: customersReducer,
+    attendance: attendanceReducer,
     projects: projectsReducer,
     reports: reportsReducer,
     payments: paymentsReducer,

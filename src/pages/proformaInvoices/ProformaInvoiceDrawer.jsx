@@ -59,7 +59,7 @@ const compactInput = {
 
 function Section({ title, action, children }) {
   return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.75 }}>
+    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', p: 1.75 }}>
       {(title || action) && (
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>{title}</Typography>
@@ -343,7 +343,7 @@ export default function ProformaInvoiceDrawer({ open, pi, initialValues, compani
                   </Button>
                 }
               >
-                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                   <Table size="small" sx={{ '& td, & th': { px: 0.75, fontSize: '0.75rem' } }}>
                     <TableHead>
                       <TableRow sx={{ bgcolor: 'grey.50' }}>
@@ -424,7 +424,7 @@ export default function ProformaInvoiceDrawer({ open, pi, initialValues, compani
                     </Stack>
                   </Grid>
                   <Grid item xs={12} sm={7}>
-                    <Box sx={{ bgcolor: 'grey.50', borderRadius: 1.5, px: 1.75, py: 1 }}>
+                    <Box sx={{ bgcolor: 'grey.50', borderRadius: '8px', px: 1.75, py: 1 }}>
                       <TotalRow label="Total (Excluding GST)" value={totals.totalExGst} />
                       <TotalRow label="Freight" value={totals.freight} />
                       <TotalRow label="Total Amount" value={totals.totalAmount} />

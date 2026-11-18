@@ -1,5 +1,16 @@
-import NotFoundPage from './NotFoundPage';
+import { useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { getDefaultLandingPath } from '../routes/routeConfig';
+import { goToCentralLogin } from '../utils/centralAuth';
 
 export default function ForbiddenPage() {
-  return <NotFoundPage code={403} message="You do not have permission to view this page" />;
+  const { isAuthenticated, user, permissions } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) goToCentralLogin();
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) return null;
+  return <Navigate to={getDefaultLandingPath(user, permissions)} replace />;
 }

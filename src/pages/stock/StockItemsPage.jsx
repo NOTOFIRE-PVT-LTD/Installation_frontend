@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -808,7 +808,7 @@ export default function StockItemsPage() {
         sx={{
           mb: 2,
           p: 2,
-          borderRadius: 2,
+          borderRadius: '8px',
           bgcolor: 'action.hover',
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
           fontSize: 13,

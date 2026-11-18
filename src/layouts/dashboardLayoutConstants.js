@@ -1,0 +1,3 @@
+export const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH_COLLAPSED = 76;
+export const DASHBOARD_TOOLBAR_OFFSET = 52;

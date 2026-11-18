@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,24 +10,23 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPen, faUserPlus, faMoneyBillWave, faPlaneDeparture } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPen, faUserPlus, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import RHFSelect from '../../components/common/FormFields/RHFSelect';
-import { ROLES, USER_STATUS } from '../../utils/constants';
+import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS, GENDER, APP_ACCESS_OPTIONS, ACCOUNT_LEVEL } from '../../utils/constants';
 import { formatDate } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
 
-const ROLE_OPTIONS = [
-  { value: ROLES.ADMIN, label: 'Admin' },
-  { value: ROLES.USER, label: 'User (Installer)' },
+const ACCOUNT_LEVEL_OPTIONS = [
+  { value: ACCOUNT_LEVEL.USER, label: 'User (Field Engineer / Salesperson)' },
+  { value: ACCOUNT_LEVEL.ADMIN, label: 'Admin' },
+  { value: ACCOUNT_LEVEL.SUPER_ADMIN, label: 'Super Admin' },
 ];
 
 const ROLE_STYLE = {
@@ -41,9 +40,20 @@ function buildSchema(isEdit) {
     email: yup.string().email('Enter a valid email').required('Email is required'),
     password: isEdit ? yup.string().notRequired() : yup.string().min(8, 'Must be at least 8 characters').required('Password is required'),
     mobileNumber: yup.string().required('Mobile number is required'),
-    role: yup.string().required('Role is required'),
+    gender: yup.string().oneOf([GENDER.MALE, GENDER.FEMALE]).required('Gender is required'),
+    accountLevel: yup.string().required('Select User, Admin, or Super Admin'),
+    appAccess: yup.string().when('accountLevel', {
+      is: ACCOUNT_LEVEL.USER,
+      then: (schema) => schema.required('Select an app'),
+      otherwise: (schema) => schema.required('Select an app'),
+    }),
   });
 }
+
+const GENDER_OPTIONS = [
+  { value: GENDER.MALE, label: 'Male (10:00–7:00 · 9 hours)' },
+  { value: GENDER.FEMALE, label: 'Female (10:00–6:30 · 8:30 hours)' },
+];
 
 function DetailRow({ icon, label, value }) {
   return (
@@ -64,7 +74,7 @@ function DetailRow({ icon, label, value }) {
           width: 28,
           height: 28,
           borderRadius: '7px',
-          bgcolor: '#eaf2ff',
+          bgcolor: '#FFE8EA',
           color: 'primary.main',
           display: 'flex',
           alignItems: 'center',
@@ -84,18 +94,45 @@ function DetailRow({ icon, label, value }) {
   );
 }
 
+function accountLevelFromUser(user) {
+  if (!user) return ACCOUNT_LEVEL.USER;
+  if (user.adminType === ADMIN_TYPES.SUPER_ADMIN) return ACCOUNT_LEVEL.SUPER_ADMIN;
+  if (user.appSuperAdmin) return ACCOUNT_LEVEL.SUPER_ADMIN;
+  if (user.role === ROLES.ADMIN) return ACCOUNT_LEVEL.ADMIN;
+  return ACCOUNT_LEVEL.USER;
+}
+
+function appAccessFromUser(user) {
+  if (user?.adminType === ADMIN_TYPES.SUPER_ADMIN) return 'ALL';
+  if (user?.adminType === ADMIN_TYPES.COMPLAINT_COORDINATOR || user?.permissions?.complaints) return 'complaints';
+  if (user?.adminType === ADMIN_TYPES.SALES_COORDINATOR || user?.jobRole === 'SALESPERSON') return 'attendance';
+  if (user?.adminType === ADMIN_TYPES.TENDER_COORDINATOR || user?.permissions?.tenders) return 'tenders';
+  if (user?.permissions?.projects) return 'projects';
+  if (user?.permissions?.billing) return 'billing';
+  if (user?.permissions?.accounts) return 'accounts';
+  if (user?.permissions?.inspections) return 'inspections';
+  if (user?.permissions?.financialDocuments) return 'financialDocuments';
+  if (user?.permissions?.atlantaPayments) return 'atlantaPayments';
+  return 'complaints';
+}
+
 export default function UserFormDrawer({ open, mode = 'create', user, onClose, onSubmit, submitting }) {
   const isEdit = mode === 'edit';
   const readOnly = mode === 'view';
-  const [imageFile, setImageFile] = useState(null);
+  const { isPlatformOwner, isSuperAdmin, permissions } = useAuth();
   const [imagePreview, setImagePreview] = useState('');
-  const [atlantaAccess, setAtlantaAccess] = useState('none');
-  const [payflowAccess, setPayflowAccess] = useState('none');
-  const [salesTravelAccess, setSalesTravelAccess] = useState('none');
 
   const methods = useForm({
     resolver: yupResolver(buildSchema(isEdit)),
-    defaultValues: { name: '', email: '', password: '', mobileNumber: '', role: ROLES.USER },
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      mobileNumber: '',
+      gender: GENDER.MALE,
+      accountLevel: ACCOUNT_LEVEL.USER,
+      appAccess: 'COMPLAINTS',
+    },
   });
 
   useEffect(() => {
@@ -105,69 +142,81 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
         email: user?.email || '',
         password: '',
         mobileNumber: user?.mobileNumber || '',
-        role: user?.role || ROLES.USER,
+        gender: user?.gender || GENDER.MALE,
+        accountLevel: accountLevelFromUser(user),
+        appAccess: user ? appAccessFromUser(user) : 'COMPLAINTS',
       });
       setImagePreview(user?.profileImage?.url || '');
-      setImageFile(null);
-      if (user?.permissions?.atlantaPayments) {
-        setAtlantaAccess(user?.permissions?.atlantaPaymentsOwnOnly ? 'own' : 'all');
-      } else {
-        setAtlantaAccess('none');
-      }
-      setPayflowAccess(user?.permissions?.payflowUser ? 'user' : 'none');
-      if (user?.permissions?.salesTravelRequests) {
-        setSalesTravelAccess(user?.permissions?.salesTravelRequestsOwnOnly ? 'own' : 'all');
-      } else {
-        setSalesTravelAccess('none');
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  };
+  const accountLevel = methods.watch('accountLevel');
+
+  const adminAppOptions = useMemo(() => {
+    const allowed =
+      isPlatformOwner || isSuperAdmin
+        ? APP_ACCESS_OPTIONS
+        : APP_ACCESS_OPTIONS.filter((opt) => permissions?.[opt.value]);
+    return allowed.length ? allowed : APP_ACCESS_OPTIONS.filter((opt) => opt.value === 'complaints');
+  }, [isPlatformOwner, isSuperAdmin, permissions]);
+
+  useEffect(() => {
+    const app = methods.getValues('appAccess');
+    if (accountLevel === ACCOUNT_LEVEL.USER && !['COMPLAINTS', 'ATTENDANCE', 'PROJECTS'].includes(app)) {
+      methods.setValue('appAccess', 'COMPLAINTS');
+      return;
+    }
+    if (accountLevel === ACCOUNT_LEVEL.USER) return;
+    if (accountLevel === ACCOUNT_LEVEL.SUPER_ADMIN && isPlatformOwner && app === 'ALL') return;
+    const mapped =
+      app === 'ATTENDANCE' ? 'attendance' : app === 'PROJECTS' ? 'projects' : app === 'COMPLAINTS' || app === 'ALL' ? 'complaints' : app;
+    const allowed = adminAppOptions.map((opt) => opt.value);
+    if (!allowed.includes(mapped)) {
+      methods.setValue('appAccess', allowed[0] || 'complaints');
+    } else if (mapped !== app) {
+      methods.setValue('appAccess', mapped);
+    }
+  }, [accountLevel, adminAppOptions, isPlatformOwner, methods]);
+
+  const appOptions =
+    accountLevel === ACCOUNT_LEVEL.SUPER_ADMIN && isPlatformOwner
+      ? [{ value: 'ALL', label: 'All Apps' }, ...APP_ACCESS_OPTIONS]
+      : accountLevel === ACCOUNT_LEVEL.USER
+        ? [
+            { value: 'COMPLAINTS', label: 'Complaint Resolution (Field Engineer)' },
+            { value: 'ATTENDANCE', label: 'Attendance System (Field Salesperson)' },
+            { value: 'PROJECTS', label: 'Projects & Installation (Site Installer)' },
+          ]
+        : adminAppOptions;
 
   const submit = (values) => {
     const formData = new FormData();
     formData.append('name', values.name);
     formData.append('mobileNumber', values.mobileNumber);
-    formData.append('role', values.role);
+    formData.append('gender', values.gender);
+    formData.append('accountLevel', values.accountLevel);
+    formData.append('appAccess', values.appAccess);
+    if (values.accountLevel === ACCOUNT_LEVEL.USER) {
+      formData.append('role', ROLES.USER);
+      const app = String(values.appAccess || 'COMPLAINTS').toUpperCase();
+      formData.append('appAccess', app);
+      formData.append('jobRole', app === 'ATTENDANCE' ? 'SALESPERSON' : 'INSTALLER');
+    } else {
+      formData.append('role', ROLES.ADMIN);
+    }
     if (!isEdit) {
       formData.append('email', values.email);
       formData.append('password', values.password);
     }
-    if (imageFile) formData.append('profileImage', imageFile);
-
-    const perms = {};
-    if (atlantaAccess !== 'none') {
-      perms.atlantaPayments = true;
-      perms.atlantaPaymentsOwnOnly = atlantaAccess === 'own';
-    } else if (isEdit) {
-      perms.atlantaPayments = false;
-      perms.atlantaPaymentsOwnOnly = false;
-    }
-    if (payflowAccess === 'user') {
-      perms.payflowUser = true;
-    } else if (isEdit) {
-      perms.payflowUser = false;
-    }
-    if (salesTravelAccess !== 'none') {
-      perms.salesTravelRequests = true;
-      perms.salesTravelRequestsOwnOnly = salesTravelAccess === 'own';
-    } else if (isEdit) {
-      perms.salesTravelRequests = false;
-      perms.salesTravelRequestsOwnOnly = false;
-    }
-    if (Object.keys(perms).length) formData.append('permissions', JSON.stringify(perms));
-
     onSubmit(formData);
   };
 
-  const titleMap = { create: 'Add User', edit: 'Edit User', view: 'User Details' };
+  const titleMap = {
+    create: user?.role === ROLES.ADMIN ? 'Add Admin / Coordinator' : 'Add Salesperson / User',
+    edit: user?.role === ROLES.ADMIN ? 'Edit Admin / Coordinator' : 'Edit User',
+    view: 'User Details',
+  };
   const iconMap = { create: faUserPlus, edit: faUserPen, view: faUser };
   const roleStyle = ROLE_STYLE[user?.role] || { color: '#64748b', bg: '#f1f5f9' };
   const isActive = user?.status === USER_STATUS.ACTIVE;
@@ -177,6 +226,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
       anchor="right"
       open={open}
       onClose={onClose}
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
       PaperProps={{
         sx: {
           borderRadius: 0,
@@ -190,7 +240,7 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
             px: 2,
             pt: 2,
             pb: readOnly ? 0 : 1.5,
-            background: 'linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)',
+            background: 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
             borderBottom: readOnly ? 'none' : '1px solid',
             borderColor: 'divider',
           }}
@@ -273,7 +323,15 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
             <Stack spacing={1}>
               <DetailRow icon={<EmailOutlinedIcon sx={{ fontSize: 15 }} />} label="Email" value={user?.email} />
               <DetailRow icon={<PhoneOutlinedIcon sx={{ fontSize: 15 }} />} label="Mobile" value={user?.mobileNumber} />
+              <DetailRow icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />} label="Gender" value={user?.gender || '—'} />
               <DetailRow icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />} label="Role" value={user?.role} />
+              {user?.adminType && (
+                <DetailRow
+                  icon={<BadgeOutlinedIcon sx={{ fontSize: 15 }} />}
+                  label="Admin type"
+                  value={ADMIN_TYPE_LABELS[user.adminType] || user.adminType}
+                />
+              )}
               <DetailRow
                 icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
                 label="Atlanta Payments"
@@ -286,22 +344,6 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
                 }
               />
               <DetailRow
-                icon={<FontAwesomeIcon icon={faMoneyBillWave} style={{ fontSize: 13 }} />}
-                label="Payflow"
-                value={user?.permissions?.payflowUser ? 'Payflow User (Own requests)' : 'No Access'}
-              />
-              <DetailRow
-                icon={<FontAwesomeIcon icon={faPlaneDeparture} style={{ fontSize: 13 }} />}
-                label="Sales Travel Request"
-                value={
-                  user?.permissions?.salesTravelRequests
-                    ? user?.permissions?.salesTravelRequestsOwnOnly
-                      ? 'User Flow (Own requests)'
-                      : 'Admin Flow (All requests)'
-                    : 'No Access'
-                }
-              />
-              <DetailRow
                 icon={<CalendarMonthOutlinedIcon sx={{ fontSize: 15 }} />}
                 label="Created"
                 value={user?.createdAt ? formatDate(user.createdAt) : '—'}
@@ -310,136 +352,21 @@ export default function UserFormDrawer({ open, mode = 'create', user, onClose, o
           ) : (
             <FormProvider {...methods}>
               <Stack component="form" id="user-form" spacing={2} onSubmit={methods.handleSubmit(submit)}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Avatar
-                    src={imagePreview}
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      bgcolor: '#ede9fe',
-                      color: '#7c3aed',
-                      fontWeight: 700,
-                      border: '2px solid #f3e8ff',
-                    }}
-                  >
-                    {(methods.watch('name') || 'U')[0]?.toUpperCase()}
-                  </Avatar>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    size="small"
-                    sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary' }}
-                  >
-                    Upload Photo
-                    <input type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} />
-                  </Button>
-                </Stack>
                 <RHFTextField name="name" label="Name" />
                 <RHFTextField name="email" label="Email" disabled={isEdit} />
                 {!isEdit && <RHFTextField name="password" label="Password" type="password" />}
                 <RHFTextField name="mobileNumber" label="Mobile Number" />
-                <RHFSelect name="role" label="Role" options={ROLE_OPTIONS} />
-
-                <Box
-                  sx={{
-                    p: 1.75,
-                    borderRadius: '10px',
-                    bgcolor: '#fbfbfe',
-                    border: '1px solid',
-                    borderColor: '#e9e8f4',
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
-                    Atlanta Payments Access
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
-                    Configure whether this user can view Atlanta Payments records.
-                  </Typography>
-                  <FormControl fullWidth size="small">
-                    <Select
-                      value={atlantaAccess}
-                      onChange={(e) => setAtlantaAccess(e.target.value)}
-                      sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
-                    >
-                      <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
-                        No Access
-                      </MenuItem>
-                      <MenuItem value="own" sx={{ fontSize: '0.8125rem' }}>
-                        User Flow (Own Records Only)
-                      </MenuItem>
-                      <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>
-                        Admin Flow (All Records)
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-
-                {(
-                  <Box
-                    sx={{
-                      p: 1.75,
-                      borderRadius: '10px',
-                      bgcolor: '#fbfbfe',
-                      border: '1px solid',
-                      borderColor: '#e9e8f4',
-                    }}
-                  >
-                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
-                      Payflow Access
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
-                      Payflow users can submit payment requests and see only their own. Admins see all requests.
-                    </Typography>
-                    <FormControl fullWidth size="small">
-                      <Select
-                        value={payflowAccess}
-                        onChange={(e) => setPayflowAccess(e.target.value)}
-                        sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
-                      >
-                        <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
-                          No Access
-                        </MenuItem>
-                        <MenuItem value="user" sx={{ fontSize: '0.8125rem' }}>
-                          Payflow User (Submit & view own requests)
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Box>
-                )}
-
-                <Box
-                  sx={{
-                    p: 1.75,
-                    borderRadius: '10px',
-                    bgcolor: '#fbfbfe',
-                    border: '1px solid',
-                    borderColor: '#e9e8f4',
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: 'text.primary', mb: 0.35 }}>
-                    Sales Travel Request Access
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.725rem', color: 'text.secondary', mb: 1.25 }}>
-                    Users can create and view their own travel requests. Admins can view and manage all travel requests.
-                  </Typography>
-                  <FormControl fullWidth size="small">
-                    <Select
-                      value={salesTravelAccess}
-                      onChange={(e) => setSalesTravelAccess(e.target.value)}
-                      sx={{ bgcolor: '#fff', fontSize: '0.8125rem', borderRadius: '8px' }}
-                    >
-                      <MenuItem value="none" sx={{ fontSize: '0.8125rem' }}>
-                        No Access
-                      </MenuItem>
-                      <MenuItem value="own" sx={{ fontSize: '0.8125rem' }}>
-                        User Flow (Own Requests Only)
-                      </MenuItem>
-                      <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>
-                        Admin Flow (All Requests)
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
+                <RHFSelect name="gender" label="Gender" options={GENDER_OPTIONS} />
+                <RHFSelect
+                  name="accountLevel"
+                  label="Access"
+                  options={
+                    isSuperAdmin
+                      ? ACCOUNT_LEVEL_OPTIONS
+                      : ACCOUNT_LEVEL_OPTIONS.filter((opt) => opt.value !== ACCOUNT_LEVEL.SUPER_ADMIN)
+                  }
+                />
+                <RHFSelect name="appAccess" label="App" options={appOptions} />
               </Stack>
             </FormProvider>
           )}

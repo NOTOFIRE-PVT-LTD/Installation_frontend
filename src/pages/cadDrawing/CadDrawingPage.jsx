@@ -165,7 +165,7 @@ export default function CadDrawingPage() {
             textAlign: 'center',
             border: '1px dashed',
             borderColor: 'divider',
-            borderRadius: '10px',
+            borderRadius: '8px',
             bgcolor: '#fff',
           }}
         >
@@ -193,7 +193,7 @@ export default function CadDrawingPage() {
             mt: 2,
             px: 1.5,
             py: 1.25,
-            borderRadius: '10px',
+            borderRadius: '8px',
             border: '1px solid',
             borderColor: 'divider',
             bgcolor: '#fff',
