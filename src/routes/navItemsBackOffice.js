@@ -18,10 +18,6 @@ import {
   faClockRotateLeft,
   faTruck,
   faWallet,
-<<<<<<< HEAD
-=======
-  faPlaneDeparture,
->>>>>>> 95ad65b104f132308b8a67f2ff9430f343688917
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
 
@@ -98,30 +94,6 @@ export const NAV_ITEMS_BACK_OFFICE = [
     permission: 'atlantaPayments',
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#dc2626', bg: '#fef2f2' },
-  },
-  {
-    label: 'Payflow',
-    path: '/payflow',
-    icon: faWallet,
-    permission: 'payflow',
-    roles: [ROLES.ADMIN],
-    accent: { color: '#2563eb', bg: '#eff6ff' },
-  },
-  {
-    label: 'Payment Requests',
-    path: '/payflow-requests',
-    icon: faWallet,
-    permission: 'payflowUser',
-    roles: [ROLES.ADMIN, ROLES.USER],
-    accent: { color: '#2563eb', bg: '#eff6ff' },
-  },
-  {
-    label: 'Sales Travel Request',
-    path: '/sales-travel-requests',
-    icon: faPlaneDeparture,
-    permission: 'salesTravelRequests',
-    roles: [ROLES.ADMIN, ROLES.USER],
-    accent: { color: '#0d6efd', bg: '#eff6ff' },
   },
   {
     label: 'Items Master',
