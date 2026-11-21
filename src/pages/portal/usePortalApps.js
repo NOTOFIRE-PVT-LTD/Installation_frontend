@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { logout } from '../../features/auth/authThunks';
 import { usePortalAccess } from './usePortalAccess';
@@ -21,29 +21,32 @@ export function usePortalApps() {
   const [navOpen, setNavOpen] = useState(false);
   const [busy, setBusy] = useState(null);
   const [view, setView] = useState('home');
-  const singleAppRedirected = useRef(false);
   const bothApps = Boolean(access.pnl && access.workspace);
   const directory = usePortalDirectory(bothApps);
 
+  // Only unlock after Back/bfcache — not on every pageshow (that cancelled P&L navigation).
   useEffect(() => {
-    if (!ready || !access.pnl) return undefined;
-    warmPnlApp();
-    // Prefetch SSO URL immediately so the first P&L click can navigate without waiting.
-    prefetchPnlUrl().catch(() => {});
-    return undefined;
-  }, [ready, access.pnl]);
+    const unlock = (e) => {
+      if (e?.persisted) setBusy(null);
+    };
+    window.addEventListener('pageshow', unlock);
+    return () => window.removeEventListener('pageshow', unlock);
+  }, []);
 
   useEffect(() => {
-    if (!ready || busy || singleAppRedirected.current) return;
+    if (!ready || !access.pnl || !bothApps) return undefined;
+    warmPnlApp();
+    prefetchPnlUrl().catch(() => {});
+    return undefined;
+  }, [ready, access.pnl, bothApps]);
+
+  // Single-app users never see the chooser (login + browser Back to /apps).
+  useEffect(() => {
+    if (!ready || busy || bothApps) return;
     const kind = resolvePortalLanding(access);
-    if (kind === 'pnl') {
-      singleAppRedirected.current = true;
-      openPnlApp({ setError, setBusy });
-    } else if (kind === 'workspace') {
-      singleAppRedirected.current = true;
-      openWorkspaceApp({ setBusy, setError });
-    }
-  }, [ready, access, busy, setError]);
+    if (kind === 'pnl') openPnlApp({ setError, setBusy });
+    else if (kind === 'workspace') openWorkspaceApp({ setBusy, setError });
+  }, [ready, access, busy, bothApps, setError]);
 
   const email = user?.email || '';
   const name = user?.name || email;

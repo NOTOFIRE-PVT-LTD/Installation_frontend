@@ -1,4 +1,4 @@
-﻿/* Centralisation shell — Workspace Valuecon theme (P&L plant UI stays separate) */
+/* Centralisation shell — Workspace Valuecon theme (P&L plant UI stays separate) */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap");
 
 html:has(.central-shell),
@@ -849,6 +849,38 @@ body:has(.central-shell) {
   align-items: center;
   gap: 0.65rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.central-users-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(212, 163, 78, 0.12);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--c-card-border);
+}
+
+.central-users-tab {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-brown-light);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.central-users-tab.is-active {
+  background: linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%);
+  color: #3A230B;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(88, 55, 20, 0.25);
 }
 
 .central-users-search {
@@ -867,6 +899,13 @@ body:has(.central-shell) {
   color: var(--c-text);
   background: #fff;
   box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.central-users-search input:focus {
+  border-color: #D4A34E;
+  box-shadow: 0 0 0 3px rgba(212, 163, 78, 0.25);
 }
 
 .central-users-search__icon {

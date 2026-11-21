@@ -33,6 +33,15 @@ function PortalMain({ p }) {
 export default function PortalAppsPage() {
   const p = usePortalApps();
 
+  // Hide chooser until access is known; single-app users redirect away (no flash).
+  if (!p.ready || !p.bothApps) {
+    return (
+      <div className="central-shell central-shell--redirect">
+        <p className="central-home__lede">Opening your app…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="central-shell">
       <PortalAppsNav
@@ -48,29 +57,27 @@ export default function PortalAppsPage() {
         onLogout={p.onLogout}
       />
       <div className={`central-body${p.navOpen ? ' is-nav-open' : ''}`}>
-        {p.bothApps ? (
-          <PortalSidebar
-            view={p.view}
-            setView={(next) => {
-              p.setView(next);
-              p.setNavOpen(false);
-            }}
-            access={p.access}
-            bothApps={p.bothApps}
-            busy={p.busy}
-            onOpenPnl={() => {
-              p.setNavOpen(false);
-              p.openPnl();
-            }}
-            onPrefetchPnl={p.prefetchPnl}
-            onOpenWorkspace={() => {
-              p.setNavOpen(false);
-              p.openWorkspace();
-            }}
-            usersLoading={p.usersLoading}
-            userCount={p.users.length}
-          />
-        ) : null}
+        <PortalSidebar
+          view={p.view}
+          setView={(next) => {
+            p.setView(next);
+            p.setNavOpen(false);
+          }}
+          access={p.access}
+          bothApps={p.bothApps}
+          busy={p.busy}
+          onOpenPnl={() => {
+            p.setNavOpen(false);
+            p.openPnl();
+          }}
+          onPrefetchPnl={p.prefetchPnl}
+          onOpenWorkspace={() => {
+            p.setNavOpen(false);
+            p.openWorkspace();
+          }}
+          usersLoading={p.usersLoading}
+          userCount={p.users.length}
+        />
         {p.navOpen ? (
           <button
             type="button"

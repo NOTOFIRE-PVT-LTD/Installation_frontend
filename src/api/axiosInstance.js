@@ -35,9 +35,16 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config || {};
     const status = error.response?.status;
-    const skipRefresh = NO_REFRESH_PATHS.some((path) => originalRequest.url?.includes(path));
+    const isLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+    const hasToken = Boolean(store?.getState()?.auth?.accessToken);
+    const skipRefresh = NO_REFRESH_PATHS.some((path) => originalRequest.url?.includes(path)) ||
+      (isLoginPage && !hasToken);
 
     if (status === 401 && !originalRequest._retry && !skipRefresh) {
+      // Impersonation uses a one-off access token; cookie refresh would restore the admin.
+      if (store?.getState()?.auth?.impersonatorAdmin) {
+        return Promise.reject(error);
+      }
       originalRequest._retry = true;
       try {
         if (!refreshPromise) {

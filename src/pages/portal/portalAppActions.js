@@ -1,5 +1,6 @@
 import { portalApi } from '../../api/portalApi';
 import { goToFullPortalLogout } from '../../utils/centralAuth';
+import { clearPortalAccessCache } from './usePortalAccess';
 
 const PNL_ORIGIN = (import.meta.env.VITE_PNL_PUBLIC_URL || 'http://localhost:3000').replace(/\/$/, '');
 
@@ -32,16 +33,18 @@ export async function openPnlApp({ setError, setBusy }) {
   setError(null);
   setBusy('pnl');
   try {
-    // Reuse warm prefetch when still valid; otherwise mint in parallel with navigation intent.
-    const url =
-      pnlPrefetch && pnlPrefetch.until > Date.now()
-        ? pnlPrefetch.url
-        : await prefetchPnlUrl();
+    // Always mint a fresh SSO URL — reused prefetch breaks after Back/bfcache.
     pnlPrefetch = null;
-    // Full page load into Next — keep P&L (npm run dev / build) already running for speed.
+    const url = await prefetchPnlUrl();
+    if (!url) throw new Error('missing url');
+    pnlPrefetch = null;
     window.location.href = url;
-  } catch {
-    setError('Could not open P&L — is the P&L app running?');
+  } catch (err) {
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Could not open P&L — is the P&L app running?';
+    setError(msg);
     setBusy(null);
   }
 }
@@ -49,12 +52,16 @@ export async function openPnlApp({ setError, setBusy }) {
 export function openWorkspaceApp({ setBusy, setError }) {
   setError?.(null);
   setBusy('workspace');
-  const base = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
-  // Absolute URL so /ws/dashboard always leaves /apps (nginx SPA-safe).
-  window.location.href = `${window.location.origin}${base}dashboard`;
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  // Prefer live /ws/ so a build without VITE_BASE_PATH still leaves /apps on EC2.
+  const base = path.startsWith('/ws')
+    ? '/ws/'
+    : (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+  window.location.assign(`${window.location.origin}${base}dashboard`);
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {
+  clearPortalAccessCache();
   await dispatch(logoutThunk());
   goToFullPortalLogout();
 }

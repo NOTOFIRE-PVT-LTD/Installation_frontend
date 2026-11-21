@@ -261,6 +261,24 @@
   box-shadow: var(--teal-fill-shadow);
 }
 
+.login-form-card .alert {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert--error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .login-otp-hint {
   margin: 0;
   font-size: 0.88rem;
@@ -663,7 +681,9 @@
   }
 
   .login-form-card .alert {
-    margin: 0 0 0.65rem;
+    margin: 0 0 0.85rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
   }
 
   /* WhatsApp + Email: tight natural gaps (no stretch / space-between). */

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -179,12 +179,12 @@ function getUserAppAccess(row) {
 const COLUMNS = [
   {
     field: 'profileImage',
-    headerName: 'Photo',
+    headerName: '',
     sortable: false,
     filterable: false,
-    width: 56,
-    minWidth: 56,
-    maxWidth: 56,
+    width: 48,
+    minWidth: 48,
+    maxWidth: 48,
     disableColumnMenu: true,
     renderCell: (params) => {
       const color = avatarColor(params.row.name);
@@ -240,7 +240,7 @@ const COLUMNS = [
       </Typography>
     ),
   },
-    {
+  {
     field: 'role',
     headerName: 'Role / Designation',
     width: 170,
@@ -340,13 +340,42 @@ const COLUMNS = [
   },
 ];
 
+function filterAppOptionForActor(key, user, permissions) {
+  if (key === 'complaints') return user?.adminType === 'COMPLAINT_COORDINATOR' || Boolean(permissions?.complaints);
+  if (key === 'attendance') return user?.adminType === 'SALES_COORDINATOR' || Boolean(permissions?.attendance || permissions?.salespersonTracking);
+  if (key === 'tenders') return user?.adminType === 'TENDER_COORDINATOR' || Boolean(permissions?.tenders);
+  return Boolean(permissions?.[key]);
+}
+
 export default function UsersListPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user: currentUser, isPlatformOwner } = useAuth();
+  const { user: currentUser, isPlatformOwner, isSuperAdmin, permissions } = useAuth();
   const { items, total, status } = useAppSelector((state) => state.users);
   const { page, pageSize, search, sortField, sortOrder, filters, setPage, setPageSize, setSearch, setSort, setFilter, queryParams } =
     useTableQueryParams({ filterKeys: ['role', 'status', 'apps'] });
+
+  const appFilterOptions = useMemo(() => {
+    const all = [
+      { value: 'complaints', label: 'Complaint Resolution' },
+      { value: 'attendance', label: 'Attendance & Visits' },
+      { value: 'contractorAttendance', label: 'Contractor Attendance' },
+      { value: 'projects', label: 'Projects' },
+      { value: 'tenders', label: 'Tenders' },
+      { value: 'billing', label: 'Billing' },
+      { value: 'financialDocuments', label: 'Finance Docs' },
+      { value: 'inspections', label: 'Inspections' },
+      { value: 'accounts', label: 'Accounts' },
+      { value: 'atlantaPayments', label: 'Atlanta Payments' },
+      { value: 'payflow', label: 'Payflow' },
+      { value: 'payflowUser', label: 'Payment Requests' },
+      { value: 'salesTravelRequests', label: 'Sales Travel Request' },
+      { value: 'shipping', label: 'Shipping Control' },
+      { value: 'importControl', label: 'Import Control' },
+    ];
+    if (isSuperAdmin || isPlatformOwner) return all;
+    return all.filter((opt) => filterAppOptionForActor(opt.value, currentUser, permissions));
+  }, [currentUser, isPlatformOwner, isSuperAdmin, permissions]);
 
   const [dialogState, setDialogState] = useState({ open: false, mode: 'create', user: null });
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -354,15 +383,12 @@ export default function UsersListPage() {
   const [setPasswordUser, setSetPasswordUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Workspace Users: only accounts with workspace portal grant (hide P&L-only).
-  const listParams = { ...queryParams, portalApp: 'workspace' };
-
   useEffect(() => {
-    dispatch(fetchUsers(listParams));
+    dispatch(fetchUsers(queryParams));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(listParams)]);
+  }, [JSON.stringify(queryParams)]);
 
-  const refresh = () => dispatch(fetchUsers(listParams));
+  const refresh = () => dispatch(fetchUsers(queryParams));
 
   const handleCreate = () => setDialogState({ open: true, mode: 'create', user: null });
   const handleEdit = (user) => setDialogState({ open: true, mode: 'edit', user });
@@ -449,28 +475,28 @@ export default function UsersListPage() {
   const columnsWithStatusToggle = COLUMNS.map((col) =>
     col.field === 'status'
       ? {
-          ...col,
-          renderCell: (params) => {
-            const active = params.value === USER_STATUS.ACTIVE;
-            return (
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <Switch size="small" checked={active} onChange={() => handleToggleStatus(params.row)} />
-                <Chip
-                  size="small"
-                  label={active ? 'Active' : 'Inactive'}
-                  sx={{
-                    height: 20,
-                    fontWeight: 600,
-                    bgcolor: active ? '#ecfdf5' : '#f1f5f9',
-                    color: active ? '#059669' : '#64748b',
-                    border: 'none',
-                    '& .MuiChip-label': { px: 0.75, fontSize: '0.625rem' },
-                  }}
-                />
-              </Stack>
-            );
-          },
-        }
+        ...col,
+        renderCell: (params) => {
+          const active = params.value === USER_STATUS.ACTIVE;
+          return (
+            <Stack direction="row" alignItems="center" spacing={0.75}>
+              <Switch size="small" checked={active} onChange={() => handleToggleStatus(params.row)} />
+              <Chip
+                size="small"
+                label={active ? 'Active' : 'Inactive'}
+                sx={{
+                  height: 20,
+                  fontWeight: 600,
+                  bgcolor: active ? '#ecfdf5' : '#f1f5f9',
+                  color: active ? '#059669' : '#64748b',
+                  border: 'none',
+                  '& .MuiChip-label': { px: 0.75, fontSize: '0.625rem' },
+                }}
+              />
+            </Stack>
+          );
+        },
+      }
       : col
   );
 
@@ -532,28 +558,6 @@ export default function UsersListPage() {
           </Stack>
         }
         subtitle="Manage admins and installers"
-        actions={
-          <Button
-            startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-            variant="contained"
-            onClick={handleCreate}
-            sx={{
-              background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
-              color: '#3A230B',
-              borderRadius: '10px',
-              fontWeight: 800,
-              textTransform: 'none',
-              px: { xs: 1.5, sm: 2.5 },
-              minHeight: 36,
-              boxShadow: '0 2px 8px rgba(88, 55, 20, 0.2)',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
-              },
-            }}
-          >
-            + Add User
-          </Button>
-        }
       />
 
       <DataTable
@@ -569,26 +573,57 @@ export default function UsersListPage() {
         searchValue={search}
         onSearchChange={setSearch}
         toolbarStart={
-          <TextField
-            select
-            size="small"
-            label="Staff"
-            value={filters.role || ''}
-            onChange={(e) => setFilter('role', e.target.value)}
-            sx={{
-              minWidth: 210,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#FFFDF8',
-                borderRadius: '10px',
-                '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
-              },
-            }}
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ width: { xs: '100%', md: 'auto' } }}
           >
-            <MenuItem value="">All Staff</MenuItem>
-            <MenuItem value={ADMIN_TYPES.SUPER_ADMIN}>Super Admins</MenuItem>
-            <MenuItem value={ROLES.USER}>Salespeople & Field Staff</MenuItem>
-            <MenuItem value={ROLES.ADMIN}>Admins & Coordinators</MenuItem>
-          </TextField>
+            <Button
+              startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+              variant="contained"
+              onClick={handleCreate}
+              sx={{
+                flex: { xs: 1, md: '0 0 auto' },
+                background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
+                color: '#3A230B',
+                borderRadius: '10px',
+                fontWeight: 800,
+                textTransform: 'none',
+                px: { xs: 1.5, sm: 2 },
+                minHeight: 38,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(88, 55, 20, 0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
+                },
+              }}
+            >
+              Add User
+            </Button>
+            <TextField
+              select
+              size="small"
+              label="Staff"
+              value={filters.role || ''}
+              onChange={(e) => setFilter('role', e.target.value)}
+              sx={{
+                flex: { xs: 1, md: '0 0 auto' },
+                minWidth: { xs: 110, md: 180 },
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFDF8',
+                  borderRadius: '10px',
+                  minHeight: 38,
+                  '& fieldset': { borderColor: 'rgba(212, 163, 78, 0.4)' },
+                },
+              }}
+            >
+              <MenuItem value="">All Staff</MenuItem>
+              <MenuItem value={ADMIN_TYPES.SUPER_ADMIN}>Super Admins</MenuItem>
+              <MenuItem value={ROLES.USER}>Salespeople & Field Staff</MenuItem>
+              <MenuItem value={ROLES.ADMIN}>Admins & Coordinators</MenuItem>
+            </TextField>
+          </Stack>
         }
         filters={[
           {
@@ -605,17 +640,7 @@ export default function UsersListPage() {
             field: 'apps',
             label: 'Apps',
             multiple: true,
-            options: [
-              { value: 'complaints', label: 'Complaint Resolution' },
-              { value: 'attendance', label: 'Attendance & Visits' },
-              { value: 'projects', label: 'Projects' },
-              { value: 'tenders', label: 'Tenders' },
-              { value: 'billing', label: 'Billing' },
-              { value: 'financialDocuments', label: 'Finance Docs' },
-              { value: 'inspections', label: 'Inspections' },
-              { value: 'accounts', label: 'Accounts' },
-              { value: 'atlantaPayments', label: 'Atlanta Payments' },
-            ],
+            options: appFilterOptions,
           },
         ]}
         filterValues={filters}
