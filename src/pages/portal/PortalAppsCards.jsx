@@ -5,14 +5,13 @@ export default function PortalAppsCards({
   onOpenPnl,
   onPrefetchPnl,
   onOpenWorkspace,
-  onOpenLeadTrack,
 }) {
   return (
     <main className="central-home">
       <p className="central-home__eyebrow">Valuecon</p>
       <h2 className="central-home__title">All your apps. One place.</h2>
       <p className="central-home__lead">
-        Valuecon Centralisation — open P&amp;L, Workspace, or LeadTrack below. One login. No second sign-in.
+        Valuecon Centralisation — open P&amp;L or Workspace below. LeadTrack lives inside Workspace.
       </p>
       <p className="central-home__sub">Plant numbers. Field work. Connected.</p>
       <div className="central-home__apps">
@@ -35,17 +34,6 @@ export default function PortalAppsCards({
             <span className="central-home__app-hint">{busy === 'workspace' ? '…' : 'Open'}</span>
           </button>
         ) : null}
-        <button
-          type="button"
-          className="central-home__app-btn"
-          disabled={busy !== null}
-          onClick={onOpenLeadTrack}
-        >
-          <span>LeadTrack</span>
-          <span className="central-home__app-hint">
-            {busy === 'leadtrack' ? '…' : 'Open'}
-          </span>
-        </button>
       </div>
       {error ? <p className="portal-error">{error}</p> : null}
     </main>

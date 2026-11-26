@@ -21,6 +21,7 @@ import ContractorAttendancePage from '../pages/contractorAttendance/ContractorAt
 import PayflowPage from '../pages/payflow/PayflowPage';
 import PayflowUserPage from '../pages/payflow/PayflowUserPage';
 import SalesTravelRequestsPage from '../pages/salesTravelRequests/SalesTravelRequestsPage';
+import LeadTrackWorkspacePage from '../pages/leadTrack/LeadTrackWorkspacePage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import ForbiddenPage from '../pages/ForbiddenPage';
 import { ROLES } from '../utils/constants';
@@ -222,6 +223,14 @@ export const backOfficeRouteNodes = (
       element={
         <PermissionGate permission="salesTravelRequests" roles={[ROLES.USER]}>
           <SalesTravelRequestsPage />
+        </PermissionGate>
+      }
+    />
+    <Route
+      path="/lead-track"
+      element={
+        <PermissionGate permission={null} roles={[ROLES.ADMIN, ROLES.USER]}>
+          <LeadTrackWorkspacePage />
         </PermissionGate>
       }
     />

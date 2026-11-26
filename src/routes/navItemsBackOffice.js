@@ -17,6 +17,7 @@ import {
   faReceipt,
   faClockRotateLeft,
   faTruck,
+  faUserTag,
   faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
@@ -159,5 +160,39 @@ export const NAV_ITEMS_BACK_OFFICE = [
     userPermission: 'complaints',
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#6366f1', bg: '#eef2ff' },
+  },
+  {
+    label: 'Payflow',
+    path: '/payflow',
+    icon: faWallet,
+    permission: 'payflow',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#059669', bg: '#ecfdf5' },
+  },
+  {
+    label: 'Payment Requests',
+    path: '/payflow-requests',
+    icon: faMoneyBillWave,
+    permission: 'payflowUser',
+    userPermission: 'payflowUser',
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#10b981', bg: '#d1fae5' },
+  },
+  {
+    label: 'Sales Travel Request',
+    path: '/sales-travel-requests',
+    icon: faPlaneDeparture,
+    permission: 'salesTravelRequests',
+    userPermission: 'salesTravelRequests',
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#6366f1', bg: '#eef2ff' },
+  },
+  {
+    label: 'LeadTrack',
+    path: '/lead-track',
+    icon: faUserTag,
+    permission: null,
+    roles: [ROLES.ADMIN, ROLES.USER],
+    accent: { color: '#563310', bg: '#FAE2B4' },
   },
 ];
