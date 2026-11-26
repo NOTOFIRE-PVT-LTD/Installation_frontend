@@ -9,6 +9,7 @@ export default function PortalSidebar({
   onOpenPnl,
   onPrefetchPnl,
   onOpenWorkspace,
+  onOpenLeadTrack,
   usersLoading,
   userCount,
 }) {
@@ -56,6 +57,22 @@ export default function PortalSidebar({
             <span>Workspace</span>
           </span>
           <span className="central-side-hint">{busy === 'workspace' ? '…' : 'Open'}</span>
+        </button>
+      ) : null}
+      {onOpenLeadTrack ? (
+        <button
+          type="button"
+          className="central-side-btn"
+          onClick={onOpenLeadTrack}
+          disabled={busy !== null}
+        >
+          <span className="central-side-btn__left">
+            <AppsIcon />
+            <span>LeadTrack</span>
+          </span>
+          <span className="central-side-hint">
+            {busy === 'leadtrack' ? '…' : 'Open'}
+          </span>
         </button>
       ) : null}
 

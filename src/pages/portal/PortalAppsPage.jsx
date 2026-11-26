@@ -15,6 +15,7 @@ function PortalMain({ p }) {
         loading={p.usersLoading}
         error={p.usersError}
         onGoHome={() => p.setView('home')}
+        canLoginAs={p.bothApps}
       />
     );
   }
@@ -26,6 +27,7 @@ function PortalMain({ p }) {
       onOpenPnl={p.openPnl}
       onPrefetchPnl={p.prefetchPnl}
       onOpenWorkspace={p.openWorkspace}
+      onOpenLeadTrack={p.openLeadTrack}
     />
   );
 }
@@ -74,6 +76,10 @@ export default function PortalAppsPage() {
           onOpenWorkspace={() => {
             p.setNavOpen(false);
             p.openWorkspace();
+          }}
+          onOpenLeadTrack={() => {
+            p.setNavOpen(false);
+            p.openLeadTrack();
           }}
           usersLoading={p.usersLoading}
           userCount={p.users.length}

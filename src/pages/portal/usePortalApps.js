@@ -8,6 +8,7 @@ import { resolvePortalLanding } from './portalLanding';
 import {
   logoutPortalApp,
   openPnlApp,
+  openLeadTrackApp,
   openWorkspaceApp,
   prefetchPnlUrl,
   warmPnlApp,
@@ -72,6 +73,7 @@ export function usePortalApps() {
     usersLoading: directory.loading,
     usersError: directory.error,
     openPnl: () => openPnlApp({ setError, setBusy }),
+    openLeadTrack: () => openLeadTrackApp({ setError, setBusy }),
     prefetchPnl: () => {
       prefetchPnlUrl().catch(() => {});
     },

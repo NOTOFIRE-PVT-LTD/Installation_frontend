@@ -49,6 +49,24 @@ export async function openPnlApp({ setError, setBusy }) {
   }
 }
 
+export async function openLeadTrackApp({ setError, setBusy }) {
+  setError(null);
+  setBusy('leadtrack');
+  try {
+    const res = await portalApi.openLeadTrack();
+    const url = res.data?.data?.url;
+    if (!url) throw new Error('missing url');
+    window.location.href = url;
+  } catch (err) {
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Could not open LeadTrack — is it running on :3010?';
+    setError(msg);
+    setBusy(null);
+  }
+}
+
 export function openWorkspaceApp({ setBusy, setError }) {
   setError?.(null);
   setBusy('workspace');
