@@ -14,8 +14,10 @@ export default function LeadTrackWorkspacePage() {
     (async () => {
       try {
         const res = await portalApi.openLeadTrack();
-        const url = res.data?.data?.url;
+        let url = res.data?.data?.url;
         if (!url) throw new Error('missing url');
+        // Strip LeadTrack chrome; horizontal tabs only inside Workspace.
+        url += url.includes('?') ? '&embed=1' : '?embed=1';
         if (!cancelled) setSrc(url);
       } catch (err) {
         if (!cancelled) {
