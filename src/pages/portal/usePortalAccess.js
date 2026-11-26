@@ -15,6 +15,7 @@ export function setPortalAccessCache(access) {
   cachedAccess = {
     pnl: Boolean(access?.pnl),
     workspace: Boolean(access?.workspace),
+    leadtrack: Boolean(access?.leadtrack),
   };
   accessPromise = null;
   return cachedAccess;
@@ -27,7 +28,11 @@ function loadPortalAccess() {
       .me()
       .then((res) => {
         const a = res.data?.data?.access || {};
-        cachedAccess = { pnl: Boolean(a.pnl), workspace: Boolean(a.workspace) };
+        cachedAccess = {
+          pnl: Boolean(a.pnl),
+          workspace: Boolean(a.workspace),
+          leadtrack: Boolean(a.leadtrack),
+        };
         return cachedAccess;
       })
       .finally(() => {
@@ -38,7 +43,9 @@ function loadPortalAccess() {
 }
 
 export function usePortalAccess(enabled = true) {
-  const [access, setAccess] = useState(cachedAccess || { pnl: false, workspace: false });
+  const [access, setAccess] = useState(
+    cachedAccess || { pnl: false, workspace: false, leadtrack: false },
+  );
   const [ready, setReady] = useState(Boolean(cachedAccess));
   const [error, setError] = useState(null);
 

@@ -1,19 +1,26 @@
 import { portalApi } from '../../api/portalApi';
-import { openPnlApp, openWorkspaceApp } from './portalAppActions';
+import { openLeadTrackApp, openPnlApp, openWorkspaceApp } from './portalAppActions';
 import { setPortalAccessCache } from './usePortalAccess';
 
 export function resolvePortalLanding(access) {
   const pnl = Boolean(access?.pnl);
   const ws = Boolean(access?.workspace);
+  const lt = Boolean(access?.leadtrack);
   if (pnl && ws) return 'apps';
-  if (pnl) return 'pnl';
+  if (lt && !pnl && !ws) return 'leadtrack';
+  if (pnl && !ws) return 'pnl';
   if (ws) return 'workspace';
+  if (lt) return 'leadtrack';
   return 'apps';
 }
 
 export async function fetchPortalAccess() {
   const res = await portalApi.me();
-  const access = res.data?.data?.access || { pnl: false, workspace: false };
+  const access = res.data?.data?.access || {
+    pnl: false,
+    workspace: false,
+    leadtrack: false,
+  };
   return setPortalAccessCache(access);
 }
 
@@ -33,11 +40,14 @@ export async function applyPortalLanding({ navigate, setError, setBusy }) {
     await openPnlApp({ setError, setBusy });
     return kind;
   }
+  if (kind === 'leadtrack') {
+    await openLeadTrackApp({ setError, setBusy });
+    return kind;
+  }
   if (kind === 'workspace') {
     openWorkspaceApp({ setBusy, setError });
     return kind;
   }
-  // Hard navigate so dual users always hit the chooser (no SPA race into Workspace).
   if (typeof window !== 'undefined') {
     window.location.replace(appsChooserUrl());
     return kind;

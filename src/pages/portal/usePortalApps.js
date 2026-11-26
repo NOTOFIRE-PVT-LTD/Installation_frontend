@@ -46,6 +46,7 @@ export function usePortalApps() {
     if (!ready || busy || bothApps) return;
     const kind = resolvePortalLanding(access);
     if (kind === 'pnl') openPnlApp({ setError, setBusy });
+    else if (kind === 'leadtrack') openLeadTrackApp({ setError, setBusy });
     else if (kind === 'workspace') openWorkspaceApp({ setBusy, setError });
   }, [ready, access, busy, bothApps, setError]);
 
