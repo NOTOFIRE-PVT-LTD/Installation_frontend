@@ -88,13 +88,19 @@ export default function CustomerDrawer({
   };
 
   return (
-    <Drawer open={open} onClose={onClose} anchor="right" PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      anchor="right"
+      sx={{ zIndex: (t) => t.zIndex.modal }}
+      PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}
+    >
       <FormProvider {...methods}>
-        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 2.5, sm: 3 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Typography variant="h6" sx={{ mb: 2, flexShrink: 0 }}>
             {readOnly ? 'Customer' : isEdit ? 'Edit customer' : 'New customer'}
           </Typography>
-          <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
+          <Stack spacing={2} sx={{ flex: 1, overflow: 'auto', pr: 1, pt: 1 }}>
             <RHFTextField name="companyName" label="Company name" disabled={readOnly} autoFocus />
             <RHFTextField name="contactPerson" label="Contact person" disabled={readOnly} />
             <RHFTextField name="phone" label="Phone" disabled={readOnly} />

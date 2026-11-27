@@ -13,6 +13,7 @@ import DashboardKpiSection from './DashboardKpiSection';
 import DashboardOverdueList from './DashboardOverdueList';
 import DashboardEngineerWorkloadTable from './DashboardEngineerWorkloadTable';
 import ComplaintDashboardActions from './ComplaintDashboardActions';
+import './complaintsGlass.css';
 
 function usePagedComplaints(filter, refresh = 0) {
   const [page, setPage] = useState(0);
@@ -72,7 +73,7 @@ export default function ComplaintDashboardPage() {
   const engineerList = data?.engineerWorkload || [];
 
   return (
-    <Box sx={{ p: { xs: 0, md: 1 }, maxWidth: 1600, mx: 'auto', width: '100%' }}>
+    <Box className="complaints-glass" sx={{ p: { xs: 0, md: 1 }, maxWidth: 1600, mx: 'auto', width: '100%' }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h5" fontWeight={800} sx={{ color: '#241404' }}>

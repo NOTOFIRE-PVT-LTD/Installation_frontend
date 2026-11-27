@@ -13,6 +13,7 @@ export const USER_PERMISSION_KEYS = [
   'shipping',
   'importControl',
   'contractorAttendance',
+  'leadTrack',
 ];
 
 /** User keys that stay off until explicitly granted. */
@@ -25,6 +26,7 @@ export const OPT_IN_KEYS = [
   'shipping',
   'importControl',
   'contractorAttendance',
+  'leadTrack',
 ];
 
 export const USER_LABELS = {
@@ -42,6 +44,7 @@ export const USER_LABELS = {
   shipping: 'Shipping Control',
   importControl: 'Import Control',
   contractorAttendance: 'Contractor Attendance (HR Excel Upload & Wages)',
+  leadTrack: 'LeadTrack CRM',
 };
 
 export const ADMIN_LABELS = {
@@ -75,4 +78,5 @@ export const ADMIN_LABELS = {
   payflowUser: 'Payflow user (submit & view own payment requests)',
   salesTravelRequests: 'Sales Travel Request',
   salesTravelRequestsOwnOnly: 'Sales Travel Request user (own records only)',
+  leadTrack: 'LeadTrack CRM',
 };

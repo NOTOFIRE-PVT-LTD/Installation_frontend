@@ -19,6 +19,7 @@ export default function DashboardLayoutDrawers({
         open={mobileOpen}
         onClose={onMobileClose}
         ModalProps={{ keepMounted: true }}
+        PaperProps={{ className: 'dashboard-drawer' }}
         sx={{
           display: { xs: 'block', sm: 'none' },
           '& .MuiDrawer-paper': {
@@ -32,6 +33,7 @@ export default function DashboardLayoutDrawers({
       </Drawer>
       <Drawer
         variant="permanent"
+        PaperProps={{ className: 'dashboard-drawer' }}
         sx={{
           display: { xs: 'none', sm: 'block' },
           '& .MuiDrawer-paper': {

@@ -1,0 +1,16 @@
+/* Complaint pages — inherit appGlass; light page-local tweaks only. */
+
+.complaints-glass {
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.complaints-glass .stat-card-paper > .complaints-glass__icon-wrap,
+.complaints-glass .complaints-glass__icon-wrap {
+  /* Icon nest uses .glass-icon from appGlass */
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}

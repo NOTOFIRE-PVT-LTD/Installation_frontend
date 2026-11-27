@@ -1,6 +1,6 @@
 import { formatPortalApps, formatPortalRole } from './portalUsersHelpers';
 
-export default function PortalUsersTable({ users, onLoginAs }) {
+export default function PortalUsersTable({ users, onLoginAs, canLoginAs = false }) {
   if (!users.length) {
     return <p className="central-users-empty">No users match this search.</p>;
   }
@@ -16,7 +16,7 @@ export default function PortalUsersTable({ users, onLoginAs }) {
             <th>Role</th>
             <th>App Access</th>
             <th>Status</th>
-            <th>Actions</th>
+            {canLoginAs ? <th>Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -37,7 +37,7 @@ export default function PortalUsersTable({ users, onLoginAs }) {
               </td>
               <td>
                 <span className="central-users-pill central-users-pill--app">
-                  {formatPortalApps(u.apps)}
+                  {formatPortalApps(u.apps, u.workspaceApps)}
                 </span>
               </td>
               <td>
@@ -45,20 +45,22 @@ export default function PortalUsersTable({ users, onLoginAs }) {
                   {u.active === false ? 'Inactive' : 'Active'}
                 </span>
               </td>
-              <td>
-                {u.workspaceId ? (
-                  <button
-                    type="button"
-                    className="central-page-btn"
-                    onClick={() => onLoginAs(u)}
-                    title="Log in as this Workspace user"
-                  >
-                    Log in as
-                  </button>
-                ) : (
-                  <span className="central-users-muted">P&amp;L only</span>
-                )}
-              </td>
+              {canLoginAs ? (
+                <td>
+                  {u.workspaceId ? (
+                    <button
+                      type="button"
+                      className="central-page-btn"
+                      onClick={() => onLoginAs(u)}
+                      title="Log in as this Workspace user"
+                    >
+                      Log in as
+                    </button>
+                  ) : (
+                    <span className="central-users-muted">P&amp;L only</span>
+                  )}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

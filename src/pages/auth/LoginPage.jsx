@@ -4,7 +4,7 @@ import CentralLoginForm from './CentralLoginForm';
 import { getLoginCopy } from './centralLoginCopy';
 import './centralLogin.css';
 
-/** Exact Centralisation login (Valuecon App split screen). */
+/** Desktop: split halves. Mobile: curvy hero + lightly frosted card. */
 export default function LoginPage() {
   const [locale, setLocale] = useState(() => localStorage.getItem('portal_locale') || 'en');
   const t = getLoginCopy(locale);

@@ -22,6 +22,8 @@ import { buildComplaintColumns } from './complaintTableColumns';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import PhoneIcon from '@mui/icons-material/Phone';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import { glassIconBtnSx, glassIcon3dSx, glassPrimaryBtnSx } from './complaintsGlassSx';
+import './complaintsGlass.css';
 
 const EMPTY_STATS = { assigned: 0, total: 0, open: 0, inProgress: 0, resolved: 0, closed: 0, overdue: 0, unassigned: 0, today: 0, myTickets: 0 };
 const STATUS_FILTER_OPTIONS = [
@@ -149,27 +151,29 @@ export default function ComplaintsPage({ embedded = false }) {
     if (newTab === 'my_tickets') setFilters({ assignedTo: String(user?._id || ''), status: '', isOverdue: '' });
     else if (newTab === 'assigned') setFilters({ status: 'ASSIGNED', assignedTo: '', isOverdue: '' });
     else if (newTab === 'unassigned') setFilters({ assignedTo: 'unassigned', status: '', isOverdue: '' });
-    else if (newTab === 'in_progress') setFilters({ status: 'IN_PROGRESS,PENDING', assignedTo: isFieldEngineer ? String(user?._id || '') : '', isOverdue: '' });
+    else if (newTab === 'in_progress') setFilters({ status: 'IN_PROGRESS', assignedTo: isFieldEngineer ? String(user?._id || '') : '', isOverdue: '' });
+    else if (newTab === 'pending') setFilters({ status: 'PENDING', assignedTo: '', isOverdue: '' });
     else if (newTab === 'resolved') setFilters({ status: 'RESOLVED,CLOSED', assignedTo: isFieldEngineer ? String(user?._id || '') : '', isOverdue: '' });
     else if (newTab === 'overdue') setFilters({ isOverdue: 'true', status: '', assignedTo: '' });
     else setFilters({ assignedTo: '', status: '', isOverdue: '' });
   };
 
   const queueTabs = useMemo(() => isFieldEngineer ? [
+    { id: 'all', label: 'All Tickets', showCount: false },
     { id: 'my_tickets', label: 'Assigned Tickets', count: stats.myTickets, showCount: true },
     { id: 'in_progress', label: 'In Progress & Follow-ups', count: stats.inProgress, showCount: true },
     { id: 'resolved', label: 'Resolved & Closed', count: stats.resolved + stats.closed, showCount: true },
-    { id: 'all', label: 'All Tickets', showCount: false },
   ] : [
     { id: 'all', label: 'All Tickets', showCount: false },
-    { id: 'assigned', label: 'Assigned Tickets', count: stats.assigned, showCount: true },
     { id: 'unassigned', label: '⚠️ Unassigned Queue', count: stats.unassigned, isAlert: true, showCount: true },
-    { id: 'in_progress', label: 'In Progress & Follow-ups', count: stats.inProgress, showCount: true },
+    { id: 'assigned', label: 'Assigned', count: stats.assigned, showCount: true },
+    { id: 'in_progress', label: 'In Progress', count: stats.inProgress, showCount: true },
+    { id: 'pending', label: 'Pending', count: stats.open || 0, showCount: true },
     { id: 'resolved', label: 'Resolved & Closed', count: stats.resolved + stats.closed, showCount: true },
   ], [isFieldEngineer, stats]);
 
   return (
-    <>
+    <Box className="complaints-glass">
       <Box sx={{ mb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3, color: 'primary.main', minWidth: 0, flex: '1 1 auto' }}>
@@ -177,9 +181,26 @@ export default function ComplaintsPage({ embedded = false }) {
           </Typography>
           {!isFieldEngineer && (
             <>
-              <Tooltip title="Operations Dashboard"><IconButton component={Link} to="/complaints/dashboard" size="small" sx={{ color: '#583714', border: '1px solid #D4A34E', bgcolor: 'rgba(212, 163, 78, 0.08)' }}><DashboardIcon fontSize="small" /></IconButton></Tooltip>
-              <Tooltip title="Customer QR Poster"><IconButton size="small" onClick={() => setQrOpen(true)} sx={{ color: '#583714', border: '1px solid #D4A34E', bgcolor: 'rgba(212, 163, 78, 0.08)' }}><QrCode2Icon fontSize="small" /></IconButton></Tooltip>
-              <Button component={Link} to="/complaints/new" variant="contained" size="small" startIcon={<PhoneIcon fontSize="small" />} sx={{ background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 100%)', color: '#3A230B', fontWeight: 800, textTransform: 'none' }}>+ Phone Intake</Button>
+              <Tooltip title="Operations Dashboard">
+                <IconButton component={Link} to="/complaints/dashboard" size="small" sx={glassIconBtnSx}>
+                  <DashboardIcon fontSize="small" sx={glassIcon3dSx} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Customer QR Poster">
+                <IconButton size="small" onClick={() => setQrOpen(true)} sx={glassIconBtnSx}>
+                  <QrCode2Icon fontSize="small" sx={glassIcon3dSx} />
+                </IconButton>
+              </Tooltip>
+              <Button
+                component={Link}
+                to="/complaints/new"
+                variant="contained"
+                size="small"
+                startIcon={<PhoneIcon fontSize="small" sx={glassIcon3dSx} />}
+                sx={glassPrimaryBtnSx}
+              >
+                + Phone Intake
+              </Button>
             </>
           )}
         </Stack>
@@ -188,7 +209,7 @@ export default function ComplaintsPage({ embedded = false }) {
       <ComplaintStatsHeader stats={stats} isFieldEngineer={isFieldEngineer} onFilterClick={handleTabChange} />
 
       <Box sx={{ mb: 1.5, overflowX: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 48, display: 'flex', alignItems: 'center' }}>
-        <SlidingPills tabs={queueTabs} activeTab={activeTab} onChange={handleTabChange} />
+        <SlidingPills items={queueTabs} value={activeTab} onChange={handleTabChange} />
       </Box>
 
       <DataTable
@@ -201,6 +222,6 @@ export default function ComplaintsPage({ embedded = false }) {
       <ComplaintDetailDrawer open={drawerOpen} complaintId={selectedComplaintId} onClose={() => { setDrawerOpen(false); setSelectedComplaintId(null); }} onUpdated={() => { loadList(); loadStats(); }} />
       <ComplaintQrDialog open={qrOpen} onClose={() => setQrOpen(false)} />
       <ComplaintReassignDialog confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} onConfirm={handleConfirmReassign} />
-    </>
+    </Box>
   );
 }

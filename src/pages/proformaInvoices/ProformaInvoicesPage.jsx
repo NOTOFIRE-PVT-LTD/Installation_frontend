@@ -206,7 +206,7 @@ export default function ProformaInvoicesPage() {
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                       <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => openEdit(row)}>
+                        <IconButton size="small" color="success" onClick={() => openEdit(row)}>
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

@@ -24,14 +24,6 @@ export async function fetchPortalAccess() {
   return setPortalAccessCache(access);
 }
 
-function appsChooserUrl() {
-  const path = typeof window !== 'undefined' ? window.location.pathname : '';
-  const base = path.startsWith('/ws')
-    ? '/ws/'
-    : (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
-  return `${window.location.origin}${base}apps`;
-}
-
 /** After login / when /apps is not a chooser: go to the one app or stay on /apps. */
 export async function applyPortalLanding({ navigate, setError, setBusy }) {
   const access = await fetchPortalAccess();
@@ -48,10 +40,7 @@ export async function applyPortalLanding({ navigate, setError, setBusy }) {
     openWorkspaceApp({ setBusy, setError });
     return kind;
   }
-  if (typeof window !== 'undefined') {
-    window.location.replace(appsChooserUrl());
-    return kind;
-  }
+  // SPA navigate keeps Redux token + access cache (full reload stuck on Opening…).
   navigate('/apps', { replace: true });
   return kind;
 }

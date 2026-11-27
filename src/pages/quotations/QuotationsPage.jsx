@@ -165,7 +165,7 @@ function QuotationCard({ quotation, trash, busy, onAction }) {
           ) : (
             <>
               <Tooltip title="Edit">
-                <IconButton size="small" onClick={stop(() => onAction('edit', quotation))}>
+                <IconButton size="small" color="success" onClick={stop(() => onAction('edit', quotation))}>
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>

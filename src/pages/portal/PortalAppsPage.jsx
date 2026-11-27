@@ -1,5 +1,6 @@
 import PortalAppsNav from './PortalAppsNav';
 import PortalAppsCards from './PortalAppsCards';
+import PortalOpeningScreen from './PortalOpeningScreen';
 import PortalSidebar from './PortalSidebar';
 import PortalUsersPanel from './PortalUsersPanel';
 import PortalProfilePanel from './PortalProfilePanel';
@@ -36,10 +37,20 @@ export default function PortalAppsPage() {
 
   // Hide chooser until access is known; single-app users redirect away (no flash).
   if (!p.ready || !p.bothApps) {
+    const loginBase = window.location.pathname.startsWith('/ws') ? '/ws/' : '/';
     return (
-      <div className="central-shell central-shell--redirect">
-        <p className="central-home__lede">Opening your app…</p>
-      </div>
+      <PortalOpeningScreen
+        error={p.error}
+        onRetry={p.error ? p.retryOpen : undefined}
+        onSignIn={
+          p.error
+            ? () => {
+                p.onLogout();
+                window.location.assign(`${window.location.origin}${loginBase}login`);
+              }
+            : undefined
+        }
+      />
     );
   }
 

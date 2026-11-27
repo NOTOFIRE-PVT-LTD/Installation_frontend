@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import Link from '@mui/material/Link';
+import { useNavigate, useParams } from 'react-router-dom';
 import RHFTextField from '../../components/common/FormFields/RHFTextField';
 import { authApi } from '../../api/authApi';
+import AuthPasswordCard from './AuthPasswordCard';
 
 const schema = yup.object({
-  password: yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
+  password: yup
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref('password')], 'Passwords do not match')
@@ -24,14 +23,16 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
-
-  const methods = useForm({ resolver: yupResolver(schema), defaultValues: { password: '', confirmPassword: '' } });
+  const methods = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: { password: '', confirmPassword: '' },
+  });
 
   const onSubmit = async (values) => {
     setStatus('loading');
     try {
       const { data } = await authApi.resetPassword(token, values.password);
-      setMessage(data.message);
+      setMessage(data.message || 'Password updated.');
       setStatus('succeeded');
       setTimeout(() => navigate('/login', { replace: true }), 1500);
     } catch (err) {
@@ -41,24 +42,33 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <FormProvider {...methods}>
-      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
-        Choose a new password for your account.
-      </Typography>
-      <Stack component="form" spacing={2.5} onSubmit={methods.handleSubmit(onSubmit)}>
-        {status === 'succeeded' && <Alert severity="success">{message}</Alert>}
-        {status === 'failed' && <Alert severity="error">{message}</Alert>}
-        <RHFTextField name="password" label="New Password" type="password" autoFocus />
-        <RHFTextField name="confirmPassword" label="Confirm New Password" type="password" />
-        <Button type="submit" variant="contained" size="large" disabled={status === 'loading'}>
-          {status === 'loading' ? 'Resetting…' : 'Reset password'}
-        </Button>
-        <Typography variant="body2" textAlign="center">
-          <Link component={RouterLink} to="/login">
-            Back to login
-          </Link>
-        </Typography>
-      </Stack>
-    </FormProvider>
+    <AuthPasswordCard
+      title="Reset password"
+      lead="Choose a new password for your account."
+    >
+      <FormProvider {...methods}>
+        <form className="form-grid login-form-body" onSubmit={methods.handleSubmit(onSubmit)}>
+          {status === 'succeeded' ? (
+            <div className="alert alert--success" role="status">
+              {message}
+            </div>
+          ) : null}
+          {status === 'failed' ? (
+            <div className="alert alert--error" role="alert">
+              {message}
+            </div>
+          ) : null}
+          <RHFTextField name="password" label="New password" type="password" autoFocus />
+          <RHFTextField name="confirmPassword" label="Confirm new password" type="password" />
+          <button
+            type="submit"
+            className="btn btn-primary login-submit"
+            disabled={status === 'loading'}
+          >
+            {status === 'loading' ? 'Resetting…' : 'Reset password'}
+          </button>
+        </form>
+      </FormProvider>
+    </AuthPasswordCard>
   );
 }

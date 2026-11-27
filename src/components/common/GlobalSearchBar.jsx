@@ -20,6 +20,7 @@ import {
   faAddressBook,
   faCompassDrafting,
   faFolderOpen,
+  faCube,
   faLocationDot,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
@@ -27,6 +28,7 @@ import { searchApi } from '../../api/searchApi';
 import { useDebounce } from '../../hooks/useDebounce';
 
 const SECTION_META = {
+  apps: { label: 'Apps', icon: faCube, color: '#D4A34E' },
   projects: { label: 'Projects', icon: faFolderOpen, color: '#14b8a6' },
   stations: { label: 'Stations', icon: faLocationDot, color: '#0ea5e9' },
   users: { label: 'Users', icon: faUsers, color: '#8b5cf6' },
@@ -34,7 +36,7 @@ const SECTION_META = {
   tenders: { label: 'CAD / Tenders', icon: faCompassDrafting, color: '#ec4899' },
 };
 
-const SECTION_ORDER = ['projects', 'stations', 'users', 'numbers', 'tenders'];
+const SECTION_ORDER = ['apps', 'projects', 'stations', 'users', 'numbers', 'tenders'];
 
 const ROUND_SX = {
   '& .MuiOutlinedInput-root': {
@@ -77,7 +79,9 @@ const ROUND_SX = {
   },
 };
 
-export default function GlobalSearchBar({ placeholder = 'Search projects, users, stations...' }) {
+export default function GlobalSearchBar({
+  placeholder = 'Search apps, projects, users, stations...',
+}) {
   const navigate = useNavigate();
   const anchorRef = useRef(null);
   const requestIdRef = useRef(0);

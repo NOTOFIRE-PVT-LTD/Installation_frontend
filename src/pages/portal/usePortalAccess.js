@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAppSelector } from '../../app/hooks';
 import { portalApi } from '../../api/portalApi';
 
 let cachedAccess = null;
@@ -43,6 +44,8 @@ function loadPortalAccess() {
 }
 
 export function usePortalAccess(enabled = true) {
+  const bootstrapped = useAppSelector((s) => s.auth.bootstrapped);
+  const accessToken = useAppSelector((s) => s.auth.accessToken);
   const [access, setAccess] = useState(
     cachedAccess || { pnl: false, workspace: false, leadtrack: false },
   );
@@ -51,6 +54,13 @@ export function usePortalAccess(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return undefined;
+    // Wait for fetchMe/refresh so /apps me() is not a race after login.
+    if (!bootstrapped) return undefined;
+    if (!accessToken && !cachedAccess) {
+      setReady(true);
+      setError('Session expired — sign in again');
+      return undefined;
+    }
     let cancelled = false;
     loadPortalAccess()
       .then((a) => {
@@ -67,7 +77,7 @@ export function usePortalAccess(enabled = true) {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, bootstrapped, accessToken]);
 
   return { access, ready: enabled ? ready : false, error, setError };
 }

@@ -1,0 +1,344 @@
+/* Valuecon glass — cream tiles, bronze glyphs, gold metallic buttons (ref match). */
+
+:root {
+  --vg-cream: #f8f0df;
+  --vg-gold: #d4a34e;
+  --vg-gold-bright: #e8c46a;
+  --vg-gold-deep: #b07828;
+  --vg-bronze: #5c3a12;
+  --vg-bronze-deep: #3d2410;
+  --vg-brown: #593714;
+  --vg-ink: #2a1808;
+  --vg-bevel-hi: rgba(255, 255, 255, 0.98);
+  --vg-bevel-lo: rgba(120, 70, 20, 0.28);
+}
+
+.dashboard-main {
+  color: var(--vg-brown);
+  background:
+    radial-gradient(circle at 12% 10%, #fff8e9 0%, transparent 45%),
+    radial-gradient(circle at 88% 70%, rgba(221, 175, 89, 0.22) 0%, transparent 40%),
+    linear-gradient(135deg, #f8f0df, #ead8bd, #f9f3e8) !important;
+}
+
+.dashboard-main__pad {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(100% - 52px);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 600px) {
+  .dashboard-main__pad {
+    padding: 20px;
+  }
+}
+
+/* --- Icon bg card: theme gold fill + gold gradient border (not the glyph) --- */
+.glass-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background-image:
+    linear-gradient(145deg, #fffdf8 0%, #f8f0e2 40%, #efe0c4 100%),
+    linear-gradient(135deg, #ffe9a8 0%, #e5b85c 35%, #d4a34e 65%, #8c591d 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow:
+    5px 6px 12px rgba(120, 85, 40, 0.16),
+    inset 0 1px 1px rgba(255, 252, 245, 0.65);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-icon__gloss {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 233, 168, 0.45) 0%,
+    rgba(229, 184, 92, 0.08) 42%,
+    transparent 58%
+  );
+}
+
+.glass-icon__glyph {
+  position: relative;
+  z-index: 1;
+  fill: none;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 233, 168, 0.55))
+    drop-shadow(0 2px 3px rgba(90, 55, 15, 0.4));
+}
+
+.glass-icon .MuiSvgIcon-root {
+  position: relative;
+  z-index: 1;
+  color: #b8863b !important;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 233, 168, 0.45))
+    drop-shadow(0 2px 3px rgba(90, 55, 15, 0.35));
+}
+
+.glass-icon:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    7px 8px 16px rgba(120, 85, 40, 0.22),
+    inset 0 1px 1px rgba(255, 252, 245, 0.75);
+}
+
+.glass-icon--nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  font-size: 0.8rem;
+}
+
+.glass-icon--nav svg {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.glass-icon--sm {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+
+/* --- Buttons: match login Send OTP / WhatsApp gold pill --- */
+.dashboard-main .MuiButton-root,
+.glass-btn {
+  min-height: 44px !important;
+  padding: 0 20px !important;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  border-radius: 999px !important;
+  border-style: solid !important;
+  border-width: 1.5px 1px 1px 1.5px !important;
+  border-color: rgba(184, 134, 59, 0.5) rgba(226, 211, 190, 0.95) rgba(200, 175, 140, 0.9)
+    rgba(184, 134, 59, 0.4) !important;
+  background: linear-gradient(165deg, #f7efe3 0%, #efe4d2 55%, #e6d8c0 100%) !important;
+  color: #241404 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 245, 0.75),
+    0 4px 12px rgba(58, 40, 24, 0.12) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
+}
+
+.dashboard-main .MuiButton-root .MuiSvgIcon-root,
+.dashboard-main .MuiButton-root svg {
+  color: #8b5a1a !important;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 233, 168, 0.4))
+    drop-shadow(0 1px 2px rgba(60, 35, 10, 0.3));
+}
+
+/* Gold primary — same as login CTA */
+.dashboard-main .MuiButton-contained,
+.dashboard-main .MuiButton-containedPrimary,
+.glass-btn.primary,
+.glass-btn--gold {
+  color: #241404 !important;
+  background: linear-gradient(165deg, #ffe9a8 0%, #f0c86a 45%, #d4a34e 100%) !important;
+  border-width: 1.5px 1px 1px 1.5px !important;
+  border-color: rgba(255, 233, 168, 0.75) rgba(184, 134, 59, 0.5) rgba(140, 89, 29, 0.4)
+    rgba(245, 208, 120, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(120, 70, 20, 0.18),
+    0 6px 16px rgba(88, 55, 20, 0.28) !important;
+}
+
+.dashboard-main .MuiButton-contained .MuiSvgIcon-root,
+.glass-btn.primary .MuiSvgIcon-root,
+.glass-btn--gold .MuiSvgIcon-root,
+.glass-btn--gold svg {
+  color: var(--vg-ink) !important;
+}
+
+.dashboard-main .MuiButton-root:hover,
+.glass-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px rgba(95, 62, 25, 0.22) !important;
+}
+
+.dashboard-main .MuiButton-root:active,
+.glass-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Square icon buttons — same theme icon-bg card as .glass-icon */
+.dashboard-main .MuiIconButton-root,
+.glass-btn.icon-only {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  padding: 0 !important;
+  border-radius: 14px !important;
+  border: 1.5px solid transparent !important;
+  background-image:
+    linear-gradient(145deg, #fffdf8 0%, #f8f0e2 40%, #efe0c4 100%),
+    linear-gradient(135deg, #ffe9a8 0%, #e5b85c 35%, #d4a34e 65%, #8c591d 100%) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  color: #8b5a1a !important;
+  /* Soft even shadow follows border-radius (hard offset looked square) */
+  box-shadow:
+    0 4px 10px rgba(120, 85, 40, 0.2),
+    0 1px 2px rgba(120, 85, 40, 0.1),
+    inset 0 1px 1px rgba(255, 252, 245, 0.65) !important;
+}
+
+.dashboard-main .MuiIconButton-root .MuiSvgIcon-root {
+  color: #b8863b !important;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 233, 168, 0.4))
+    drop-shadow(0 2px 2px rgba(90, 55, 15, 0.35));
+}
+
+/* Pagination prev/next — gap + right inset so last arrow isn't flush */
+.dashboard-main .MuiTablePagination-actions,
+.dashboard-main .MuiDataGrid-footerContainer .MuiTablePagination-actions {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+  margin-right: 4px;
+}
+
+.dashboard-main .MuiDataGrid-footerContainer {
+  padding-right: 16px !important;
+  padding-left: 8px !important;
+}
+
+.dashboard-main .MuiTablePagination-toolbar {
+  padding-right: 12px !important;
+  padding-left: 8px !important;
+}
+
+.dashboard-main .MuiTablePagination-actions .MuiIconButton-root {
+  border-radius: 14px !important;
+  box-shadow:
+    0 4px 10px rgba(120, 85, 40, 0.2),
+    0 1px 2px rgba(120, 85, 40, 0.1),
+    inset 0 1px 1px rgba(255, 252, 245, 0.7) !important;
+}
+
+.dashboard-main .MuiTablePagination-actions .MuiIconButton-root .MuiSvgIcon-root {
+  filter: none !important;
+}
+
+/* KPI cards — theme gold gradient fill + gradient border */
+.dashboard-main .stat-card-paper,
+.dashboard-main .kpi-card-paper {
+  border: 1.5px solid transparent !important;
+  border-radius: 20px !important;
+  background-image:
+    linear-gradient(145deg, #fffdf8 0%, #f8f0e2 42%, #efe0c4 100%),
+    linear-gradient(135deg, #ffe9a8 0%, #e5b85c 35%, #d4a34e 65%, #8c591d 100%) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  box-shadow:
+    0 8px 20px rgba(99, 66, 30, 0.12),
+    0 2px 4px rgba(99, 66, 30, 0.05),
+    inset 0 1px 1px rgba(255, 252, 245, 0.7) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dashboard-main .MuiOutlinedInput-root {
+  border-radius: 999px !important;
+  background: linear-gradient(145deg, #f7efe3 0%, #efe4d2 55%, #e6d8c0 100%) !important;
+  box-shadow:
+    inset 0 2px 4px rgba(120, 70, 20, 0.08),
+    inset 0 1px 0 rgba(255, 248, 235, 0.7) !important;
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-main .MuiOutlinedInput-notchedOutline {
+  border-width: 1.5px 1px 1px 1.5px !important;
+  border-color: rgba(184, 134, 59, 0.5) rgba(226, 211, 190, 0.95) rgba(200, 175, 140, 0.85)
+    rgba(212, 163, 78, 0.4) !important;
+}
+
+/* DataGrid sort — small gold chip (must beat 44px IconButton rule) */
+.dashboard-main .MuiDataGrid-columnHeader .MuiIconButton-root,
+.dashboard-main .MuiDataGrid-iconButtonContainer .MuiIconButton-root,
+.dashboard-main .MuiDataGrid-menuIconButton,
+.dashboard-main .MuiDataGrid-sortButton {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  background: linear-gradient(165deg, #ffe9a8 0%, #f0c86a 45%, #d4a34e 100%) !important;
+  border: 1px solid rgba(184, 134, 59, 0.55) !important;
+  color: #241404 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+.dashboard-main .MuiDataGrid-columnHeader .MuiIconButton-root .MuiSvgIcon-root,
+.dashboard-main .MuiDataGrid-sortIcon {
+  font-size: 14px !important;
+  color: #241404 !important;
+}
+
+.dashboard-main .MuiDataGrid-columnHeader--sorted,
+.dashboard-main .MuiDataGrid-columnHeader:focus-within {
+  background: linear-gradient(145deg, #f2e7d5 0%, #e8d9c0 100%) !important;
+}
+
+.dashboard-main .MuiDataGrid-root {
+  border: none !important;
+}
+
+/* Sidebar nav — dark gold tiles (no cream/white); active = deeper tile + light gold */
+.dashboard-drawer .glass-icon--nav {
+  color: #e5b85c !important;
+  background: linear-gradient(145deg, #7a4f1c, #4a2e10);
+  border-width: 1.5px 1px 1px 1.5px;
+  border-color: rgba(229, 184, 92, 0.45) rgba(20, 10, 2, 0.5) rgba(10, 5, 0, 0.55)
+    rgba(212, 163, 78, 0.35);
+  box-shadow: 3px 4px 10px rgba(10, 5, 0, 0.4), inset 0 1px 1px rgba(245, 208, 120, 0.2);
+}
+
+.dashboard-drawer .glass-icon--nav .glass-icon__gloss {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 208, 120, 0.22) 0%,
+    transparent 45%
+  );
+}
+
+.dashboard-drawer .glass-icon--nav svg,
+.dashboard-drawer .glass-icon--nav .MuiSvgIcon-root,
+.dashboard-drawer .glass-icon--nav .glass-icon__glyph {
+  color: #e5b85c !important;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.dashboard-drawer .Mui-selected .glass-icon--nav {
+  color: #fae2b4 !important;
+  background: linear-gradient(145deg, #3d2410, #201204);
+  border-color: rgba(229, 184, 92, 0.35) rgba(10, 5, 0, 0.6) rgba(0, 0, 0, 0.55)
+    rgba(189, 131, 45, 0.3);
+  box-shadow: 0 3px 8px rgba(20, 10, 2, 0.45), inset 0 1px 1px rgba(245, 208, 120, 0.15);
+}
+
+.dashboard-drawer .Mui-selected .glass-icon--nav svg,
+.dashboard-drawer .Mui-selected .glass-icon--nav .MuiSvgIcon-root,
+.dashboard-drawer .Mui-selected .glass-icon--nav .glass-icon__glyph {
+  color: #fae2b4 !important;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}

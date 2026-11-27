@@ -2,7 +2,16 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 
-export default function SlidingPills({ items = [], value, onChange, fullWidth = false }) {
+export default function SlidingPills({
+  items: itemsProp,
+  tabs,
+  value: valueProp,
+  activeTab,
+  onChange,
+  fullWidth = false,
+}) {
+  const items = itemsProp || tabs || [];
+  const value = valueProp !== undefined ? valueProp : activeTab;
   const wrapRef = useRef(null);
   const btnRefs = useRef({});
   const [indicator, setIndicator] = useState({ left: 0, top: 0, width: 0, height: 0, ready: false });
@@ -48,8 +57,12 @@ export default function SlidingPills({ items = [], value, onChange, fullWidth = 
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
         borderRadius: 999,
-        bgcolor: '#F7EFE1',
-        border: '1px solid #E2D3BE',
+        background: 'linear-gradient(145deg, #F7EFE3 0%, #EFE4D2 55%, #E6D8C0 100%)',
+        borderStyle: 'solid',
+        borderWidth: '1.5px 1px 1px 1.5px',
+        borderColor:
+          'rgba(184,134,59,0.5) rgba(226,211,190,0.95) rgba(200,175,140,0.9) rgba(184,134,59,0.4)',
+        boxShadow: 'inset 0 1px 1px rgba(255,252,245,0.7), 0 2px 8px rgba(120,85,40,0.08)',
         alignSelf: 'stretch',
       }}
     >
@@ -61,7 +74,11 @@ export default function SlidingPills({ items = [], value, onChange, fullWidth = 
           height: indicator.height || 0,
           width: indicator.width || 0,
           borderRadius: 999,
-          background: 'linear-gradient(90deg, #FAE2B4 0%, #E5B85C 40%, #C99846 100%)',
+          background: 'linear-gradient(180deg, #E8C46A 0%, #D4A34E 55%, #B8863B 100%)',
+          borderStyle: 'solid',
+          borderWidth: '1.5px 1px 1px 1.5px',
+          borderColor:
+            'rgba(245,208,120,0.55) rgba(140,89,29,0.4) rgba(100,60,15,0.35) rgba(212,163,78,0.4)',
           boxShadow: '0 2px 8px rgba(88, 55, 20, 0.22)',
           transform: `translate(${indicator.left}px, ${indicator.top}px)`,
           transition: indicator.ready

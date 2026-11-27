@@ -3,7 +3,13 @@
   --c-text: #241404;
   --c-muted: #6e4d27;
   --c-line: #e2d3be;
-  --c-header: linear-gradient(90deg, #e5b85c 0%, #c99846 15%, #8c591d 45%, #543310 70%, #2a1705 100%);
+  --c-header: linear-gradient(
+    180deg,
+    rgba(229, 184, 92, 0.48) 0%,
+    rgba(201, 152, 70, 0.26) 34%,
+    rgba(125, 81, 30, 0.1) 68%,
+    rgba(86, 51, 16, 0.03) 100%
+  );
   --c-btn: linear-gradient(135deg, #e5b85c 0%, #d4a34e 50%, #b8863b 100%);
   --c-nav-h: 52px;
   min-height: 100vh;
@@ -22,7 +28,8 @@
   gap: 12px;
   padding: 0 16px;
   background: var(--c-header);
-  box-shadow: 0 2px 10px rgba(26, 17, 7, 0.25);
+  color: #241404;
+  box-shadow: 0 1px 6px rgba(26, 17, 7, 0.08);
 }
 
 .portal-nav__logo {

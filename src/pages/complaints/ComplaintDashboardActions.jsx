@@ -5,25 +5,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-
-const outlinedSx = {
-  borderRadius: '12px',
-  textTransform: 'none',
-  fontWeight: 700,
-  borderColor: '#D4A34E',
-  color: '#583714',
-  bgcolor: 'rgba(212, 163, 78, 0.08)',
-  width: '100%',
-};
-
-const primarySx = {
-  ...outlinedSx,
-  fontWeight: 800,
-  border: 'none',
-  background: 'linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%)',
-  color: '#3A230B',
-  px: 2,
-};
+import { glassBtnSx, glassPrimaryBtnSx, glassIcon3dSx } from './complaintsGlassSx';
 
 export default function ComplaintDashboardActions({
   loading,
@@ -42,19 +24,46 @@ export default function ComplaintDashboardActions({
         alignSelf: { xs: 'stretch', sm: 'center' },
       }}
     >
-      <Button variant="outlined" size="small" onClick={onRefresh} disabled={loading} startIcon={<RefreshIcon />} sx={outlinedSx}>
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={onRefresh}
+        disabled={loading}
+        startIcon={<RefreshIcon sx={glassIcon3dSx} />}
+        sx={glassBtnSx}
+      >
         Refresh
       </Button>
       {!isFieldEngineer ? (
-        <Button variant="outlined" size="small" onClick={onOpenQr} startIcon={<QrCode2Icon />} sx={outlinedSx}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onOpenQr}
+          startIcon={<QrCode2Icon sx={glassIcon3dSx} />}
+          sx={glassBtnSx}
+        >
           QR & Links
         </Button>
       ) : null}
-      <Button component={Link} to={ticketsPath} variant="outlined" size="small" startIcon={<ListAltIcon />} sx={outlinedSx}>
+      <Button
+        component={Link}
+        to={ticketsPath}
+        variant="outlined"
+        size="small"
+        startIcon={<ListAltIcon sx={glassIcon3dSx} />}
+        sx={glassBtnSx}
+      >
         All Tickets
       </Button>
       {!isFieldEngineer ? (
-        <Button component={Link} to="/complaints/new" variant="contained" size="small" startIcon={<AddCircleOutlineIcon />} sx={primarySx}>
+        <Button
+          component={Link}
+          to="/complaints/new"
+          variant="contained"
+          size="small"
+          startIcon={<AddCircleOutlineIcon sx={glassIcon3dSx} />}
+          sx={glassPrimaryBtnSx}
+        >
           + Phone Intake
         </Button>
       ) : null}

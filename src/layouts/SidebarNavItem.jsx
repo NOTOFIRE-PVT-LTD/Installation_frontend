@@ -8,7 +8,7 @@ function SidebarSectionHeader({ section }) {
       disableSticky
       sx={{
         bgcolor: 'transparent',
-        color: '#F2CE7A',
+        color: '#7D511E',
         lineHeight: 2,
         fontSize: '0.6875rem',
         fontWeight: 700,

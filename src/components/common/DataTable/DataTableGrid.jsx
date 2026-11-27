@@ -101,18 +101,23 @@ export default function DataTableGrid(props) {
     <Box
       sx={{
         width: '100%',
+        maxWidth: '100%',
         minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: 'background.paper',
-        borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
-        border: '1px solid',
-        borderColor: 'divider',
+        display: 'block',
+        borderRadius: '16px',
+        border: '1.5px solid transparent',
+        backgroundImage:
+          'linear-gradient(145deg, #FFFDF8 0%, #F8F0E2 42%, #EFE0C4 100%), linear-gradient(135deg, #FFE9A8 0%, #E5B85C 35%, #D4A34E 65%, #8C591D 100%)',
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box',
         overflow: 'hidden',
         WebkitOverflowScrolling: 'touch',
+        '& .MuiDataGrid-root': { width: '100% !important', minWidth: 0 },
       }}
     >
-      <MainDataGrid {...props} pagingProps={pagingProps} />
+      <Box sx={{ width: '100%', minWidth: 280, maxWidth: '100%' }}>
+        <MainDataGrid {...props} pagingProps={pagingProps} />
+      </Box>
       {props.largePages ? <CustomTablePagination {...props} /> : null}
     </Box>
   );
@@ -153,11 +158,52 @@ function gridPagingProps({
 }
 
 function gridSx(onRowClick) {
+  const sortBtn = {
+    width: '20px !important',
+    height: '20px !important',
+    minWidth: '20px !important',
+    padding: '0 !important',
+    borderRadius: '6px !important',
+    color: '#241404 !important',
+    background: 'linear-gradient(165deg, #ffe9a8 0%, #f0c86a 45%, #d4a34e 100%) !important',
+    borderStyle: 'solid !important',
+    borderWidth: '1px !important',
+    borderColor: 'rgba(184,134,59,0.55) !important',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7) !important',
+  };
   return {
     border: 'none',
+    background: 'transparent',
     '& .MuiDataGrid-virtualScroller': { overflowX: 'auto' },
     '& .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller': { border: 'none' },
     ...(onRowClick ? { '& .MuiDataGrid-row': { cursor: 'pointer' } } : {}),
+    '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeader': {
+      background: 'linear-gradient(90deg, #F2E7D5 0%, #F8F0E2 50%, #EDE0C8 100%) !important',
+    },
+    '& .MuiDataGrid-columnHeader--sorted, & .MuiDataGrid-columnHeader:focus-within': {
+      background: 'linear-gradient(145deg, #E8D9C0 0%, #E0CFA8 100%) !important',
+    },
+    '& .MuiDataGrid-columnHeaderTitleContainer': {
+      flex: '1 1 auto',
+      minWidth: 0,
+      gap: '4px',
+    },
+    '& .MuiDataGrid-columnHeaderTitle': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+    '& .MuiDataGrid-iconButtonContainer': {
+      width: 'auto !important',
+      visibility: 'visible !important',
+      marginLeft: '2px',
+    },
+    '& .MuiDataGrid-columnHeader .MuiIconButton-root, & .MuiDataGrid-iconButtonContainer .MuiIconButton-root, & .MuiDataGrid-sortButton, & .MuiDataGrid-menuIconButton':
+      sortBtn,
+    '& .MuiDataGrid-sortIcon': {
+      color: '#241404 !important',
+      fontSize: '14px !important',
+    },
     '& .MuiDataGrid-cell': {
       display: 'flex',
       alignItems: 'center',

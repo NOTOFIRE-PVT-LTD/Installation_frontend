@@ -4,7 +4,10 @@ import { logout } from '../../features/auth/authThunks';
 import { usePortalAccess } from './usePortalAccess';
 import { usePortalMenu } from './usePortalMenu';
 import { usePortalDirectory } from './usePortalDirectory';
-import { resolvePortalLanding } from './portalLanding';
+import {
+  retryPortalAppOpen,
+  usePortalSingleAppRedirect,
+} from './usePortalSingleAppRedirect';
 import {
   logoutPortalApp,
   openPnlApp,
@@ -25,7 +28,6 @@ export function usePortalApps() {
   const bothApps = Boolean(access.pnl && access.workspace);
   const directory = usePortalDirectory(bothApps);
 
-  // Only unlock after Back/bfcache — not on every pageshow (that cancelled P&L navigation).
   useEffect(() => {
     const unlock = (e) => {
       if (e?.persisted) setBusy(null);
@@ -41,14 +43,15 @@ export function usePortalApps() {
     return undefined;
   }, [ready, access.pnl, bothApps]);
 
-  // Single-app users never see the chooser (login + browser Back to /apps).
-  useEffect(() => {
-    if (!ready || busy || bothApps) return;
-    const kind = resolvePortalLanding(access);
-    if (kind === 'pnl') openPnlApp({ setError, setBusy });
-    else if (kind === 'leadtrack') openLeadTrackApp({ setError, setBusy });
-    else if (kind === 'workspace') openWorkspaceApp({ setBusy, setError });
-  }, [ready, access, busy, bothApps, setError]);
+  usePortalSingleAppRedirect({
+    ready,
+    busy,
+    bothApps,
+    error,
+    access,
+    setBusy,
+    setError,
+  });
 
   const email = user?.email || '';
   const name = user?.name || email;
@@ -63,6 +66,7 @@ export function usePortalApps() {
     ready,
     busy,
     error,
+    setError,
     menuOpen,
     menuRef,
     setMenuOpen,
@@ -79,6 +83,7 @@ export function usePortalApps() {
       prefetchPnlUrl().catch(() => {});
     },
     openWorkspace: () => openWorkspaceApp({ setBusy, setError }),
+    retryOpen: () => retryPortalAppOpen(access, setError, setBusy),
     onLogout: () => logoutPortalApp({ dispatch, logoutThunk: logout }),
     goProfile: () => {
       setMenuOpen(false);

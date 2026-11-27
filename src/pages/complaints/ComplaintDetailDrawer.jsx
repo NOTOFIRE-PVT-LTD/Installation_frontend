@@ -43,6 +43,9 @@ function buildPayload(formData, complaint) {
     p.note = formData.note.trim();
     if (normStatus === 'PENDING') p.pendingRemark = formData.note.trim();
   }
+  if (formData.photos && formData.photos !== complaint.photos) {
+    p.photos = formData.photos;
+  }
   return p;
 }
 
@@ -60,7 +63,7 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
   const [formData, setFormData] = useState({
     customerName: '', contactNumber: '', whatsappNumber: '', email: '', customerOrganization: '',
     customerLocation: '', productName: '', productSerialNumber: '', category: '', subject: '',
-    description: '', assignedTo: '', status: '', priority: '', resolutionNotes: '', note: '',
+    description: '', assignedTo: '', status: '', priority: '', resolutionNotes: '', note: '', photos: [],
   });
 
   const initFormData = (doc) => ({
@@ -71,8 +74,23 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
     productName: doc.productName || doc.product || '', productSerialNumber: doc.productSerialNumber || '',
     category: doc.category || 'Product Quality', subject: doc.subject || '', description: doc.description || '',
     assignedTo: String(doc.assignedTo?._id || ''), status: doc.status || 'NEW', priority: doc.priority || 'MEDIUM',
-    resolutionNotes: doc.resolutionNotes || '', note: '',
+    resolutionNotes: doc.resolutionNotes || '', note: '', photos: doc.photos || [],
   });
+
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setFormData((prev) => ({
+          ...prev,
+          photos: [...(prev.photos || []), { url: ev.target.result, publicId: null }],
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   useEffect(() => {
     if (!open || !complaintId) return;
@@ -167,7 +185,7 @@ export default function ComplaintDetailDrawer({ open, complaintId, onClose, onUp
           <Stack spacing={2}>
             {saveError && <Alert severity="error">{saveError}</Alert>}
             <ComplaintDetailStatusSection formData={formData} handleChange={handleChange} statusOptions={statusOptions} assigneeOptions={assigneeOptions} disabled={isFieldEngineer} />
-            <ComplaintDetailOverview formData={formData} handleChange={handleChange} complaint={complaint} />
+            <ComplaintDetailOverview formData={formData} handleChange={handleChange} complaint={complaint} onPhotoUpload={handlePhotoUpload} />
             <ComplaintDetailResolutionSection formData={formData} handleChange={handleChange} complaint={complaint} />
             <ComplaintDetailTimeline activityLogs={complaint?.activityLogs || []} />
           </Stack>

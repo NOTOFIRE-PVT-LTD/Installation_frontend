@@ -18,11 +18,11 @@ export default function StageStepper({ steps, statuses }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: '#fff',
                 flexShrink: 0,
                 bgcolor:
-                  statuses[i] === 'done' ? 'success.main' : statuses[i] === 'current' ? 'warning.main' : 'grey.400',
+                  statuses[i] === 'done' ? 'success.main' : statuses[i] === 'current' ? 'primary.main' : 'grey.400',
               }}
             >
               {statuses[i] === 'done' ? '✓' : i + 1}
@@ -30,7 +30,7 @@ export default function StageStepper({ steps, statuses }) {
             <Typography
               variant="caption"
               color={statuses[i] === 'pending' ? 'text.secondary' : 'text.primary'}
-              sx={{ whiteSpace: 'nowrap', fontWeight: statuses[i] === 'current' ? 700 : 500 }}
+              sx={{ whiteSpace: 'nowrap', fontWeight: 500 }}
             >
               {label}
             </Typography>

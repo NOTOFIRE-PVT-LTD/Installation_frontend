@@ -11,6 +11,7 @@ export {
   expandNavItems,
   isNavItemAllowed,
   flattenNavItems,
+  listWorkspaceApps,
   getDefaultLandingPath,
   canOpenPath,
 } from './navAccess';

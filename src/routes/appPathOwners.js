@@ -12,6 +12,7 @@ const APP_PATH_OWNERS = [
   { prefix: '/my-approvals', permission: 'attendance' },
   { prefix: '/shipping', permission: 'shipping' },
   { prefix: '/import-control', permission: 'importControl' },
+  { prefix: '/lead-track', permission: 'leadTrack' },
   { prefix: '/contractor-attendance', permission: 'contractorAttendance' },
   { prefix: '/payflow-requests', permission: 'payflowUser' },
   { prefix: '/payflow', permission: 'payflow' },
@@ -46,6 +47,7 @@ export function userHasAppPermission(permissions, ownerKey) {
  */
 export function canStayOnWorkspacePath(pathname, user, permissions, navItems = []) {
   if (!user) return false;
+  if (user?.portalSource === 'pnl') return false;
   if (isSuperAdminUser(user)) return true;
   const path = String(pathname || '');
   if (path === '/profile' || path === '/home' || path === '/dashboard' || path === '/403' || path === '/404') {

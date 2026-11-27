@@ -17,9 +17,18 @@ const badgeSx = {
 
 export default function SidebarNavItemIcon({ icon, isCollapsed, badgeContent }) {
   return (
-    <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 40, justifyContent: 'center', color: 'inherit' }}>
+    <ListItemIcon
+      sx={{
+        minWidth: isCollapsed ? 0 : 44,
+        justifyContent: 'center',
+        color: 'inherit',
+      }}
+    >
       <Badge badgeContent={badgeContent} color="error" sx={badgeSx}>
-        <FontAwesomeIcon icon={icon} fixedWidth style={{ color: 'currentColor' }} />
+        <span className="glass-icon glass-icon--nav">
+          <span className="glass-icon__gloss" aria-hidden />
+          <FontAwesomeIcon icon={icon} fixedWidth className="glass-icon__glyph" style={{ color: 'currentColor' }} />
+        </span>
       </Badge>
     </ListItemIcon>
   );
