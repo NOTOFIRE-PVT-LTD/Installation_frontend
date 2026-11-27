@@ -58,7 +58,6 @@ export default function PortalSidebar({
           <span className="central-side-hint">{busy === 'workspace' ? '…' : 'Open'}</span>
         </button>
       ) : null}
-
       {bothApps ? (
         <>
           <p className="central-side-label">Directory</p>

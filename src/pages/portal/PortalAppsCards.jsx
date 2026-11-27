@@ -11,7 +11,7 @@ export default function PortalAppsCards({
       <p className="central-home__eyebrow">Valuecon</p>
       <h2 className="central-home__title">All your apps. One place.</h2>
       <p className="central-home__lead">
-        Valuecon Centralisation — open P&amp;L or Workspace below. One login. No second sign-in.
+        Valuecon Centralisation — open P&amp;L or Workspace below. LeadTrack lives inside Workspace.
       </p>
       <p className="central-home__sub">Plant numbers. Field work. Connected.</p>
       <div className="central-home__apps">

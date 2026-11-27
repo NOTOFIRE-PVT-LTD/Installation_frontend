@@ -42,7 +42,7 @@ export default function PageHeader({ title, subtitle, actions }) {
             alignItems: 'center',
             gap: 1,
             minWidth: 0,
-            '& .MuiButton-root': { flex: { xs: '1 1 calc(50% - 4px)', sm: '0 0 auto' }, minWidth: 0 },
+            '& .MuiButton-root': { flex: { xs: '1 1 100%', sm: '0 0 auto' }, minWidth: 0 },
           }}
         >
           {actions}

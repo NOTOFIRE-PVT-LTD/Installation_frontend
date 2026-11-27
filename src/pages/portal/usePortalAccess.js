@@ -4,6 +4,23 @@ import { portalApi } from '../../api/portalApi';
 let cachedAccess = null;
 let accessPromise = null;
 
+/** Clear after logout / user switch so the next login cannot reuse another user's apps. */
+export function clearPortalAccessCache() {
+  cachedAccess = null;
+  accessPromise = null;
+}
+
+/** Seed cache right after login so /apps never briefly looks single-app. */
+export function setPortalAccessCache(access) {
+  cachedAccess = {
+    pnl: Boolean(access?.pnl),
+    workspace: Boolean(access?.workspace),
+    leadtrack: Boolean(access?.leadtrack),
+  };
+  accessPromise = null;
+  return cachedAccess;
+}
+
 function loadPortalAccess() {
   if (cachedAccess) return Promise.resolve(cachedAccess);
   if (!accessPromise) {
@@ -11,7 +28,11 @@ function loadPortalAccess() {
       .me()
       .then((res) => {
         const a = res.data?.data?.access || {};
-        cachedAccess = { pnl: Boolean(a.pnl), workspace: Boolean(a.workspace) };
+        cachedAccess = {
+          pnl: Boolean(a.pnl),
+          workspace: Boolean(a.workspace),
+          leadtrack: Boolean(a.leadtrack),
+        };
         return cachedAccess;
       })
       .finally(() => {
@@ -21,12 +42,15 @@ function loadPortalAccess() {
   return accessPromise;
 }
 
-export function usePortalAccess() {
-  const [access, setAccess] = useState(cachedAccess || { pnl: false, workspace: false });
+export function usePortalAccess(enabled = true) {
+  const [access, setAccess] = useState(
+    cachedAccess || { pnl: false, workspace: false, leadtrack: false },
+  );
   const [ready, setReady] = useState(Boolean(cachedAccess));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return undefined;
     let cancelled = false;
     loadPortalAccess()
       .then((a) => {
@@ -43,7 +67,7 @@ export function usePortalAccess() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
-  return { access, ready, error, setError };
+  return { access, ready: enabled ? ready : false, error, setError };
 }

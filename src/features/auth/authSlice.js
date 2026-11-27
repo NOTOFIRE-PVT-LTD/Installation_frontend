@@ -16,10 +16,11 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials(state, action) {
+      // Cookie refresh must not wipe "Log in as" (Atul) back to the admin (Yashika).
+      if (state.impersonatorAdmin) return;
       state.user = action.payload.user;
       state.permissions = action.payload.permissions;
       state.accessToken = action.payload.accessToken;
-      state.impersonatorAdmin = null;
       state.bootstrapped = true;
       state.status = 'succeeded';
       state.error = null;
@@ -81,6 +82,11 @@ const authSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
+        if (state.impersonatorAdmin) {
+          state.bootstrapped = true;
+          state.status = 'succeeded';
+          return;
+        }
         // Stale refresh can finish after Central SSO — don't overwrite the newer session.
         const incomingEmail = String(action.payload?.user?.email || '').toLowerCase();
         const currentEmail = String(state.user?.email || '').toLowerCase();
@@ -101,6 +107,12 @@ const authSlice = createSlice({
         state.bootstrapped = true;
       })
       .addCase(fetchMe.rejected, (state) => {
+        // Login can finish while the mount-time fetchMe is still rejecting — keep the new session.
+        if (state.accessToken && state.user) {
+          state.bootstrapped = true;
+          state.status = 'succeeded';
+          return;
+        }
         state.status = 'idle';
         state.user = null;
         state.permissions = null;

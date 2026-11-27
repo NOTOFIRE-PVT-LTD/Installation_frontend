@@ -5,11 +5,25 @@ export default function PortalAppsNav({
   menuOpen,
   menuRef,
   onToggleMenu,
+  onToggleNav,
+  showNavToggle,
   onProfile,
   onLogout,
 }) {
   return (
     <header className="central-navbar">
+      {showNavToggle ? (
+        <button
+          type="button"
+          className="central-navbar__menu"
+          aria-label="Open menu"
+          onClick={onToggleNav}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      ) : null}
       <div className="central-navbar__brand">
         <img
           src={`${import.meta.env.BASE_URL}brand/valuecon.png`}

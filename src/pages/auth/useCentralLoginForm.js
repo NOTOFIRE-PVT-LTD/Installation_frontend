@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../app/hooks';
 import { login, loginWithOtp } from '../../features/auth/authThunks';
 import { authApi } from '../../api/authApi';
 import { applyPortalLanding } from '../portal/portalLanding';
+import { clearPortalAccessCache } from '../portal/usePortalAccess';
 import { getLoginCopy } from './centralLoginCopy';
 
 export function useCentralLoginForm() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const [locale, setLocale] = useState(() => localStorage.getItem('portal_locale') || 'en');
   const t = getLoginCopy(locale);
   const [mode, setMode] = useState('whatsapp');
@@ -40,11 +40,8 @@ export function useCentralLoginForm() {
   }, [otpExpiresAt]);
 
   async function goAfterLogin() {
-    const from = location.state?.from?.pathname;
-    if (from && from !== '/login' && from !== '/apps') {
-      navigate(from, { replace: true });
-      return;
-    }
+    clearPortalAccessCache();
+    // Always route by portal access — never restore /dashboard for P&L-only users.
     try {
       await applyPortalLanding({
         navigate,

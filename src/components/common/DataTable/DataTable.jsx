@@ -1,675 +1,139 @@
-import { useEffect, useMemo, useState } from 'react';
-import { DataGrid } from '@mui/x-data-grid';
+import { useMemo } from 'react';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
-import Popover from '@mui/material/Popover';
-import Checkbox from '@mui/material/Checkbox';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Button from '@mui/material/Button';
-import Badge from '@mui/material/Badge';
-import Typography from '@mui/material/Typography';
-import Skeleton from '@mui/material/Skeleton';
-import TablePagination from '@mui/material/TablePagination';
-import SearchIcon from '@mui/icons-material/Search';
-import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
-import AnimatedActionButton from '../AnimatedActionButton';
-import FilterListIcon from '@mui/icons-material/FilterListOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import StatusBadge from '../StatusBadge';
-import { useDebounce } from '../../../hooks/useDebounce';
+import DataTableToolbar from './DataTableToolbar';
+import DataTableGrid from './DataTableGrid';
+import DataTableRowActions from './DataTableRowActions';
+import { useDataTableState } from './useDataTableState';
 
-const MONGO_ID_RE = /^[a-f\d]{24}$/i;
 const GRID_MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-function getRowKey(row) {
-  const raw = row?._id ?? row?.id;
-  if (raw == null) return '';
-  if (typeof raw === 'object' && raw.toString && raw.toString !== Object.prototype.toString) {
-    return String(raw.toString());
-  }
-  return String(raw);
-}
+export { extractSelectedRowIds } from './dataTableRowUtils';
 
-export function extractSelectedRowIds(model, rows = []) {
-  if (model == null) return [];
-
-  let rawIds = [];
-  if (Array.isArray(model)) {
-    rawIds = model;
-  } else if (model.ids instanceof Set) {
-    if (model.type === 'exclude') {
-      const excluded = model.ids;
-      rawIds = (rows || [])
-        .map(getRowKey)
-        .filter((id) => id && !excluded.has(id) && !excluded.has(Number(id)));
-    } else {
-      rawIds = [...model.ids];
+function buildFinalColumns(columns, statusField, actions) {
+  let cols = columns.map((col) => {
+    const sized = col.flex == null && col.width == null ? { ...col, flex: 1 } : col;
+    if (sized.field === statusField && !sized.renderCell) {
+      return { ...sized, renderCell: (params) => <StatusBadge status={params.value} /> };
     }
-  } else if (Array.isArray(model.ids)) {
-    rawIds = model.ids;
+    return sized;
+  });
+  if (actions.length > 0) {
+    cols = [
+      ...cols,
+      {
+        field: '__actions',
+        headerName: '',
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        width: 52,
+        align: 'right',
+        headerAlign: 'right',
+        renderCell: (params) => <DataTableRowActions row={params.row} actions={actions} />,
+      },
+    ];
   }
-
-  return [
-    ...new Set(
-      rawIds
-        .map((id) => String(id ?? '').trim())
-        .filter((id) => MONGO_ID_RE.test(id))
-    ),
-  ];
+  return cols;
 }
 
-function SkeletonOverlay() {
-  return (
-    <Stack sx={{ p: 2 }} spacing={1.5}>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} variant="rounded" height={36} />
-      ))}
-    </Stack>
+export default function DataTable(props) {
+  const {
+    columns,
+    rows,
+    totalCount,
+    page,
+    pageSize,
+    onPageChange,
+    onPageSizeChange,
+    sortModel,
+    onSortChange,
+    searchValue,
+    onSearchChange,
+    filters = [],
+    filterValues = {},
+    onFilterChange,
+    statusField,
+    actions = [],
+    onExportCsv,
+    loading,
+    emptyMessage = 'No records found',
+    storageKey,
+    onRowClick,
+    checkboxSelection = false,
+    rowSelectionModel,
+    onRowSelectionModelChange,
+    onBulkDelete,
+    bulkDeleteLabel = 'Delete selected',
+    pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+    toolbarStart,
+    toolbarEnd,
+  } = props;
+
+  const state = useDataTableState({
+    storageKey,
+    searchValue,
+    onSearchChange,
+    filterValues,
+    rowSelectionModel,
+    rows,
+  });
+
+  const finalColumns = useMemo(
+    () => buildFinalColumns(columns, statusField, actions),
+    [columns, statusField, actions],
   );
-}
 
-function RowActionsMenu({ row, actions }) {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const visibleActions = actions.filter((a) => !a.show || a.show(row));
-
-  if (visibleActions.length === 0) return null;
-
-  return (
-    <>
-      <IconButton
-        size="small"
-        aria-label="More actions"
-        onClick={(e) => {
-          e.stopPropagation();
-          setAnchorEl(e.currentTarget);
-        }}
-        sx={{
-          borderRadius: '999px',
-          color: 'text.secondary',
-          '&:hover': { bgcolor: 'primary.light', color: 'primary.main' },
-        }}
-      >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-        onClick={(e) => e.stopPropagation()}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '8px',
-              border: '1px solid',
-              borderColor: 'divider',
-              boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
-              minWidth: 180,
-              mt: 0.5,
-            },
-          },
-        }}
-      >
-        {visibleActions.map((action) => (
-          <MenuItem
-            key={action.label}
-            dense
-            onClick={() => {
-              setAnchorEl(null);
-              action.onClick(row);
-            }}
-            sx={{
-              fontSize: '0.75rem',
-              py: 0.85,
-              color: action.danger ? 'error.main' : 'text.primary',
-            }}
-          >
-            {action.icon && <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>{action.icon}</ListItemIcon>}
-            <ListItemText primary={action.label} primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 500 }} />
-          </MenuItem>
-        ))}
-      </Menu>
-    </>
-  );
-}
-
-function loadStoredVisibility(storageKey) {
-  if (!storageKey) return {};
-  try {
-    const saved = localStorage.getItem(`datatable-columns-${storageKey}`);
-    return saved ? JSON.parse(saved) : {};
-  } catch {
-    return {};
-  }
-}
-
-export default function DataTable({
-  columns,
-  rows,
-  totalCount,
-  page,
-  pageSize,
-  onPageChange,
-  onPageSizeChange,
-  sortModel,
-  onSortChange,
-  searchValue,
-  onSearchChange,
-  filters = [],
-  filterValues = {},
-  onFilterChange,
-  statusField,
-  actions = [],
-  onExportCsv,
-  loading,
-  emptyMessage = 'No records found',
-  storageKey,
-  onRowClick,
-  checkboxSelection = false,
-  rowSelectionModel,
-  onRowSelectionModelChange,
-  onBulkDelete,
-  bulkDeleteLabel = 'Delete selected',
-  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-  toolbarStart,
-  toolbarEnd,
-}) {
   const largePages = pageSizeOptions.some((size) => size > GRID_MAX_PAGE_SIZE);
-  const [columnsMenuAnchor, setColumnsMenuAnchor] = useState(null);
-  const [filtersAnchor, setFiltersAnchor] = useState(null);
-  const activeFilterCount = Object.values(filterValues).filter(Boolean).length;
-  const [columnVisibilityModel, setColumnVisibilityModel] = useState(() => loadStoredVisibility(storageKey));
-
-  const [localSearch, setLocalSearch] = useState(searchValue || '');
-  const debouncedSearch = useDebounce(localSearch, 400);
-
-  const selectedIds = useMemo(
-    () => extractSelectedRowIds(rowSelectionModel, rows),
-    [rowSelectionModel, rows]
-  );
-
-  const selectedCount = selectedIds.length;
-
-  useEffect(() => {
-    setLocalSearch(searchValue || '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchValue]);
-
-  useEffect(() => {
-    if (onSearchChange && debouncedSearch !== searchValue) {
-      onSearchChange(debouncedSearch);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
-
-  const handleVisibilityChange = (model) => {
-    setColumnVisibilityModel(model);
-    if (storageKey) {
-      try {
-        localStorage.setItem(`datatable-columns-${storageKey}`, JSON.stringify(model));
-      } catch {
-        // ignore storage failures (e.g. private browsing quota)
-      }
-    }
-  };
-
-  const toggleColumn = (field) => {
-    const isVisible = columnVisibilityModel[field] !== false;
-    handleVisibilityChange({ ...columnVisibilityModel, [field]: !isVisible });
-  };
-
-  const finalColumns = useMemo(() => {
-    let cols = columns.map((col) => {
-      const sized = col.flex == null && col.width == null ? { ...col, flex: 1 } : col;
-      if (sized.field === statusField && !sized.renderCell) {
-        return { ...sized, renderCell: (params) => <StatusBadge status={params.value} /> };
-      }
-      return sized;
-    });
-
-    if (actions.length > 0) {
-      cols = [
-        ...cols,
-        {
-          field: '__actions',
-          headerName: '',
-          sortable: false,
-          filterable: false,
-          disableColumnMenu: true,
-          width: 52,
-          align: 'right',
-          headerAlign: 'right',
-          renderCell: (params) => <RowActionsMenu row={params.row} actions={actions} />,
-        },
-      ];
-    }
-
-    return cols;
-  }, [columns, statusField, actions]);
 
   return (
-    <Box sx={{ minWidth: 0 }}>
-      <Stack
-        direction="row"
-        spacing={1.25}
-        useFlexGap
-        flexWrap={{ xs: onSearchChange ? 'wrap' : 'nowrap', md: 'nowrap' }}
-        sx={{ mb: 2, minWidth: 0 }}
-        alignItems="center"
-      >
-        {toolbarStart ? (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              // Mobile row 1: Staff Role shares the line with Search
-              flex: onSearchChange ? { xs: '1 1 40%', md: '0 0 auto' } : '1 1 0%',
-              maxWidth: onSearchChange ? { xs: '42%', md: 'none' } : undefined,
-              flexWrap: 'nowrap',
-              minWidth: 0,
-            }}
-          >
-            {toolbarStart}
-          </Box>
-        ) : null}
-        {onSearchChange ? (
-          <TextField
-            size="small"
-            placeholder="Search…"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            sx={{
-              // Mobile row 1: Search next to Staff Role
-              flex: { xs: '1 1 52%', md: '1 1 160px' },
-              minWidth: { xs: 0, md: 140 },
-              maxWidth: { xs: '58%', md: 'none' },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 999,
-                minHeight: 40,
-                '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main', borderWidth: 1 },
-              },
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <SearchIcon sx={{ color: 'primary.main', fontSize: 16, width: 16, height: 16 }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        ) : toolbarStart ? null : (
-          <Box sx={{ flex: 1 }} />
-        )}
-        <Stack
-          direction="row"
-          spacing={0.75}
-          alignItems="center"
-          flexWrap="nowrap"
-          useFlexGap
-          sx={{
-            // Mobile row 2: columns icon + both action buttons (≤3 lines total for toolbar)
-            flex: { xs: '1 1 100%', md: '0 0 auto' },
-            width: { xs: '100%', md: 'auto' },
-            minWidth: 0,
-            justifyContent: { xs: 'flex-start', md: 'flex-end' },
-            '& > .MuiIconButton-root': { flex: '0 0 auto' },
-            '& > .MuiStack-root': { flex: '1 1 auto', minWidth: 0 },
-          }}
-        >
-          {checkboxSelection && selectedCount > 0 && onBulkDelete && (
-            <Button
-              size="small"
-              color="error"
-              variant="outlined"
-              startIcon={<DeleteOutlineIcon />}
-              onClick={() => onBulkDelete(selectedIds)}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              {bulkDeleteLabel} ({selectedCount})
-            </Button>
-          )}
-          {filters.length > 0 && (
-            <>
-              <Tooltip title="Filters">
-                <IconButton
-                  onClick={(e) => setFiltersAnchor(e.currentTarget)}
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '999px',
-                    bgcolor: 'primary.light',
-                    color: 'primary.main',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    '&:hover': { bgcolor: 'rgba(212, 163, 78, 0.28)', borderColor: '#D4A34E', color: '#3A230B' },
-                  }}
-                >
-                  <Badge
-                    badgeContent={activeFilterCount}
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        bgcolor: 'primary.main',
-                        color: '#fff',
-                        fontSize: '0.625rem',
-                        minWidth: 16,
-                        height: 16,
-                      },
-                    }}
-                  >
-                    <FilterListIcon sx={{ fontSize: 18 }} />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-              <Popover
-                anchorEl={filtersAnchor}
-                open={Boolean(filtersAnchor)}
-                onClose={() => setFiltersAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
-                      mt: 0.75,
-                    },
-                  },
-                }}
-              >
-                <Stack spacing={1.5} sx={{ p: 1.75, minWidth: 240 }}>
-                  <Stack direction="row" spacing={0.75} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: (theme) => `${Math.max(4, (theme.shape?.borderRadius ?? 10) - 2)}px`,
-                        bgcolor: 'primary.light',
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <FilterListIcon sx={{ fontSize: 14 }} />
-                    </Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem' }}>Filters</Typography>
-                  </Stack>
-                  {filters.map((filter) => {
-                    const selectedApps = filter.multiple
-                      ? String(filterValues[filter.field] || '')
-                          .split(',')
-                          .filter(Boolean)
-                      : null;
-                    return (
-                    <TextField
-                      key={filter.field}
-                      size="small"
-                      select
-                      label={filter.label}
-                      value={filter.multiple ? selectedApps : filterValues[filter.field] || ''}
-                      onChange={(e) => {
-                        if (!filter.multiple) {
-                          onFilterChange(filter.field, e.target.value);
-                          return;
-                        }
-                        const next = e.target.value;
-                        onFilterChange(filter.field, (Array.isArray(next) ? next : [next]).filter(Boolean).join(','));
-                      }}
-                      fullWidth
-                      SelectProps={
-                        filter.multiple
-                          ? {
-                              multiple: true,
-                              renderValue: (selected) =>
-                                selected
-                                  .map((val) => filter.options.find((opt) => opt.value === val)?.label || val)
-                                  .join(', '),
-                            }
-                          : undefined
-                      }
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
-                          bgcolor: 'background.paper',
-                          fontSize: '0.75rem',
-                        },
-                      }}
-                    >
-                      {!filter.multiple && <MenuItem value="">All</MenuItem>}
-                      {filter.options.map((opt) => (
-                        <MenuItem key={opt.value} value={opt.value}>
-                          {filter.multiple && (
-                            <Checkbox size="small" checked={selectedApps.includes(opt.value)} sx={{ p: 0.5, mr: 0.5 }} />
-                          )}
-                          {opt.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    );
-                  })}
-                  {activeFilterCount > 0 && (
-                    <Button
-                      size="small"
-                      onClick={() => filters.forEach((filter) => onFilterChange(filter.field, ''))}
-                      sx={{ alignSelf: 'flex-start', color: 'primary.main', fontWeight: 600 }}
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                </Stack>
-              </Popover>
-            </>
-          )}
-          <Tooltip title="Columns">
-            <IconButton
-              onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: '999px',
-                bgcolor: 'primary.light',
-                color: 'primary.main',
-                border: '1px solid',
-                borderColor: 'divider',
-                '&:hover': { bgcolor: 'rgba(212, 163, 78, 0.28)', borderColor: '#D4A34E', color: '#3A230B' },
-              }}
-            >
-              <ViewColumnIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={columnsMenuAnchor}
-            open={Boolean(columnsMenuAnchor)}
-            onClose={() => setColumnsMenuAnchor(null)}
-            slotProps={{
-              paper: {
-                sx: {
-                  borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  boxShadow: '0 12px 28px rgba(31, 42, 68, 0.1)',
-                  mt: 0.75,
-                  minWidth: 180,
-                },
-              },
-            }}
-          >
-            <Box sx={{ px: 1.5, pt: 1.25, pb: 0.5 }}>
-              <Stack direction="row" spacing={0.75} alignItems="center">
-                <Box
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '999px',
-                    bgcolor: 'primary.light',
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ViewColumnIcon sx={{ fontSize: 14 }} />
-                </Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem' }}>Columns</Typography>
-              </Stack>
-            </Box>
-            {columns
-              .filter((col) => col.field !== '__actions')
-              .map((col) => (
-                <MenuItem
-                  key={col.field}
-                  onClick={() => toggleColumn(col.field)}
-                  dense
-                  sx={{
-                    py: 0,
-                    minHeight: 28,
-                    gap: 0,
-                    '&:hover': { bgcolor: '#f1f5f9' },
-                  }}
-                >
-                  <Checkbox
-                    checked={columnVisibilityModel[col.field] !== false}
-                    size="small"
-                    sx={{
-                      p: 0.35,
-                      mr: 0.5,
-                      color: 'primary.main',
-                      '&.Mui-checked': { color: 'primary.main' },
-                      '& .MuiSvgIcon-root': { fontSize: 16 },
-                    }}
-                  />
-                  <ListItemText
-                    primary={col.headerName || col.field}
-                    sx={{ my: 0 }}
-                    primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.2 }}
-                  />
-                </MenuItem>
-              ))}
-          </Menu>
-          {onExportCsv && <AnimatedActionButton kind="download" label="Download" onClick={onExportCsv} />}
-          {toolbarEnd}
-        </Stack>
-      </Stack>
-
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          borderRadius: (theme) => `${theme.shape?.borderRadius ?? 10}px`,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        <DataGrid
-          autoHeight
-          disableColumnMenu
-          rows={rows}
-          columns={finalColumns}
-          getRowId={(row) => {
-            const key = getRowKey(row);
-            if (!key) {
-              throw new Error('DataTable row is missing _id');
-            }
-            return key;
-          }}
-          loading={loading}
-          paginationMode="server"
-          sortingMode="server"
-          {...(largePages
-            ? {
-                // MIT DataGrid rejects pageSize > 100, so paging is rendered by TablePagination below
-                // and the grid just shows every row it receives (server mode never slices rows).
-                rowCount: rows.length,
-                paginationModel: { page: 0, pageSize: GRID_MAX_PAGE_SIZE },
-                onPaginationModelChange: () => {},
-                pageSizeOptions: [GRID_MAX_PAGE_SIZE],
-                hideFooterPagination: true,
-              }
-            : {
-                rowCount: totalCount,
-                paginationModel: {
-                  page: Math.max(page - 1, 0),
-                  pageSize: Math.min(Math.max(Number(pageSize) || 10, 1), GRID_MAX_PAGE_SIZE),
-                },
-                onPaginationModelChange: (model) => {
-                  const nextSize = Math.min(Math.max(model.pageSize, 1), GRID_MAX_PAGE_SIZE);
-                  if (nextSize !== pageSize) onPageSizeChange(nextSize);
-                  else onPageChange(model.page + 1);
-                },
-                pageSizeOptions,
-              })}
-          sortModel={sortModel ? [sortModel] : []}
-          onSortModelChange={(model) => onSortChange(model[0])}
-          columnVisibilityModel={columnVisibilityModel}
-          onColumnVisibilityModelChange={handleVisibilityChange}
-          onRowClick={onRowClick ? (params) => onRowClick(params.row) : undefined}
-          checkboxSelection={checkboxSelection}
-          rowSelectionModel={rowSelectionModel}
-          onRowSelectionModelChange={onRowSelectionModelChange}
-          keepNonExistentRowsSelected
-          disableRowSelectionOnClick
-          sx={{
-            border: 'none',
-            '& .MuiDataGrid-virtualScroller': { overflowX: 'auto' },
-            '& .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller': { border: 'none' },
-            ...(onRowClick ? { '& .MuiDataGrid-row': { cursor: 'pointer' } } : {}),
-            '& .MuiDataGrid-cell': {
-              display: 'flex',
-              alignItems: 'center',
-              outline: 'none',
-              overflow: 'hidden',
-            },
-            '& .MuiDataGrid-cellContent': {
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%',
-            },
-            '& .MuiDataGrid-columnHeader': {
-              outline: 'none',
-            },
-          }}
-          slots={{
-            noRowsOverlay: () => (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', py: 4 }}>
-                <Typography color="text.secondary">{emptyMessage}</Typography>
-              </Box>
-            ),
-            loadingOverlay: SkeletonOverlay,
-          }}
-        />
-        {largePages && (
-          <TablePagination
-            component="div"
-            count={totalCount || 0}
-            page={Math.max(page - 1, 0)}
-            rowsPerPage={Number(pageSize) || pageSizeOptions[0]}
-            rowsPerPageOptions={
-              pageSizeOptions.includes(Number(pageSize))
-                ? pageSizeOptions
-                : [...pageSizeOptions, Number(pageSize)].filter(Boolean).sort((a, b) => a - b)
-            }
-            onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
-            onRowsPerPageChange={(event) => onPageSizeChange(Number(event.target.value))}
-            sx={{ borderTop: '1px solid', borderColor: 'divider' }}
-          />
-        )}
-      </Box>
+    <Box sx={{ width: '100%', minWidth: 0 }}>
+      <DataTableToolbar
+        toolbarStart={toolbarStart}
+        toolbarEnd={toolbarEnd}
+        onSearchChange={onSearchChange}
+        localSearch={state.localSearch}
+        setLocalSearch={state.setLocalSearch}
+        filters={filters}
+        filterValues={filterValues}
+        onFilterChange={onFilterChange}
+        activeFilterCount={state.activeFilterCount}
+        filtersAnchor={state.filtersAnchor}
+        setFiltersAnchor={state.setFiltersAnchor}
+        columns={columns}
+        columnVisibilityModel={state.columnVisibilityModel}
+        toggleColumn={state.toggleColumn}
+        columnsMenuAnchor={state.columnsMenuAnchor}
+        setColumnsMenuAnchor={state.setColumnsMenuAnchor}
+        checkboxSelection={checkboxSelection}
+        selectedCount={state.selectedIds.length}
+        onBulkDelete={onBulkDelete}
+        bulkDeleteLabel={bulkDeleteLabel}
+        selectedIds={state.selectedIds}
+        onExportCsv={onExportCsv}
+      />
+      <DataTableGrid
+        rows={rows}
+        finalColumns={finalColumns}
+        loading={loading}
+        emptyMessage={emptyMessage}
+        largePages={largePages}
+        totalCount={totalCount}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        pageSizeOptions={pageSizeOptions}
+        sortModel={sortModel}
+        onSortChange={onSortChange}
+        columnVisibilityModel={state.columnVisibilityModel}
+        handleVisibilityChange={state.handleVisibilityChange}
+        onRowClick={onRowClick}
+        checkboxSelection={checkboxSelection}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={onRowSelectionModelChange}
+      />
     </Box>
   );
 }

@@ -1,10 +1,12 @@
 import Button from '@mui/material/Button';
+import { Link as RouterLink } from 'react-router-dom';
 
 /** Navbar control matching P&L “Apps” — back to Centralisation chooser. */
 export default function DashboardAppsHomeLink() {
   return (
     <Button
-      href="/apps"
+      component={RouterLink}
+      to="/apps"
       size="small"
       variant="outlined"
       sx={{

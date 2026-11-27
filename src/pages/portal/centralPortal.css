@@ -1,4 +1,4 @@
-﻿/* Centralisation shell — Workspace Valuecon theme (P&L plant UI stays separate) */
+/* Centralisation shell — Workspace Valuecon theme (P&L plant UI stays separate) */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap");
 
 html:has(.central-shell),
@@ -376,21 +376,27 @@ body:has(.central-shell) {
 }
 
 .central-navbar__menu {
-  display: none;
-  width: 38px;
-  height: 38px;
+  display: grid;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   place-items: center;
-  border: none;
+  border: 1.5px solid rgba(250, 226, 180, 0.85);
   border-radius: 10px;
-  background: rgba(250, 226, 180, 0.2);
+  background: rgba(32, 18, 4, 0.35);
   color: #fff;
   cursor: pointer;
   padding: 0;
 }
 
 .central-navbar__menu:hover {
-  background: rgba(250, 226, 180, 0.35);
+  background: rgba(32, 18, 4, 0.55);
+}
+
+@media (min-width: 801px) {
+  .central-navbar__menu {
+    display: none;
+  }
 }
 
 .central-nav-backdrop {
@@ -403,6 +409,25 @@ body:has(.central-shell) {
   min-height: 0;
   flex: 1;
   height: 100%;
+}
+
+.central-users__home {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0.5rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--c-card-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-brown-mid);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.central-users__home:hover {
+  background: var(--c-yellow-pale);
 }
 
 .central-users__title {
@@ -725,10 +750,6 @@ body:has(.central-shell) {
     grid-template-columns: 1fr;
   }
 
-  .central-navbar__menu {
-    display: grid;
-  }
-
   .central-navbar__brand {
     width: auto;
   }
@@ -828,6 +849,38 @@ body:has(.central-shell) {
   align-items: center;
   gap: 0.65rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.central-users-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(212, 163, 78, 0.12);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--c-card-border);
+}
+
+.central-users-tab {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-brown-light);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.central-users-tab.is-active {
+  background: linear-gradient(90deg, #FFE997 0%, #D4A34E 60%, #A37836 100%);
+  color: #3A230B;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(88, 55, 20, 0.25);
 }
 
 .central-users-search {
@@ -846,6 +899,13 @@ body:has(.central-shell) {
   color: var(--c-text);
   background: #fff;
   box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.central-users-search input:focus {
+  border-color: #D4A34E;
+  box-shadow: 0 0 0 3px rgba(212, 163, 78, 0.25);
 }
 
 .central-users-search__icon {

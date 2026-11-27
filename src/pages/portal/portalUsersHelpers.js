@@ -13,10 +13,16 @@ export function formatPortalApps(apps = []) {
   return 'Workspace';
 }
 
-export function filterPortalUsers(users, search) {
+export function filterPortalUsers(users, search, appFilter = 'all') {
+  let list = users;
+  if (appFilter === 'workspace') {
+    list = list.filter((u) => u.apps?.includes('workspace'));
+  } else if (appFilter === 'pnl') {
+    list = list.filter((u) => u.apps?.includes('pnl'));
+  }
   const q = String(search || '').trim().toLowerCase();
-  if (!q) return users;
-  return users.filter((u) => {
+  if (!q) return list;
+  return list.filter((u) => {
     const hay = [u.name, u.email, u.phone, u.role, ...(u.apps || [])]
       .filter(Boolean)
       .join(' ')
