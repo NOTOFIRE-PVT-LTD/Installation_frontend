@@ -68,19 +68,22 @@ export default function MigratedAppWorkspace({
   const deep = canEmbedShipping && isDeepEmbed(effectivePath, rootPath);
 
   const setTab = (id) => {
-    const tab = tabs.find((t) => t.id === id);
     const next = new URLSearchParams(params);
     next.set('tab', id);
     setParams(next, { replace: true });
     setPage(1);
     setSearch('');
-    if (canEmbedShipping && tab?.path != null) {
-      setLivePath(null);
-      setEmbedPath(tab.path || '/');
+  };
+
+  // Sidebar Links only change ?tab= — drive the iframe from that (same as LeadTrack).
+  useEffect(() => {
+    if (!canEmbedShipping) {
+      setEmbedPath(null);
       return;
     }
-    setEmbedPath(null);
-  };
+    setLivePath(null);
+    setEmbedPath(tabRootPath(tabs, current));
+  }, [canEmbedShipping, current, tabs]);
 
   const load = useCallback(async () => {
     if (canEmbedShipping) {
@@ -149,14 +152,22 @@ export default function MigratedAppWorkspace({
     setEmbedPath('/');
   };
 
-  const onDashboardHome = current === 'home' && !deep;
-
   // Horizontal tab strip is Super Admin only — regular users use the sidebar.
   const showTopTabs = isSuperAdmin && !deep;
 
   if (canEmbedShipping) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '78vh', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          height: 'calc(100dvh - 52px)',
+          m: { xs: -2, sm: -2.5 },
+          width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 40px)' },
+        }}
+      >
         {showTopTabs ? (
           <SlidingPills
             fullWidth
@@ -172,14 +183,10 @@ export default function MigratedAppWorkspace({
           path={embedPath || '/'}
           onBack={goEmbedBack}
           onLivePath={setLivePath}
-          showBack={!onDashboardHome}
-          backToPath={deep ? rootPath : '/'}
+          showBack={deep}
+          backToPath={rootPath}
           backLabel={
-            deep && current === 'dispatch'
-              ? 'Back to New dispatch'
-              : deep
-                ? 'Back'
-                : 'Back to Dashboard'
+            current === 'dispatch' ? 'Back to New dispatch' : 'Back'
           }
         />
       </Box>
