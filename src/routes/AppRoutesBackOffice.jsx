@@ -237,7 +237,11 @@ export const backOfficeRouteNodes = (
     <Route
       path="/lead-track"
       element={
-        <PermissionGate permission={null} roles={[ROLES.ADMIN, ROLES.USER]}>
+        <PermissionGate
+          permission="leadTrack"
+          userPermission="leadTrack"
+          roles={[ROLES.ADMIN, ROLES.USER]}
+        >
           <LeadTrackWorkspacePage />
         </PermissionGate>
       }

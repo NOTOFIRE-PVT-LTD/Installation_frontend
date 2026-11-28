@@ -91,10 +91,18 @@ export default function ContractorAttendancePage() {
 
   const actions = [{ label: 'Delete', icon: <DeleteIcon fontSize="small" color="error" />, onClick: setConfirmDelete }];
 
+  const hasFilters = filterOptions.contractors.length > 0 || filterOptions.months.length > 0;
   const headerActions = (
-    <Stack direction="row" spacing={1.5} alignItems="center">
-      <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleDownload}>Download Template</Button>
-      <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => setUploadOpen(true)}>Upload Excel</Button>
+    <Stack direction="row" spacing={1} alignItems="center" flexWrap="nowrap" sx={{ width: '100%' }}>
+      <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleDownload}>
+        Template
+      </Button>
+      <Button variant="contained" size="small" startIcon={<UploadFileIcon />} onClick={() => setUploadOpen(true)}>
+        Excel
+      </Button>
+      <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={loadData}>
+        Refresh
+      </Button>
     </Stack>
   );
 
@@ -103,21 +111,22 @@ export default function ContractorAttendancePage() {
       <PageHeader title="Contractor Attendance" subtitle="HR contractor attendance & wage calculation" actions={headerActions} />
       <ContractorStatCards summary={summary} />
 
-      <Paper elevation={0} sx={{ p: 1.5, mb: 2, display: 'flex', gap: 1.5, alignItems: 'center', border: '1px solid #E2D3BE' }}>
-        {filterOptions.contractors.length > 0 && (
-          <TextField select size="small" label="Contractor" value={filters.contractor || ''} onChange={(e) => setFilter('contractor', e.target.value)} sx={{ minWidth: 170 }}>
-            <MenuItem value="">All Contractors</MenuItem>
-            {filterOptions.contractors.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-          </TextField>
-        )}
-        {filterOptions.months.length > 0 && (
-          <TextField select size="small" label="Month" value={filters.monthYear || ''} onChange={(e) => setFilter('monthYear', e.target.value)} sx={{ minWidth: 140 }}>
-            <MenuItem value="">All Periods</MenuItem>
-            {filterOptions.months.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-          </TextField>
-        )}
-        <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={loadData} sx={{ ml: 'auto' }}>Refresh</Button>
-      </Paper>
+      {hasFilters ? (
+        <Paper elevation={0} sx={{ p: 1.5, mb: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #E2D3BE' }}>
+          {filterOptions.contractors.length > 0 && (
+            <TextField select size="small" label="Contractor" value={filters.contractor || ''} onChange={(e) => setFilter('contractor', e.target.value)} sx={{ minWidth: 170 }}>
+              <MenuItem value="">All Contractors</MenuItem>
+              {filterOptions.contractors.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+            </TextField>
+          )}
+          {filterOptions.months.length > 0 && (
+            <TextField select size="small" label="Month" value={filters.monthYear || ''} onChange={(e) => setFilter('monthYear', e.target.value)} sx={{ minWidth: 140 }}>
+              <MenuItem value="">All Periods</MenuItem>
+              {filterOptions.months.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+            </TextField>
+          )}
+        </Paper>
+      ) : null}
 
       <DataTable
         columns={getContractorColumns()}

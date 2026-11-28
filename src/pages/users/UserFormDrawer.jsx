@@ -116,6 +116,12 @@ function appAccessFromUser(user) {
   if (user?.permissions?.inspections) return 'inspections';
   if (user?.permissions?.financialDocuments) return 'financialDocuments';
   if (user?.permissions?.atlantaPayments) return 'atlantaPayments';
+  if (user?.permissions?.payflow) return 'payflow';
+  if (user?.permissions?.payflowUser) return 'payflowUser';
+  if (user?.permissions?.salesTravelRequests) return 'salesTravelRequests';
+  if (user?.permissions?.shipping) return 'shipping';
+  if (user?.permissions?.importControl) return 'importControl';
+  if (user?.permissions?.contractorAttendance) return 'contractorAttendance';
   return 'complaints';
 }
 

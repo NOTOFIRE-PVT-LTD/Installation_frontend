@@ -28,6 +28,7 @@ import PermissionsDialog from './PermissionsDialog';
 import SetPasswordDialog from './SetPasswordDialog';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { useAuth } from '../../hooks/useAuth';
+import { usePortalAccess } from '../portal/usePortalAccess';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import {
   fetchUsers,
@@ -351,6 +352,8 @@ export default function UsersListPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user: currentUser, isPlatformOwner, isSuperAdmin, permissions } = useAuth();
+  const { access: portalAccess } = usePortalAccess(true);
+  const canLoginAsUser = Boolean(portalAccess?.pnl && portalAccess?.workspace);
   const { items, total, status } = useAppSelector((state) => state.users);
   const { page, pageSize, search, sortField, sortOrder, filters, setPage, setPageSize, setSearch, setSort, setFilter, queryParams } =
     useTableQueryParams({ filterKeys: ['role', 'status', 'apps'] });
@@ -523,7 +526,7 @@ export default function UsersListPage() {
     {
       label: 'Login as this user',
       icon: <LoginIcon fontSize="small" color="primary" />,
-      show: (row) => row.status === USER_STATUS.ACTIVE,
+      show: (row) => canLoginAsUser && row.status === USER_STATUS.ACTIVE,
       onClick: handleImpersonate,
     },
     {

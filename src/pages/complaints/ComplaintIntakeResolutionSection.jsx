@@ -2,6 +2,12 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import ButtonBase from '@mui/material/ButtonBase';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 
 const DELIVERY_STATUS_OPTIONS = [
   '',
@@ -31,6 +37,9 @@ export default function ComplaintIntakeResolutionSection({
   setDeliveryStatus,
   pendingReason,
   setPendingReason,
+  photos = [],
+  onAddPhotos,
+  onRemovePhoto,
 }) {
   return (
     <>
@@ -80,6 +89,31 @@ export default function ComplaintIntakeResolutionSection({
       </Grid>
       <Grid item xs={12}>
         <TextField fullWidth size="small" label="Pending Reason / Remarks (Optional)" placeholder="e.g. Waiting for railway station master approval" value={pendingReason} onChange={(e) => setPendingReason(e.target.value)} />
+      </Grid>
+      <Grid item xs={12}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.05em', mt: 1 }}>
+          5. Photos / Evidence (Optional)
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          Attach up to 3 photos of the equipment, issue, or nameplate.
+        </Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ gap: 1 }}>
+          {photos.map((p, idx) => (
+            <Box key={idx} sx={{ position: 'relative', width: 72, height: 72, borderRadius: 1.5, overflow: 'hidden', border: '1px solid #E2D3BE' }}>
+              <Box component="img" src={p.url} alt={`photo-${idx}`} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <IconButton size="small" onClick={() => onRemovePhoto(idx)} sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.85)' } }}>
+                <CloseIcon sx={{ fontSize: 13 }} />
+              </IconButton>
+            </Box>
+          ))}
+          {photos.length < 3 && (
+            <ButtonBase component="label" sx={{ width: 72, height: 72, borderRadius: 1.5, border: '1px dashed #d4a34e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(212,163,78,0.06)', cursor: 'pointer' }}>
+              <input type="file" accept="image/*" multiple hidden onChange={onAddPhotos} />
+              <AddPhotoAlternateOutlinedIcon sx={{ color: '#8C5E28', fontSize: 24 }} />
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', mt: 0.5, color: '#8C5E28', fontWeight: 700 }}>+ Photo</Typography>
+            </ButtonBase>
+          )}
+        </Stack>
       </Grid>
     </>
   );

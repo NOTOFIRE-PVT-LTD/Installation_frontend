@@ -5,12 +5,7 @@ export function matchComplaintsDesk(pathname, item) {
 
 export function matchComplaintsDashboard(pathname, item) {
   if (item.path !== '/complaints/dashboard') return null;
-  if (pathname === '/complaints/desk') return false;
-  return (
-    pathname === '/complaints/dashboard' ||
-    pathname === '/complaints' ||
-    pathname.startsWith('/complaints/')
-  );
+  return pathname === '/complaints/dashboard';
 }
 
 export function matchComplaintsHub(pathname, item) {

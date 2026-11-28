@@ -13,34 +13,38 @@ export default function DashboardLayoutMain({
   return (
     <Box
       component="main"
+      className="dashboard-main"
       sx={{
         flexGrow: 1,
         minWidth: 0,
+        minHeight: 0,
         overflowX: 'hidden',
-        // Match Visits mobile gutters (~16px) across Attendance / Complaints / People.
-        px: { xs: 2, sm: 2.5 },
-        py: { xs: 1.5, sm: 2 },
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
         width: { sm: `calc(100% - ${drawerWidth}px)` },
         transition: 'width 0.2s',
-        bgcolor: '#F8F6F1',
-        minHeight: '100vh',
+        boxSizing: 'border-box',
+        p: 0,
       }}
     >
       <Toolbar />
-      {impersonatorAdmin ? (
-        <Alert
-          severity="warning"
-          sx={{ mb: 2 }}
-          action={
-            <Button color="inherit" size="small" onClick={onExitImpersonation}>
-              Return to Admin
-            </Button>
-          }
-        >
-          Viewing as {user?.name} ({user?.role}) — logged in by {impersonatorAdmin.user?.name}
-        </Alert>
-      ) : null}
-      <Outlet />
+      <div className="dashboard-main__pad">
+        {impersonatorAdmin ? (
+          <Alert
+            severity="warning"
+            sx={{ mb: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={onExitImpersonation}>
+                Return to Admin
+              </Button>
+            }
+          >
+            Viewing as {user?.name} ({user?.role}) — logged in by {impersonatorAdmin.user?.name}
+          </Alert>
+        ) : null}
+        <Outlet />
+      </div>
     </Box>
   );
 }

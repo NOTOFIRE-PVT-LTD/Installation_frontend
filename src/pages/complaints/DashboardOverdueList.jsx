@@ -9,7 +9,7 @@ export const DASH_CARD_SX = {
   p: 2.5,
   borderRadius: '16px',
   border: '1.5px solid #E2D3BE',
-  background: 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
+  background: 'linear-gradient(90deg, #F2E7D5 0%, #F7EFE1 28%, #FDF7EB 62%, #FFFDF8 100%)',
   height: '100%',
   transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.32s ease',
   '&:hover': {

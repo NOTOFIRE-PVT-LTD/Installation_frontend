@@ -125,13 +125,26 @@ export default function AdminAttendanceRoster() {
     );
   }
 
+  const rosterHint = (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 1, sm: 1.25 },
+        borderRadius: '12px',
+        border: '1px solid #E2D3BE',
+        bgcolor: '#FFFDF8',
+        width: '100%',
+        minWidth: 0,
+      }}
+    >
+      <Typography sx={{ fontWeight: 700, color: '#6E4D27', fontSize: { xs: '0.72rem', sm: '0.8125rem' }, lineHeight: 1.35 }}>
+        Today ({formatIstDate(today)}) — tap a salesperson for month-wise attendance
+      </Typography>
+    </Paper>
+  );
+
   return (
-    <Box>
-      <Paper elevation={0} sx={{ mb: 2, p: 1.5, borderRadius: '12px', border: '1px solid #E2D3BE', bgcolor: '#FFFDF8' }}>
-        <Typography sx={{ fontWeight: 700, color: '#6E4D27', fontSize: '0.8125rem' }}>
-          Today ({formatIstDate(today)}) — tap a salesperson for month-wise attendance
-        </Typography>
-      </Paper>
+    <Box sx={{ width: '100%', minWidth: 0 }}>
       <DataTable
         columns={ROSTER_COLUMNS}
         rows={rows}
@@ -142,6 +155,7 @@ export default function AdminAttendanceRoster() {
         onPageSizeChange={() => {}}
         loading={loading}
         onRowClick={(row) => setSelected(row)}
+        toolbarStart={rosterHint}
       />
     </Box>
   );

@@ -27,22 +27,26 @@ export function KpiCard({ label, count, color, bg, border, onClick }) {
         className="kpi-card-paper"
         sx={{
           p: 2,
-          borderRadius: '14px',
-          border: `1.5px solid ${border || '#E2D3BE'}`,
-          background: bg || 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
+          borderRadius: '20px',
+          border: border ? `1.5px solid ${border}` : '1.5px solid transparent',
+          backgroundImage: bg
+            || 'linear-gradient(145deg, #FFFDF8 0%, #F8F0E2 42%, #EFE0C4 100%), linear-gradient(135deg, #FFE9A8 0%, #E5B85C 35%, #D4A34E 65%, #8C591D 100%)',
+          backgroundOrigin: 'border-box',
+          backgroundClip: border ? undefined : 'padding-box, border-box',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           height: '100%',
           minHeight: 108,
-          boxShadow: '0 2px 8px rgba(36, 20, 4, 0.03)',
-          transition: 'box-shadow 0.32s ease, border-color 0.2s ease',
+          boxShadow:
+            '0 8px 20px rgba(99,66,30,0.12), inset 0 1px 1px rgba(255,252,245,0.7)',
+          transition: 'box-shadow 0.32s ease',
         }}
       >
-        <Typography variant="caption" sx={{ fontWeight: 700, color: color || '#583714', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', fontSize: '0.6875rem' }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: color || '#2a1808', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontSize: '0.6875rem' }}>
           {label}
         </Typography>
-        <Typography variant="h4" fontWeight={800} sx={{ color: '#241404', mt: 0.5, lineHeight: 1.1 }}>
+        <Typography variant="h4" fontWeight={800} sx={{ color: '#1a1006', mt: 0.5, lineHeight: 1.1 }}>
           {count ?? 0}
         </Typography>
       </Paper>

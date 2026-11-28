@@ -4,8 +4,9 @@ import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import { useAuth } from '../hooks/useAuth';
 import { usePortalAccess } from '../pages/portal/usePortalAccess';
-import { NAV_ITEMS, expandNavItems } from '../routes/routeConfig';
+import { NAV_ITEMS, expandNavItems, listWorkspaceApps } from '../routes/routeConfig';
 import { filterPortalNavItems } from './filterPortalNavItems';
+import { scopeWorkspaceSidebarNav } from './scopeWorkspaceSidebarNav';
 import { isSidebarItemActive } from './sidebarNavActive';
 import { useUnassignedComplaintsCount } from './useUnassignedComplaintsCount';
 import { useSidebarNavIndicator } from './useSidebarNavIndicator';
@@ -14,20 +15,32 @@ import SidebarNavListItems from './SidebarNavListItems';
 
 export default function SidebarNavList({ isCollapsed = false, onNavigate }) {
   const location = useLocation();
-  const { user, permissions, isSuperAdmin } = useAuth();
+  const { user, permissions } = useAuth();
   const { access, ready } = usePortalAccess();
   const bothApps = Boolean(access.pnl && access.workspace);
+  const path = String(location.pathname || '').split('?')[0];
+  const onHub = path === '/home' || path === '/' || path === '';
   const navItems = useMemo(() => {
     const expanded = expandNavItems(NAV_ITEMS, user, permissions);
-    return filterPortalNavItems(expanded, { bothApps, ready });
-  }, [user, permissions, bothApps, ready]);
-  const showAppSections = !isSuperAdmin && navItems.some((item) => item.section);
+    const portalFiltered = filterPortalNavItems(expanded, { bothApps, ready });
+    const hubApps = listWorkspaceApps(user, permissions);
+    // Everyone (incl. Super Admin): hub Home → /apps when dual portal; else /home.
+    return scopeWorkspaceSidebarNav(portalFiltered, location.pathname, {
+      bothApps,
+      hubApps,
+    });
+  }, [user, permissions, bothApps, ready, location.pathname]);
+  const showAppSections = false;
   const unassignedComplaints = useUnassignedComplaintsCount();
 
-  const activeItem = useMemo(
-    () => navItems.find((item) => isSidebarItemActive(location, item)),
-    [location, navItems],
-  );
+  const activeItem = useMemo(() => {
+    // On hub, Home links to /apps but should still look current.
+    if (onHub) {
+      const home = navItems.find((item) => item.path === '/apps' || item.path === '/home');
+      if (home) return home;
+    }
+    return navItems.find((item) => isSidebarItemActive(location, item));
+  }, [location, navItems, onHub]);
 
   const { listRef, itemRefs, indicator } = useSidebarNavIndicator(activeItem, isCollapsed, navItems);
 

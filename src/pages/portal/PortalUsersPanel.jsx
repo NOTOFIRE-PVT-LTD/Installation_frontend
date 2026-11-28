@@ -39,7 +39,9 @@ function PortalUsersHeader({ count, onGoHome }) {
       ) : null}
       <p className="central-home__eyebrow">Directory</p>
       <h2 className="central-users__title">Users</h2>
-      <p className="central-users__lead">{count} people across P&amp;L and Workspace.</p>
+      <p className="central-users__lead">
+        {count === 1 ? '1 person' : `${count} people`} across P&amp;L and Workspace.
+      </p>
     </header>
   );
 }
@@ -66,13 +68,13 @@ function usePortalPanelState(users) {
   return { search, setSearch, appFilter, setAppFilter, actionError, setActionError, counts, filtered };
 }
 
-export default function PortalUsersPanel({ users, loading, error, onGoHome }) {
+export default function PortalUsersPanel({ users, loading, error, onGoHome, canLoginAs = false }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const state = usePortalPanelState(users);
 
   async function onLoginAs(row) {
-    if (!row.workspaceId) return;
+    if (!canLoginAs || !row.workspaceId) return;
     state.setActionError(null);
     try {
       const res = await dispatch(impersonateUser(row.workspaceId)).unwrap();
@@ -100,7 +102,7 @@ export default function PortalUsersPanel({ users, loading, error, onGoHome }) {
         disabled={!state.filtered.length}
       />
       {state.actionError ? <p className="portal-error">{state.actionError}</p> : null}
-      <PortalUsersTable users={state.filtered} onLoginAs={onLoginAs} />
+      <PortalUsersTable users={state.filtered} onLoginAs={onLoginAs} canLoginAs={canLoginAs} />
     </div>
   );
 }

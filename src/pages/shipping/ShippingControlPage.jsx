@@ -8,7 +8,7 @@ export default function ShippingControlPage() {
     <MigratedAppWorkspace
       app="shipping"
       title="Shipping Control"
-      subtitle="Dashboard, dispatches, shipments, bills, and masters in one place"
+      subtitle=""
       tabs={SHIPPING_TABS}
       permissionKey="shipping"
       fetchDashboard={shippingApi.dashboard}
@@ -22,7 +22,7 @@ export function ImportControlPage() {
     <MigratedAppWorkspace
       app="import"
       title="Import Control"
-      subtitle="Dashboard, imports, inbox, payments, and masters in one place"
+      subtitle=""
       tabs={IMPORT_TABS}
       permissionKey="importControl"
       fetchDashboard={importControlApi.dashboard}

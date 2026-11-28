@@ -8,7 +8,7 @@ export default function DashboardAppBarToolbar(props) {
     props;
 
   return (
-    <Toolbar sx={{ gap: 0, px: { xs: 1, sm: 0 }, minWidth: 0 }}>
+    <Toolbar sx={{ gap: { xs: 1.25, sm: 0 }, px: { xs: 1, sm: 0 }, minWidth: 0 }}>
       <DashboardAppBarBrand
         drawerWidth={drawerWidth}
         collapsed={collapsed}
@@ -17,7 +17,6 @@ export default function DashboardAppBarToolbar(props) {
       />
       <DashboardAppBarCenter
         isSuperAdmin={props.isSuperAdmin}
-        showAppsHome={props.showAppsHome}
         searchPlaceholder={props.searchPlaceholder}
         user={props.user}
         setAnchorEl={setAnchorEl}

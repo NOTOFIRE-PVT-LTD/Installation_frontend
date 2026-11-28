@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PageHeader from '../../components/common/PageHeader';
@@ -109,11 +110,6 @@ export default function WhatsAppLogsPage() {
       <PageHeader
         title="WhatsApp Logs"
         subtitle="Delivery history for payment-request WhatsApp alerts via AiSensy"
-        actions={
-          <Button startIcon={<RefreshIcon />} variant="outlined" onClick={load} disabled={loading}>
-            Refresh
-          </Button>
-        }
       />
 
       {statusInfo?.hints?.length > 0 && (
@@ -199,6 +195,15 @@ export default function WhatsAppLogsPage() {
           loading={loading}
           emptyMessage="No WhatsApp logs yet"
           storageKey="whatsapp-logs"
+          toolbarEnd={
+            <Tooltip title="Refresh">
+              <span>
+                <IconButton onClick={load} disabled={loading} aria-label="Refresh">
+                  <RefreshIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          }
         />
       )}
     </Box>

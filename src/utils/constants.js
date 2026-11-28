@@ -20,9 +20,10 @@ export const ADMIN_TYPE_LABELS = {
 };
 
 export const PLATFORM_OWNER_EMAILS = [
-  'gauravjain@atlantatelecables.com',
   'gauravjain@gmail.com',
   'mansi@gmail.com',
+  'ridh.jain.rj@gmail.com',
+  'gauravjain@atlantatelecables.com',
 ];
 /** @deprecated use PLATFORM_OWNER_EMAILS */
 export const PLATFORM_OWNER_EMAIL = PLATFORM_OWNER_EMAILS[0];
@@ -38,6 +39,9 @@ export const APP_ACCESS_OPTIONS = [
   { value: 'inspections', label: 'Inspections' },
   { value: 'accounts', label: 'Accounts' },
   { value: 'atlantaPayments', label: 'Atlanta Payments' },
+  { value: 'payflow', label: 'Payflow' },
+  { value: 'payflowUser', label: 'Payment Requests' },
+  { value: 'salesTravelRequests', label: 'Sales Travel Request' },
   { value: 'shipping', label: 'Shipping Control' },
   { value: 'importControl', label: 'Import Control' },
 ];
@@ -204,6 +208,7 @@ export const PERMISSION_KEYS = [
   'shipping',
   'importControl',
   'contractorAttendance',
+  'leadTrack',
 ];
 
 export const COMPLAINT_STATUS = {

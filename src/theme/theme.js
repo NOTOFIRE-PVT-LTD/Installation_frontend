@@ -3,6 +3,13 @@ import '@fontsource/dm-sans/500.css';
 import '@fontsource/dm-sans/600.css';
 import '@fontsource/dm-sans/700.css';
 import { createTheme } from '@mui/material/styles';
+import {
+  glassPrimaryBg,
+  glassPrimaryBgHover,
+  glassPrimaryShadow,
+  glassSurfaceBg,
+  glassSurfaceShadow,
+} from './glassTokens';
 
 // Luxury Valuecon Dual Theme: Brown & Yellow Complementary Pairing
 // Rule: On yellow bg -> brown text; On brown bg -> yellow text
@@ -30,12 +37,11 @@ export const BRAND = {
   cardGradient: 'linear-gradient(135deg, #FFFDF8 0%, #FDF7EB 45%, #F7EFE1 80%, #F2E7D5 100%)',
   cardHoverGradient: 'linear-gradient(135deg, #FFFFFF 0%, #FEF9EE 45%, #F9F1E5 80%, #F4EAD9 100%)',
 
-  // Shell Gradients:
-  // 1. Sidebar: Top to bottom (top brown, down yellow)
-  sidebarGradient: 'linear-gradient(180deg, #201204 0%, #341D08 25%, #563310 50%, #82521B 72%, #B57F2F 88%, #D4A34E 100%)',
-
-  // 2. Header / AppBar: First (left) yellow, then in right brown
-  headerGradient: 'linear-gradient(90deg, #E5B85C 0%, #C99846 15%, #8C591D 45%, #543310 70%, #2A1705 100%)',
+  // Shell Gradients (navbar + sidebar only): light 4-shade top→bottom, bottom ~0.
+  sidebarGradient:
+    'linear-gradient(180deg, rgba(86, 51, 16, 0.4) 0%, rgba(125, 81, 30, 0.2) 34%, rgba(181, 127, 47, 0.08) 68%, rgba(212, 163, 78, 0.03) 100%)',
+  headerGradient:
+    'linear-gradient(180deg, rgba(229, 184, 92, 0.48) 0%, rgba(201, 152, 70, 0.26) 34%, rgba(125, 81, 30, 0.1) 68%, rgba(86, 51, 16, 0.03) 100%)',
 
   // 3. Active Nav Pill on Sidebar: First (left) yellow, then in right brown
   activePillGradient: 'linear-gradient(90deg, #FAE2B4 0%, #E5B85C 25%, #C99846 60%, #7D511E 85%, #38200A 100%)',
@@ -132,7 +138,8 @@ const theme = createTheme({
           colorScheme: 'light',
         },
         body: {
-          background: BRAND.ink,
+          background:
+            'radial-gradient(circle at 15% 15%, #fff8e9, transparent 40%), linear-gradient(135deg, #f8f0df, #ead8bd, #f9f3e8)',
           color: BRAND.textPrimary,
           overflowX: 'hidden',
           accentColor: BRAND.yellowMain,
@@ -206,13 +213,18 @@ const theme = createTheme({
           },
         },
         containedPrimary: {
-          background: BRAND.btnGradient,
-          color: `${BRAND.textOnYellow} !important`, // Deep brown text on yellow button
-          boxShadow: `0 4px 14px ${BRAND.shadow}`,
+          background: glassPrimaryBg,
+          color: `${BRAND.textOnYellow} !important`,
+          borderStyle: 'solid',
+          borderWidth: '1.5px 1px 1px 1.5px',
+          borderColor:
+            'rgba(255,233,168,0.75) rgba(184,134,59,0.5) rgba(140,89,29,0.4) rgba(245,208,120,0.55)',
+          boxShadow: glassPrimaryShadow,
           '&:hover': {
-            background: BRAND.btnGradientHover,
+            background: glassPrimaryBgHover,
             color: '#140A01 !important',
-            boxShadow: `0 6px 18px ${BRAND.shadow}`,
+            boxShadow:
+              'inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 18px rgba(88,55,20,0.32)',
           },
           '&.Mui-disabled': {
             background: '#E2D7C8',
@@ -221,11 +233,14 @@ const theme = createTheme({
           },
         },
         outlinedPrimary: {
-          borderColor: BRAND.brownLight,
+          borderColor: 'rgba(212,163,78,0.55)',
           color: BRAND.brownDark,
+          background: glassSurfaceBg,
+          boxShadow: glassSurfaceShadow,
+          backdropFilter: 'blur(10px)',
           '&:hover': {
-            borderColor: BRAND.brownDeep,
-            backgroundColor: BRAND.cardMidYellow,
+            borderColor: 'rgba(189,131,45,0.7)',
+            background: 'linear-gradient(145deg, #f0d78a 0%, #e0b050 55%, #c99846 100%)',
           },
         },
       },
@@ -233,7 +248,22 @@ const theme = createTheme({
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: 999,
+          borderRadius: 10,
+          border: 'none',
+          backgroundImage: 'none',
+          boxShadow: 'none',
+          color: '#8B5A1A',
+          '&:hover': {
+            bgcolor: 'rgba(212, 163, 78, 0.12)',
+          },
+          '&.MuiIconButton-colorSuccess': {
+            color: '#059669',
+            '&:hover': { bgcolor: 'rgba(5, 150, 105, 0.12)' },
+          },
+          '&.MuiIconButton-colorError': {
+            color: '#f43f5e',
+            '&:hover': { bgcolor: 'rgba(244, 63, 94, 0.12)' },
+          },
         },
       },
     },
@@ -343,6 +373,17 @@ const theme = createTheme({
         },
         selectIcon: {
           color: BRAND.brownDark,
+        },
+        toolbar: {
+          paddingRight: 16,
+          paddingLeft: 8,
+        },
+        actions: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginLeft: 8,
+          marginRight: 4,
         },
       },
     },
@@ -585,46 +626,65 @@ const theme = createTheme({
         root: {
           minWidth: 0,
           borderRadius: 16,
-          borderColor: BRAND.cardBorder,
-          background: BRAND.cardGradient,
+          border: '1.5px solid transparent',
+          borderColor: 'rgba(212,163,78,0.55) rgba(226,211,190,0.9) rgba(226,211,190,0.85) rgba(212,163,78,0.4)',
+          background: 'linear-gradient(145deg, #FFFDF8 0%, #F8F0E2 55%, #F0E4D0 100%)',
           color: BRAND.textPrimary,
           '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeader, & .MuiDataGrid-container--top, & .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller': {
-            background: 'linear-gradient(90deg, #FFFDF8 0%, #FDF7EB 40%, #FAF1DC 100%) !important',
-            borderBottom: '1.5px solid rgba(212, 163, 78, 0.4) !important',
-            color: '#3A230B !important',
+            background: 'linear-gradient(90deg, #F8F0E2 0%, #F2E7D5 50%, #EDE0C8 100%) !important',
+            borderBottom: '1.5px solid rgba(184, 134, 59, 0.45) !important',
+            color: '#5c3a12 !important',
+          },
+          '& .MuiDataGrid-columnHeader--sorted, & .MuiDataGrid-columnHeader--sorted:focus, & .MuiDataGrid-columnHeader--sorted:focus-within': {
+            background: 'linear-gradient(145deg, #F2E7D5 0%, #E8D9C0 100%) !important',
           },
           '& .MuiDataGrid-columnHeaderTitle': {
             fontWeight: 700,
             fontSize: '0.75rem',
             letterSpacing: '0.04em',
             textTransform: 'uppercase',
-            color: '#3A230B !important',
+            color: '#5c3a12 !important',
           },
           '& .MuiDataGrid-columnSeparator': {
-            color: BRAND.cardBorder,
+            color: 'rgba(184, 134, 59, 0.45)',
           },
           '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within': {
             outline: 'none',
+            background: 'linear-gradient(145deg, #F2E7D5 0%, #E8D9C0 100%) !important',
           },
           '& .MuiDataGrid-row:nth-of-type(even)': {
-            backgroundColor: 'rgba(253, 247, 235, 0.45)',
+            backgroundColor: 'rgba(242, 231, 213, 0.4)',
           },
           '& .MuiDataGrid-row:hover': {
-            backgroundColor: 'rgba(247, 239, 225, 0.85)',
+            backgroundColor: 'rgba(232, 217, 192, 0.75)',
           },
           '& .MuiDataGrid-row.Mui-selected, & .MuiDataGrid-row.Mui-selected:hover': {
-            backgroundColor: 'rgba(235, 219, 192, 0.9)',
+            backgroundColor: 'rgba(229, 184, 92, 0.22)',
           },
           '& .MuiDataGrid-footerContainer': {
-            borderTop: `1px solid ${BRAND.cardBorder}`,
+            borderTop: '1px solid rgba(184, 134, 59, 0.35)',
             background: 'transparent',
             color: BRAND.textPrimary,
+            paddingRight: 16,
+            paddingLeft: 8,
           },
-          '& .MuiDataGrid-sortIcon, & .MuiDataGrid-menuIconButton': {
-            color: BRAND.brownDark,
+          '& .MuiDataGrid-iconButtonContainer .MuiIconButton-root, & .MuiDataGrid-menuIconButton, & .MuiDataGrid-sortButton, & .MuiDataGrid-columnHeader .MuiIconButton-root': {
+            width: '20px !important',
+            height: '20px !important',
+            minWidth: '20px !important',
+            padding: '0 !important',
+            borderRadius: '6px !important',
+            color: '#241404 !important',
+            background: 'linear-gradient(165deg, #ffe9a8 0%, #f0c86a 45%, #d4a34e 100%) !important',
+            border: '1px solid rgba(184,134,59,0.55) !important',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7) !important',
+          },
+          '& .MuiDataGrid-sortIcon, & .MuiDataGrid-menuIconButton .MuiSvgIcon-root': {
+            color: '#241404 !important',
+            fontSize: '14px !important',
           },
           '& .MuiDataGrid-cell': {
-            borderColor: BRAND.cardBorder,
+            borderColor: 'rgba(226, 211, 190, 0.85)',
             color: BRAND.textPrimary,
           },
         },

@@ -7,25 +7,12 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAuth } from '../../hooks/useAuth';
-import { NAV_ITEMS, isNavItemAllowed } from '../../routes/routeConfig';
+import { listWorkspaceApps } from '../../routes/routeConfig';
 import PageHeader from '../../components/common/PageHeader';
 
-/** Top-level Workspace apps (not nested children). */
 function useWorkspaceApps() {
   const { user, permissions } = useAuth();
-  return useMemo(
-    () =>
-      NAV_ITEMS.filter(
-        (item) =>
-          item.path !== '/home' &&
-          item.path !== '/apps' &&
-          !item.bothAppsOnly &&
-          !item.path.includes('?') &&
-          item.path !== '/complaints/desk' &&
-          isNavItemAllowed(item, user, permissions),
-      ),
-    [user, permissions],
-  );
+  return useMemo(() => listWorkspaceApps(user, permissions), [user, permissions]);
 }
 
 export default function WorkspaceHomePage() {

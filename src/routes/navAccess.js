@@ -11,6 +11,7 @@ const APP_SECTION_LABELS = {
   complaints: 'Complaints',
   shipping: 'Shipping Control',
   importControl: 'Import Control',
+  leadTrack: 'LeadTrack',
   dashboard: 'Dashboard',
   users: 'Users',
   projects: 'Projects',
@@ -138,6 +139,19 @@ export function flattenNavItems(items = NAV_ITEMS) {
   return items.flatMap((item) => [item, ...(item.children || [])]);
 }
 
+/** Top-level Workspace apps shown on /home (excludes hub/portal/nested routes). */
+export function listWorkspaceApps(user, permissions) {
+  return NAV_ITEMS.filter(
+    (item) =>
+      item.path !== '/home' &&
+      item.path !== '/apps' &&
+      !item.bothAppsOnly &&
+      !item.path.includes('?') &&
+      item.path !== '/complaints/desk' &&
+      isNavItemAllowed(item, user, permissions),
+  );
+}
+
 function resolveComplaintsLanding(user, permissions) {
   if (user.role !== ROLES.ADMIN && permissions?.complaints) {
     return '/complaints/dashboard';
@@ -148,16 +162,23 @@ function resolveComplaintsLanding(user, permissions) {
 
 export function getDefaultLandingPath(user, permissions) {
   if (!user) return '/login';
-  // Portal chooser is the home after main login.
-  if (typeof window !== 'undefined') return '/apps';
+  // Do NOT always return /apps — that bounces Open Workspace back to the chooser
+  // (and can loop for workspace-only users). Login uses applyPortalLanding for /apps.
   if (isSuperAdminUser(user)) return '/dashboard';
   if (user.jobRole === 'SALESPERSON') return '/attendance';
+  if (user.adminType === 'SALES_COORDINATOR') return '/attendance';
+  if (permissions?.salesTravelRequests && !permissions?.tenders) {
+    return '/sales-travel-requests';
+  }
 
   const complaintsPath = resolveComplaintsLanding(user, permissions);
   if (complaintsPath) return complaintsPath;
 
-  const eligible = NAV_ITEMS.find((item) => isNavItemAllowed(item, user, permissions));
-  return eligible ? eligible.path : '/profile';
+  const apps = listWorkspaceApps(user, permissions);
+  if (apps.length > 1) return '/home';
+  if (apps.length === 1) return apps[0].path;
+
+  return '/profile';
 }
 
 function findBestNavPathMatch(pathname) {
@@ -168,7 +189,7 @@ function findBestNavPathMatch(pathname) {
 
 export function canOpenPath(pathname, user, permissions) {
   if (!pathname || pathname === '/login' || pathname === '/403' || pathname === '/404') return false;
-  if (pathname === '/' || pathname === '/profile') return true;
+  if (pathname === '/' || pathname === '/profile' || pathname === '/home') return true;
   if (isSuperAdminUser(user)) return true;
 
   const match = findBestNavPathMatch(pathname);

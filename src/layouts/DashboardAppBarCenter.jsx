@@ -1,11 +1,10 @@
 import Box from '@mui/material/Box';
 import GlobalSearchBar from '../components/common/GlobalSearchBar';
 import DashboardAppBarUserAvatar from './DashboardAppBarUserAvatar';
-import DashboardAppsHomeLink from './DashboardAppsHomeLink';
 
+/** Apps chooser lives in sidebar Home — no duplicate navbar control. */
 export default function DashboardAppBarCenter({
   isSuperAdmin,
-  showAppsHome,
   searchPlaceholder,
   user,
   setAnchorEl,
@@ -18,6 +17,7 @@ export default function DashboardAppBarCenter({
         display: 'flex',
         alignItems: 'center',
         gap: 1,
+        pl: { xs: 0.5, sm: 0 },
         pr: { xs: 0.5, sm: 2 },
       }}
     >
@@ -28,7 +28,6 @@ export default function DashboardAppBarCenter({
       ) : (
         <Box sx={{ flex: 1, minWidth: 0 }} />
       )}
-      {showAppsHome ? <DashboardAppsHomeLink /> : null}
       <DashboardAppBarUserAvatar user={user} onOpenMenu={(e) => setAnchorEl(e.currentTarget)} />
     </Box>
   );

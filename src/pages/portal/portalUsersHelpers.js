@@ -6,11 +6,15 @@ export function formatPortalRole(role) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function formatPortalApps(apps = []) {
-  if (!apps.length) return '—';
-  if (apps.includes('pnl') && apps.includes('workspace')) return 'All Apps';
-  if (apps.includes('pnl')) return 'P&L';
-  return 'Workspace';
+export function formatPortalApps(apps = [], workspaceApps = []) {
+  const parts = [];
+  if (apps.includes('pnl')) parts.push('P&L');
+  if (workspaceApps?.length) {
+    parts.push(...workspaceApps);
+  } else if (apps.includes('workspace')) {
+    parts.push('Workspace');
+  }
+  return parts.length ? parts.join(' · ') : '—';
 }
 
 export function filterPortalUsers(users, search, appFilter = 'all') {
@@ -23,7 +27,14 @@ export function filterPortalUsers(users, search, appFilter = 'all') {
   const q = String(search || '').trim().toLowerCase();
   if (!q) return list;
   return list.filter((u) => {
-    const hay = [u.name, u.email, u.phone, u.role, ...(u.apps || [])]
+    const hay = [
+      u.name,
+      u.email,
+      u.phone,
+      u.role,
+      ...(u.apps || []),
+      ...(u.workspaceApps || []),
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -38,7 +49,7 @@ export function portalUsersToCsv(users) {
     u.email || '',
     u.phone || '',
     formatPortalRole(u.role),
-    formatPortalApps(u.apps),
+    formatPortalApps(u.apps, u.workspaceApps),
     u.active === false ? 'Inactive' : 'Active',
   ]);
   return [header, ...rows]

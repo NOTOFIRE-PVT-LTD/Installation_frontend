@@ -11,13 +11,11 @@ import { ROLES } from '../utils/constants';
 export const NAV_ITEMS_WORKSPACE = [
   {
     label: 'Home',
-    // Centralisation chooser — only for users with both P&L + Workspace.
-    path: '/apps',
+    // Inside an app → /home (apps hub). On hub, sidebar remaps to /apps when both portals.
+    path: '/home',
     icon: faHouse,
     permission: null,
-    roles: [ROLES.ADMIN],
-    superAdminOnly: true,
-    bothAppsOnly: true,
+    roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#563310', bg: '#FAE2B4' },
   },
   {
@@ -53,16 +51,14 @@ export const NAV_ITEMS_WORKSPACE = [
     permission: 'complaints',
     roles: [ROLES.ADMIN],
     accent: { color: '#d4a34e', bg: '#fffdf0' },
-    children: [
-      {
-        label: 'Complaints',
-        path: '/complaints',
-        icon: faClipboardList,
-        permission: 'complaints',
-        roles: [ROLES.ADMIN],
-        accent: { color: '#d4a34e', bg: '#fffdf0' },
-      },
-    ],
+  },
+  {
+    label: 'All Tickets',
+    path: '/complaints',
+    icon: faClipboardList,
+    permission: 'complaints',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#d4a34e', bg: '#fffdf0' },
   },
   {
     label: 'Users',

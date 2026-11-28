@@ -21,6 +21,7 @@ import {
   faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 import { ROLES } from '../utils/constants';
+import { LEADTRACK_TABS } from '../pages/leadTrack/leadTrackTabs';
 
 /** Projects, finance, inventory, and admin tools. */
 export const NAV_ITEMS_BACK_OFFICE = [
@@ -199,8 +200,19 @@ export const NAV_ITEMS_BACK_OFFICE = [
     label: 'LeadTrack',
     path: '/lead-track',
     icon: faUserTag,
-    permission: null,
+    permission: 'leadTrack',
+    userPermission: 'leadTrack',
     roles: [ROLES.ADMIN, ROLES.USER],
     accent: { color: '#563310', bg: '#FAE2B4' },
+    expandChildrenInSidebar: true,
+    children: LEADTRACK_TABS.map((tab) => ({
+      label: tab.label,
+      path: `/lead-track?tab=${tab.id}`,
+      icon: tab.icon || faUserTag,
+      permission: 'leadTrack',
+      userPermission: 'leadTrack',
+      roles: [ROLES.ADMIN, ROLES.USER],
+      accent: { color: '#563310', bg: '#FAE2B4' },
+    })),
   },
 ];

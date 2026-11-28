@@ -75,7 +75,7 @@ export function openWorkspaceApp({ setBusy, setError }) {
   const base = path.startsWith('/ws')
     ? '/ws/'
     : (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
-  window.location.assign(`${window.location.origin}${base}dashboard`);
+  window.location.assign(`${window.location.origin}${base}home`);
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {

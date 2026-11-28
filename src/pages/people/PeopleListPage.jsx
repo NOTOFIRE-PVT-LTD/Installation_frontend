@@ -11,6 +11,8 @@ import Typography from '@mui/material/Typography';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import AssessmentIcon from '@mui/icons-material/AssessmentOutlined';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import BadgeIcon from '@mui/icons-material/BadgeOutlined';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable/DataTable';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -21,7 +23,7 @@ import { useAppDispatch } from '../../app/hooks';
 import { useTableQueryParams } from '../../hooks/useTableQueryParams';
 import { showSnackbar } from '../../features/ui/uiSlice';
 import { peopleApi } from '../../api/peopleApi';
-import { ROLES, USER_STATUS, ADMIN_TYPES, ADMIN_TYPE_LABELS } from '../../utils/constants';
+import { ROLES, USER_STATUS, ADMIN_TYPES } from '../../utils/constants';
 
 function formToPayload(formData) {
   const payload = {
@@ -209,11 +211,16 @@ export default function PeopleListPage({ embedded = false }) {
       minWidth: 190,
       renderCell: (params) => {
         const isAdmin = params.row.role === ROLES.ADMIN;
-        const adminLabel = ADMIN_TYPE_LABELS[params.row.adminType] || 'Coordinator';
         return (
           <Chip
             size="small"
-            label={isAdmin ? `Admin · ${adminLabel}` : 'Salesperson'}
+            label={
+              isAdmin
+                ? params.row.adminType === ADMIN_TYPES.SUPER_ADMIN
+                  ? 'Super Admin'
+                  : 'Admin'
+                : 'Salesperson'
+            }
             sx={{
               fontWeight: 700,
               fontSize: '0.6875rem',
@@ -284,18 +291,21 @@ export default function PeopleListPage({ embedded = false }) {
     >
       <Button
         variant="outlined"
+        startIcon={<PersonAddAlt1Icon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
         onClick={() => setDrawer({ open: true, mode: 'create', user: { role: ROLES.USER, jobRole: 'SALESPERSON' } })}
         sx={{
           ...actionBtnSx,
           borderColor: 'rgba(88, 55, 20, 0.3)',
           color: '#583714',
           '&:hover': { borderColor: '#583714', bgcolor: 'rgba(255, 233, 151, 0.15)' },
+          '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 0.75 } },
         }}
       >
-        + Salesperson
+        Salesperson
       </Button>
       <Button
         variant="contained"
+        startIcon={<BadgeIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
         onClick={() =>
           setDrawer({
             open: true,
@@ -311,9 +321,10 @@ export default function PeopleListPage({ embedded = false }) {
           '&:hover': {
             background: 'linear-gradient(90deg, #FFF0B3 0%, #DEA954 60%, #B8853D 100%)',
           },
+          '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 0.75 } },
         }}
       >
-        + Admin/Coord
+        Admin
       </Button>
     </Stack>
   );
@@ -350,9 +361,8 @@ export default function PeopleListPage({ embedded = false }) {
             value={filters.role || ''}
             onChange={(e) => setFilter('role', e.target.value)}
             sx={{
-              minWidth: { xs: 118, sm: 190 },
-              flex: { xs: '0 1 42%', sm: '0 0 auto' },
-              width: { xs: 'auto', sm: 190 },
+              minWidth: { xs: 110, sm: 190 },
+              width: { xs: '100%', sm: 190 },
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#FFFDF8',
                 borderRadius: 999,
@@ -363,7 +373,7 @@ export default function PeopleListPage({ embedded = false }) {
           >
             <MenuItem value="">All Staff</MenuItem>
             <MenuItem value={ROLES.USER}>Salespeople</MenuItem>
-            <MenuItem value={ROLES.ADMIN}>Admins & Coordinators</MenuItem>
+            <MenuItem value={ROLES.ADMIN}>Admins</MenuItem>
           </TextField>
         }
         toolbarEnd={embedded ? actionButtons : null}

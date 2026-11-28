@@ -58,6 +58,7 @@ export default function ComplaintIntakePage() {
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('Product Quality');
   const [priority, setPriority] = useState('MEDIUM');
+  const [photos, setPhotos] = useState([]);
 
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +114,22 @@ export default function ComplaintIntakePage() {
     }
   };
 
+  const handleAddPhotos = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    files.slice(0, 3 - photos.length).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotos((prev) => [...prev, { url: ev.target.result }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePhoto = (idx) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const buildPayload = () => ({
     source, customerId, customerName: customerName.trim(), contactNumber: mobileNo.trim(), whatsappNumber: whatsappNo.trim(),
     email: email.trim(), customerOrganization: customerOrganization.trim(), siteName: stationName.trim(), stationName: stationName.trim(),
@@ -122,6 +139,7 @@ export default function ComplaintIntakePage() {
     solutions: solutions.trim(), takenTime: takenTime.trim(), attempt: Number(attempt) || 1, pendingRemark: pendingReason.trim(),
     pendingReason: pendingReason.trim(), deliveryStatus: deliveryStatus.trim(), warrantyStatus, notifyChannel: 'whatsapp',
     assignedTo: isAdmin ? visitPersonId || null : user?._id || null,
+    photos,
   });
 
   const handleSubmit = async (e) => {
@@ -145,29 +163,29 @@ export default function ComplaintIntakePage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 960, mx: 'auto' }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 960, mx: 'auto' }}>
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5 }}>
         <Button component={Link} to="/complaints" size="small" startIcon={<ArrowBackIcon />} sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 600 }}>
           Back to Complaints
         </Button>
       </Stack>
-      <Paper elevation={0} component="form" onSubmit={handleSubmit} sx={{ p: { xs: 2.5, md: 4 }, borderRadius: '12px', border: '1px solid #e2e8f0', bgcolor: '#ffffff', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'linear-gradient(135deg, #FFE997 0%, #D4A34E 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 12px rgba(88, 55, 20, 0.25)', border: '1.5px solid #FFFFFF' }}>
+      <Paper elevation={0} component="form" onSubmit={handleSubmit} sx={{ p: { xs: 1.5, sm: 2.5, md: 3.5 }, borderRadius: '12px', border: '1px solid #e2e8f0', bgcolor: '#ffffff', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
+          <Box sx={{ width: 48, height: 48, minWidth: 48, minHeight: 48, flexShrink: 0, borderRadius: '12px', background: 'linear-gradient(135deg, #FFE997 0%, #D4A34E 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 12px rgba(88, 55, 20, 0.25)', border: '1.5px solid #FFFFFF' }}>
             <PhoneInTalkIcon sx={{ fontSize: 26, color: '#3A230B' }} />
           </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={800} sx={{ color: '#241404' }}>Create complaint ticket</Typography>
-            <Typography variant="body2" color="text.secondary">Register caller issue, suggest immediate solutions, and assign engineer</Typography>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="h5" fontWeight={800} sx={{ color: '#241404', fontSize: { xs: '1.15rem', sm: '1.45rem' }, lineHeight: 1.25 }}>Create complaint ticket</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.875rem' }, mt: 0.3 }}>Register caller issue, suggest immediate solutions, and assign engineer</Typography>
           </Box>
         </Stack>
 
         {duplicateWarning && (
-          <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mb: 3, borderRadius: '8px' }}>{duplicateWarning}</Alert>
+          <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mb: 2, borderRadius: '8px' }}>{duplicateWarning}</Alert>
         )}
-        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '8px' }}>{error}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '8px' }}>{error}</Alert>}
 
-        <Grid container spacing={2.5}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <ComplaintIntakeCustomerSection
             customers={customers} handleCustomerChange={handleCustomerChange} customerName={customerName} setCustomerName={setCustomerName}
             mobileNo={mobileNo} setMobileNo={setMobileNo} whatsappNo={whatsappNo} setWhatsappNo={setWhatsappNo} email={email} setEmail={setEmail}
@@ -185,6 +203,7 @@ export default function ComplaintIntakePage() {
             setVisitPersonId={setVisitPersonId} assignees={assignees} complaintReceiver={complaintReceiver} setComplaintReceiver={setComplaintReceiver}
             takenTime={takenTime} setTakenTime={setTakenTime} attempt={attempt} setAttempt={setAttempt} deliveryStatus={deliveryStatus}
             setDeliveryStatus={setDeliveryStatus} pendingReason={pendingReason} setPendingReason={setPendingReason}
+            photos={photos} onAddPhotos={handleAddPhotos} onRemovePhoto={handleRemovePhoto}
           />
         </Grid>
 

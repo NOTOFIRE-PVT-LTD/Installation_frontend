@@ -27,7 +27,8 @@ export function buildComplaintColumns({ onSelectTicket, assignees, onSelectEngin
     {
       field: 'createdAt',
       headerName: 'Submitted',
-      width: 110,
+      width: 150,
+      minWidth: 140,
       disableColumnMenu: true,
       renderCell: (params) => (
         <Typography variant="caption" color="text.secondary" fontWeight={700}>{formatDate(params.value)}</Typography>
@@ -36,7 +37,8 @@ export function buildComplaintColumns({ onSelectTicket, assignees, onSelectEngin
     {
       field: 'resolvedAt',
       headerName: 'Resolved',
-      width: 110,
+      width: 120,
+      minWidth: 110,
       disableColumnMenu: true,
       renderCell: (params) => (
         <Typography variant="caption" color="text.secondary" fontWeight={600}>{params.value ? formatDate(params.value) : '—'}</Typography>

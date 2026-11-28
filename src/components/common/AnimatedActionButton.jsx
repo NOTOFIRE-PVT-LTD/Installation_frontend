@@ -21,6 +21,8 @@ export default function AnimatedActionButton({
   return (
     <Tooltip title={text}>
       <Button
+        className="glass-btn--gold"
+        variant="contained"
         onClick={onClick}
         disabled={disabled}
         aria-label={text}
@@ -28,19 +30,15 @@ export default function AnimatedActionButton({
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
-          height: 36,
-          minWidth: { xs: 36, lg: 118 },
-          width: { xs: 36, lg: 'auto' },
+          height: 42,
+          minWidth: { xs: 42, lg: 118 },
+          width: { xs: 42, lg: 'auto' },
           px: { xs: 0, lg: 2 },
-          borderRadius: 999,
+          borderRadius: '999px !important',
           textTransform: 'none',
           fontWeight: 700,
-          color: '#241404',
-          background: 'linear-gradient(180deg, #FFE997 0%, #E5B85C 42%, #D4A34E 100%)',
-          boxShadow: '0 2px 8px rgba(88, 55, 20, 0.22)',
           '&:hover': {
-            background: 'linear-gradient(180deg, #FFE08A 0%, #D4A34E 50%, #C99846 100%)',
-            boxShadow: '0 4px 12px rgba(88, 55, 20, 0.28)',
+            filter: 'brightness(1.05)',
           },
           '@media (min-width: 1200px)': {
             '&:hover .aa-text': { top: '-100%' },
