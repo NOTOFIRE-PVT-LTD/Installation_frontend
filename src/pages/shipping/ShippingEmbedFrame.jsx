@@ -123,8 +123,21 @@ export default function ShippingEmbedFrame({
     if (onBack) onBack();
   };
 
+  // Match Workspace cream so embed is not a white “card” on the shell.
+  const shellBg = '#f8f0df';
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: '78vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        width: '100%',
+        bgcolor: shellBg,
+      }}
+    >
       {showBack ? (
         <Button
           startIcon={<ArrowBackIcon />}
@@ -134,7 +147,10 @@ export default function ShippingEmbedFrame({
             textTransform: 'none',
             fontWeight: 500,
             color: 'text.secondary',
-            px: 0.5,
+            px: 1.5,
+            py: 0.25,
+            minHeight: 32,
+            flexShrink: 0,
             '&:hover': { bgcolor: 'transparent', color: 'text.primary' },
           }}
         >
@@ -142,7 +158,7 @@ export default function ShippingEmbedFrame({
         </Button>
       ) : null}
       {error ? (
-        <Typography sx={{ color: 'error.main', fontWeight: 500 }}>{error}</Typography>
+        <Typography sx={{ color: 'error.main', fontWeight: 500, px: 1 }}>{error}</Typography>
       ) : null}
       {loading ? (
         <Box sx={{ py: 8, display: 'grid', placeItems: 'center' }}>
@@ -158,10 +174,11 @@ export default function ShippingEmbedFrame({
           sx={{
             flex: 1,
             width: '100%',
-            minHeight: { xs: '70vh', md: '78vh' },
-            border: '1px solid #E2D3BE',
-            borderRadius: '12px',
-            bgcolor: '#FFFDF8',
+            minHeight: 0,
+            border: 'none',
+            borderRadius: 0,
+            bgcolor: shellBg,
+            display: 'block',
           }}
         />
       ) : null}
