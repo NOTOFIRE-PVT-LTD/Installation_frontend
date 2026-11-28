@@ -60,6 +60,7 @@ function MainDataGrid(props) {
     handleVisibilityChange,
     onRowClick,
     checkboxSelection,
+    isRowSelectable,
     rowSelectionModel,
     onRowSelectionModelChange,
   } = props;
@@ -85,6 +86,7 @@ function MainDataGrid(props) {
       onColumnVisibilityModelChange={handleVisibilityChange}
       onRowClick={onRowClick ? (params) => onRowClick(params.row) : undefined}
       checkboxSelection={checkboxSelection}
+      isRowSelectable={isRowSelectable}
       rowSelectionModel={rowSelectionModel}
       onRowSelectionModelChange={onRowSelectionModelChange}
       keepNonExistentRowsSelected

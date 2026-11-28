@@ -62,6 +62,7 @@ export default function DataTable(props) {
     storageKey,
     onRowClick,
     checkboxSelection = false,
+    isRowSelectable,
     rowSelectionModel,
     onRowSelectionModelChange,
     onBulkDelete,
@@ -131,6 +132,7 @@ export default function DataTable(props) {
         handleVisibilityChange={state.handleVisibilityChange}
         onRowClick={onRowClick}
         checkboxSelection={checkboxSelection}
+        isRowSelectable={isRowSelectable}
         rowSelectionModel={rowSelectionModel}
         onRowSelectionModelChange={onRowSelectionModelChange}
       />

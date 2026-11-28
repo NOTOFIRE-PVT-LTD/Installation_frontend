@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/pages/auditLogs/ticketAudit.test.js src/utils/readLocation.test.js"
+    "test": "node --test src/pages/auditLogs/ticketAudit.test.js src/utils/readLocation.test.js src/pages/payflow/payflowBulkSelection.test.js"
   },
   "dependencies": {
     "@emotion/react": "^11.13.5",
