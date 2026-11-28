@@ -13,22 +13,11 @@ import ShippingEmbedFrame from './ShippingEmbedFrame';
 import { hasShippingAppUrl } from './shippingAppUrl';
 import { withGridIds } from './migratedWorkspaceBits';
 import MigratedHomePanel from './MigratedHomePanel';
-
-function tabRootPath(tabs, tabId) {
-  const tab = tabs.find((t) => t.id === tabId) || tabs[0];
-  return tab?.path || '/';
-}
-
-/** True when iframe is deeper than the selected tab's root (e.g. shipment under New dispatch). */
-function isDeepEmbed(embedPath, rootPath) {
-  const path = String(embedPath || '/').split('?')[0];
-  const root = String(rootPath || '/').split('?')[0];
-  if (!path || path === root) return false;
-  if (path.startsWith('/shipments/')) return true;
-  if (path.startsWith('/dispatch/new/')) return true;
-  if (root !== '/' && path.startsWith(`${root}/`)) return true;
-  return path !== root && path !== '/';
-}
+import {
+  isDeepEmbed,
+  pathBelongsToTab,
+  tabRootPath,
+} from './shippingEmbedPath';
 
 export default function MigratedAppWorkspace({
   app,
@@ -64,7 +53,11 @@ export default function MigratedAppWorkspace({
   const allowed = isSuperAdmin || Boolean(permissions?.[permissionKey]);
   const isHome = current === 'home' || current === 'reports';
   const rootPath = tabRootPath(tabs, current);
-  const effectivePath = livePath || embedPath || '/';
+  // Ignore stale iframe polls from the previous tab (avoids Back button flash).
+  const effectivePath =
+    livePath && pathBelongsToTab(livePath, rootPath)
+      ? livePath
+      : embedPath || '/';
   const deep = canEmbedShipping && isDeepEmbed(effectivePath, rootPath);
 
   const setTab = (id) => {
