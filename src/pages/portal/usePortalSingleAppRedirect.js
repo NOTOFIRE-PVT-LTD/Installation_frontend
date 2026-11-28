@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { store } from '../../app/store';
+import { getDefaultLandingPath } from '../../routes/navAccess';
 import { resolvePortalLanding } from './portalLanding';
 import {
   openLeadTrackApp,
@@ -7,6 +9,11 @@ import {
 } from './portalAppActions';
 
 const OPEN_WATCHDOG_MS = 12_000;
+
+function workspaceLandPath() {
+  const { user, permissions } = store.getState().auth;
+  return getDefaultLandingPath(user, permissions);
+}
 
 /** Auto-open the only granted app; unlock if navigation never leaves /apps. */
 export function usePortalSingleAppRedirect({
@@ -32,8 +39,9 @@ export function usePortalSingleAppRedirect({
     const kind = resolvePortalLanding(access);
     if (kind === 'pnl') openPnlApp({ setError, setBusy });
     else if (kind === 'leadtrack') openLeadTrackApp({ setError, setBusy });
-    else if (kind === 'workspace') openWorkspaceApp({ setBusy, setError });
-    else setError('No app access for this account');
+    else if (kind === 'workspace') {
+      openWorkspaceApp({ setBusy, setError, landPath: workspaceLandPath() });
+    } else setError('No app access for this account');
   }, [ready, access, busy, bothApps, error, setError, setBusy]);
 }
 
@@ -43,7 +51,13 @@ export function retryPortalAppOpen(access, setError, setBusy) {
   const kind = resolvePortalLanding(access);
   if (kind === 'pnl') return openPnlApp({ setError, setBusy });
   if (kind === 'leadtrack') return openLeadTrackApp({ setError, setBusy });
-  if (kind === 'workspace') return openWorkspaceApp({ setBusy, setError });
+  if (kind === 'workspace') {
+    return openWorkspaceApp({
+      setBusy,
+      setError,
+      landPath: workspaceLandPath(),
+    });
+  }
   setError('No app access for this account');
   return undefined;
 }

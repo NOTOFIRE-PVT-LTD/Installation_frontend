@@ -1,4 +1,6 @@
+import { store } from '../../app/store';
 import { portalApi } from '../../api/portalApi';
+import { getDefaultLandingPath } from '../../routes/navAccess';
 import { openLeadTrackApp, openPnlApp, openWorkspaceApp } from './portalAppActions';
 import { setPortalAccessCache } from './usePortalAccess';
 
@@ -24,6 +26,11 @@ export async function fetchPortalAccess() {
   return setPortalAccessCache(access);
 }
 
+function workspaceLandingPath() {
+  const { user, permissions } = store.getState().auth;
+  return getDefaultLandingPath(user, permissions);
+}
+
 /** After login / when /apps is not a chooser: go to the one app or stay on /apps. */
 export async function applyPortalLanding({ navigate, setError, setBusy }) {
   const access = await fetchPortalAccess();
@@ -37,6 +44,12 @@ export async function applyPortalLanding({ navigate, setError, setBusy }) {
     return kind;
   }
   if (kind === 'workspace') {
+    // SPA: single-app users land on Shipping (etc.), not the /home chooser.
+    const land = workspaceLandingPath();
+    if (land && land !== '/home' && land !== '/apps') {
+      navigate(land, { replace: true });
+      return kind;
+    }
     openWorkspaceApp({ setBusy, setError });
     return kind;
   }

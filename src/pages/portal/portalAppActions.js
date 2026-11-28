@@ -67,7 +67,7 @@ export async function openLeadTrackApp({ setError, setBusy }) {
   }
 }
 
-export function openWorkspaceApp({ setBusy, setError }) {
+export function openWorkspaceApp({ setBusy, setError, landPath } = {}) {
   setError?.(null);
   setBusy('workspace');
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -75,7 +75,8 @@ export function openWorkspaceApp({ setBusy, setError }) {
   const base = path.startsWith('/ws')
     ? '/ws/'
     : (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
-  window.location.assign(`${window.location.origin}${base}home`);
+  const land = String(landPath || '/home').replace(/^\//, '');
+  window.location.assign(`${window.location.origin}${base}${land}`);
 }
 
 export async function logoutPortalApp({ dispatch, logoutThunk }) {

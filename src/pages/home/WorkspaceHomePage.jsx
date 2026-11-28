@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -19,6 +19,13 @@ export default function WorkspaceHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const apps = useWorkspaceApps();
+
+  // One app only → skip the chooser and open it (e.g. Shipping-only accounts).
+  useEffect(() => {
+    if (apps.length === 1) navigate(apps[0].path, { replace: true });
+  }, [apps, navigate]);
+
+  if (apps.length === 1) return null;
 
   return (
     <Box>
