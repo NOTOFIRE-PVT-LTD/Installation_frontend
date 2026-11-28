@@ -58,6 +58,14 @@ export const NAV_ITEMS_BACK_OFFICE = [
     accent: { color: '#0d9488', bg: '#f0fdfa' },
   },
   {
+    label: 'Call Letter',
+    path: '/call-letters',
+    icon: faFileSignature,
+    permission: 'financialDocuments',
+    roles: [ROLES.ADMIN],
+    accent: { color: '#2563eb', bg: '#eff6ff' },
+  },
+  {
     label: 'Billing',
     path: '/billing',
     icon: faReceipt,

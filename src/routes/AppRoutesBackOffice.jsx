@@ -5,6 +5,7 @@ import NumbersPage from '../pages/numbers/NumbersPage';
 import TendersListPage from '../pages/tenders/TendersListPage';
 import InspectionsListPage from '../pages/inspections/InspectionsListPage';
 import FinancialDocumentsListPage from '../pages/financialDocuments/FinancialDocumentsListPage';
+import CallLettersListPage from '../pages/callLetters/CallLettersListPage';
 import AccountsListPage from '../pages/accounts/AccountsListPage';
 import StockItemsPage from '../pages/stock/StockItemsPage';
 import BomPage from '../pages/bom/BomPage';
@@ -69,7 +70,14 @@ export const backOfficeRouteNodes = (
       }
     />
     <Route path="/contract-agreements" element={<Navigate to="/financial-documents" replace />} />
-    <Route path="/call-letters" element={<Navigate to="/financial-documents" replace />} />
+    <Route
+      path="/call-letters"
+      element={
+        <PermissionGate permission="financialDocuments" roles={[]}>
+          <CallLettersListPage />
+        </PermissionGate>
+      }
+    />
     <Route
       path="/accounts"
       element={
